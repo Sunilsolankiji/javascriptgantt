@@ -722,7 +722,7 @@
       });
       ZT_Gantt.attachEvent("onBeforeTaskDrop", (event) => {
         console.log("onBeforeTaskDrop: ", event);
-        if (event.parentTask.id == 12) {
+        if (event.parentTask?.id == 12) {
           return false;
         }
       });
@@ -1078,7 +1078,7 @@
       document.querySelector(".hint-icon").removeEventListener("click",handleClick);
       document.querySelector(".hint-icon").addEventListener("click",handleClick);
       
-      let tour = new ztTour({});
+      // let tour = new ztTour({});
       function handleClick(e){
           tour.showHint({
             element: ".hint-icon",

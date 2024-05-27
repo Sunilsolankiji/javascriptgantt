@@ -3347,12 +3347,24 @@
           colorPicker.classList.add("zt-gantt-task-color-picker");
           let colorInput = document.createElement("input");
           colorInput.type = "color";
-          colorInput.value =
-            this.options.data[j].taskColor ||
-            (this.options.data[j].type === "milestone" ? "#e84855" : "#56a4fd");
+
+          setTimeout(() => {
+            const backgroundElement =
+              this.options.data[j].type === "milestone"
+                ? ztGanttBarTaskContent
+                : ztGanttBarTask;
+            // Get the computed style of the element
+            const ztGanttBarTaskStyle =
+              window.getComputedStyle(backgroundElement);
+            // Get the background-color property value
+            const backgroundColor =
+              ztGanttBarTaskStyle.getPropertyValue("background-color");
+            colorInput.value =
+              this.options.data[j].taskColor || this.rgbaToHex(backgroundColor);
+          }, 0);
+
           colorPicker.append(colorInput);
           ztGanttBarTask.append(colorPicker);
-
           this.changeTaskbarColor(
             ztGanttBarTask,
             colorInput,
@@ -4223,23 +4235,26 @@
               parentId.length > 1 ? newIndexTask.parent : newIndexTask.id;
             that.originalData.splice(newIndex, 0, task); // Insert the object at the new position
           };
+          
           if (taskId > -1 && taskId < allTaskbars.length) {
             let currentTask = that.getTask(taskPositionId);
             parentId =
               taskParentId.length > 1 ? currentTask.parent : currentTask.id;
             parentTask = that.getTask(parentId);
-
-            // handle custom event
-            const onBeforeTaskDrop = new CustomEvent("onBeforeTaskDrop", {
-              detail: {
-                task,
-                mode: type === "move" ? "move" : "resize",
-                parentTask: parentTask,
-                oldParentTask: that.getTask(task.parent),
-              },
-            });
-            that.element.dispatchEvent(onBeforeTaskDrop);
+          }else{
+            parentTask = null;
           }
+
+          // handle custom event
+          const onBeforeTaskDrop = new CustomEvent("onBeforeTaskDrop", {
+            detail: {
+              task,
+              mode: type === "move" ? "move" : "resize",
+              parentTask: parentTask,
+              oldParentTask: that.getTask(task.parent),
+            },
+          });
+          that.element.dispatchEvent(onBeforeTaskDrop);
 
           if (type === "move" && that.eventValue === false) {
             taskBar.style.top = startTop + "px";
@@ -6404,11 +6419,22 @@
           colorPicker.classList.add("zt-gantt-task-color-picker");
           let colorInput = document.createElement("input");
           colorInput.type = "color";
-          colorInput.setAttribute(
-            "value",
-            taskData[k].taskColor ||
-              (taskData[k].type === "milestone" ? "#e84855" : "#56a4fd")
-          );
+
+          setTimeout(() => {
+            // Get the computed style of the element
+            const backgroundElement =
+              taskData[k].type === "milestone"
+                ? ztGanttBarTaskContent
+                : ztGanttBarTask;
+            const ztGanttBarTaskStyle =
+              window.getComputedStyle(backgroundElement);
+            // Get the background-color property value
+            const backgroundColor =
+              ztGanttBarTaskStyle.getPropertyValue("background-color");
+            colorInput.value =
+              taskData[k].taskColor || this.rgbaToHex(backgroundColor);
+          }, 0);
+
           colorPicker.append(colorInput);
           ztGanttBarTask.append(colorPicker);
 
@@ -7185,6 +7211,7 @@
       }
     },
 
+    // function to get a task from the main data or can also pass your data with same structure as main data
     getTask: function (id, data = this.options.data) {
       function findObjectById(array, id) {
         for (let item of array) {
@@ -9038,66 +9065,53 @@
       return taskEndDate;
     },
 
-    // check for has cycle or not
+    // check for cycle in task links
     hasCycle: function (currentSource, currentTarget, linkId = "") {
-      if (currentTarget === null) {
-        return;
-      }
-      let targetParent = this.getTask(currentTarget).parent;
-      if (targetParent == currentSource) {
-        return true;
-      }
-      let currentSourceTask = this.getTask(currentSource);
-      let currentTargetTask = this.getTask(currentTarget);
-      if (currentSourceTask.children && currentSourceTask.children.length > 0) {
-        let isChild = findTask(currentSourceTask, "source");
-        if (isChild) {
-          return isChild;
-        }
-      }
+      if (!currentTarget) return false;
 
-      if (currentTargetTask.children && currentTargetTask.children.length > 0) {
-        let isChild = findTask(currentTargetTask, "target");
-        if (isChild) {
-          return isChild;
-        }
+      if (currentSource == currentTarget) return true;
+
+      let currentTargetTask = this.getTask(currentTarget);
+
+      if (currentTargetTask?.parent == currentSource) return true;
+
+      let currentSourceTask = this.getTask(currentSource);
+
+      if (
+        (currentSourceTask?.children?.length && findTask(currentSourceTask)) ||
+        (currentTargetTask?.children?.length && findTask(currentTargetTask))
+      ) {
+        return true;
       }
 
       // check is child or parent
-      function findTask(parentTask, type) {
-        for (const task of parentTask.children) {
-          if (
-            (type === "source" && task.id == currentTarget) ||
-            (type === "target" && task.id == currentSource)
-          ) {
+      function findTask(parentTask) {
+        for (const task of parentTask?.children) {
+          if (task?.id == currentTarget || task?.id == currentSource) {
             return true;
-          } else if (task.children && task.children.length > 0) {
+          } else if (task?.children?.length) {
             return findTask(task, type);
           }
         }
         return false;
       }
 
-      let links = this.options.links;
-      if (currentSource == currentTarget) {
-        return true;
-      }
-
-      let filteredLinks = links.filter(
+      const filteredLinks = this.options.links.filter(
         (link) => link.target == currentSource && link.id != linkId
       );
-      if (filteredLinks.length === 0) {
-        return false;
-      }
+      if (!filteredLinks?.length) return false;
 
       for (let link of filteredLinks) {
-        if (link.source == currentTarget) {
+        if (
+          link.source === currentTarget ||
+          this.hasCycle(link?.source, currentTarget, link?.id)
+        ) {
           return true;
-        } else if (this.hasCycle(link.source, currentTarget, link.id)) {
-          return true;
+        } else {
+          return false;
         }
-        return false;
       }
+      return false;
     },
 
     throwError: function (error) {
@@ -9372,6 +9386,17 @@
         .replace("rgb", "rgba")
         .replace(")", "," + opacity + ")");
       return rgbaColor;
+    },
+
+    // Function to convert RGBA to HEX
+    rgbaToHex: function (rgbaColor) {
+      var rgbaArray = rgbaColor.match(/\d+/g);
+      var hexValue =
+        "#" +
+        ("0" + parseInt(rgbaArray[0], 10).toString(16)).slice(-2) +
+        ("0" + parseInt(rgbaArray[1], 10).toString(16)).slice(-2) +
+        ("0" + parseInt(rgbaArray[2], 10).toString(16)).slice(-2);
+      return hexValue;
     },
 
     setLocalLang: function (language) {
@@ -9838,12 +9863,24 @@
             colorPicker.classList.add("zt-gantt-task-color-picker");
             let colorInput = document.createElement("input");
             colorInput.type = "color";
-            colorInput.value =
-              task.taskColor ||
-              (task.type === "milestone" ? "#e84855" : "#56a4fd");
+
+            setTimeout(() => {
+              const backgroundElement =
+                task.type === "milestone"
+                  ? ztGanttBarTaskContent
+                  : ztGanttBarTask;
+              // Get the computed style of the element
+              const ztGanttBarTaskStyle =
+                window.getComputedStyle(backgroundElement);
+              // Get the background-color property value
+              const backgroundColor =
+                ztGanttBarTaskStyle.getPropertyValue("background-color");
+              colorInput.value =
+                task.taskColor || this.rgbaToHex(backgroundColor);
+            }, 0);
+
             colorPicker.append(colorInput);
             ztGanttBarTask.append(colorPicker);
-
             this.changeTaskbarColor(
               ztGanttBarTask,
               colorInput,
