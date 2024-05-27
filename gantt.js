@@ -4235,13 +4235,13 @@
               parentId.length > 1 ? newIndexTask.parent : newIndexTask.id;
             that.originalData.splice(newIndex, 0, task); // Insert the object at the new position
           };
-          
+
           if (taskId > -1 && taskId < allTaskbars.length) {
             let currentTask = that.getTask(taskPositionId);
             parentId =
               taskParentId.length > 1 ? currentTask.parent : currentTask.id;
             parentTask = that.getTask(parentId);
-          }else{
+          } else {
             parentTask = null;
           }
 
@@ -7234,65 +7234,78 @@
 
     // filter tasks based on user conditions
     filterTask: function (condition, isFilter, findRecursive = false) {
-      if (!this.searchedData) {
-        this.oldOpenedTasks = [...this.options.openedTasks];
-      }
+      const debouncedFilterTask = this.debounce(
+        (condition, isFilter, findRecursive = false) => {
+          if (!this.searchedData) {
+            this.oldOpenedTasks = [...this.options.openedTasks];
+          }
 
-      this.selectedRow = undefined;
-      const allData = [...this.options.data];
-      const that = this;
-      let parents = [];
+          this.selectedRow = undefined;
+          const allData = [...this.options.data];
+          const that = this;
+          let parents = [];
 
-      const filteredData = filterAndFlatten(allData, condition);
+          if(!isFilter || this.searchedData){
+            this.searchedData = undefined;
+            this.options.openedTasks = [];
+            this.render();
+            return;
+          }
 
-      if (isFilter === true) {
-        this.searchedData = filteredData;
-        this.render();
-      } else {
-        this.searchedData = undefined;
-        this.options.openedTasks = [];
-        this.render();
-      }
+          const filteredData = filterAndFlatten(allData, condition);
 
-      function filterAndFlatten(data, condition) {
-        return data.reduce((result, item) => {
-          if (condition(item)) {
-            if (!that.options.splitTask && !findRecursive) {
-              const { children, ...flatItem } = item;
-              result.push(flatItem);
-            } else {
-              // find recursive parent child tasks
-              result.push(item);
-              let then = that;
-              pushParent(item);
+          if (isFilter === true) {
+            this.searchedData = filteredData;
+            this.render();
+          }
 
-              function pushParent(item) {
-                if (
-                  item.parent &&
-                  item.parent != 0 &&
-                  !parents.includes(item.parent)
-                ) {
-                  parents.push(item.parent);
-                  let parentItem = then.getTask(item.parent);
-                  if (parentItem) {
-                    parentItem.children = parentItem.children.filter(
-                      (child) => child.id == item.id
-                    );
-                    result.push(parentItem);
-                    pushParent(parentItem);
+          function filterAndFlatten(data, condition) {
+            return data.reduce((result, item) => {
+              if (condition(item)) {
+                if (!that.options.splitTask && !findRecursive) {
+                  const { children, ...flatItem } = item;
+                  result.push(flatItem);
+                } else {
+                  // find recursive parent child tasks
+                  result.push(item);
+                  let then = that;
+                  pushParent(item);
+
+                  function pushParent(item) {
+                    if (
+                      item.parent &&
+                      item.parent != 0 &&
+                      !parents.includes(item.parent)
+                    ) {
+                      parents.push(item.parent);
+                      let parentItem = then.getTask(item.parent);
+                      if (parentItem) {
+                        parentItem.children = parentItem.children.filter(
+                          (child) => child.id == item.id
+                        );
+                        result.push(parentItem);
+                        pushParent(parentItem);
+                      }
+                    }
                   }
                 }
               }
-            }
+              if (Array.isArray(item.children)) {
+                // Recursively filter and flatten nested arrays
+                const filteredItems = filterAndFlatten(
+                  item.children,
+                  condition
+                );
+                result.push(...filteredItems);
+              }
+              return result;
+            }, []);
           }
-          if (Array.isArray(item.children)) {
-            // Recursively filter and flatten nested arrays
-            const filteredItems = filterAndFlatten(item.children, condition);
-            result.push(...filteredItems);
-          }
-          return result;
-        }, []);
-      }
+        },
+        300
+      );
+
+      debouncedFilterTask(condition, isFilter, findRecursive);
     },
 
     // push custom markers
@@ -9390,13 +9403,16 @@
 
     // Function to convert RGBA to HEX
     rgbaToHex: function (rgbaColor) {
-      var rgbaArray = rgbaColor.match(/\d+/g);
-      var hexValue =
-        "#" +
-        ("0" + parseInt(rgbaArray[0], 10).toString(16)).slice(-2) +
-        ("0" + parseInt(rgbaArray[1], 10).toString(16)).slice(-2) +
-        ("0" + parseInt(rgbaArray[2], 10).toString(16)).slice(-2);
-      return hexValue;
+      if (rgbaColor) {
+        const rgbaArray = rgbaColor.match(/\d+/g);
+        const hexValue =
+          "#" +
+          ("0" + parseInt(rgbaArray[0], 10).toString(16)).slice(-2) +
+          ("0" + parseInt(rgbaArray[1], 10).toString(16)).slice(-2) +
+          ("0" + parseInt(rgbaArray[2], 10).toString(16)).slice(-2);
+        return hexValue;
+      }
+      return false;
     },
 
     setLocalLang: function (language) {
@@ -10169,6 +10185,15 @@
       if (editor) {
         editor.remove();
       }
+    },
+
+    // Utility function to create a debounced version of a function
+    debounce: function (func, wait) {
+      return function (...args) {
+        const context = this;
+        clearTimeout(this.timeout);
+        this.timeout = setTimeout(() => func.apply(context, args), wait);
+      };
     },
   };
 
