@@ -2065,11 +2065,8 @@
       );
 
       // add all markers
-      let isMarkerAreaExist = document.querySelector(".zt-gantt-marker-area");
-      if (isMarkerAreaExist) {
-        isMarkerAreaExist.remove();
-      }
       for (let marker of this.options.customMarker) {
+        if(this.outOfGanttRange(marker?.start_date)) continue;
         this.addMarkerToGantt(marker);
       }
 
@@ -2946,11 +2943,8 @@
         );
 
         // add all markers
-        let isMarkerAreaExist = document.querySelector(".zt-gantt-marker-area");
-        if (isMarkerAreaExist) {
-          isMarkerAreaExist.remove();
-        }
         for (let marker of this.options.customMarker) {
+          if(this.outOfGanttRange(marker?.start_date)) continue;
           this.addMarkerToGantt(marker);
         }
 
@@ -3803,6 +3797,9 @@
 
     // add today flag
     addTodayFlag: function () {
+      // return from here if current date is out of range 
+      if (this.outOfGanttRange(new Date())) return;
+
       let isTodayExist = document.getElementById("zt-gantt-marker-today");
       if (!isTodayExist) {
         let todayFlag = document.createElement("div");
@@ -7245,7 +7242,7 @@
           const that = this;
           let parents = [];
 
-          if(!isFilter || this.searchedData){
+          if (!isFilter || this.searchedData) {
             this.searchedData = undefined;
             this.options.openedTasks = [];
             this.render();
@@ -7316,7 +7313,7 @@
     // add custom marker to gantt
     addMarkerToGantt: function (data) {
       let markerArea = document.querySelector(".zt-gantt-marker-area");
-
+      
       if (!markerArea) {
         markerArea = document.createElement("div");
         markerArea.classList.add("zt-gantt-marker-area");
@@ -10191,10 +10188,18 @@
     debounce: function (func, wait) {
       return function (...args) {
         const context = this;
-        clearTimeout(this.timeout);
-        this.timeout = setTimeout(() => func.apply(context, args), wait);
+        clearTimeout(this.debounceTimeout);
+        this.debounceTimeout = setTimeout(() => func.apply(context, args), wait);
       };
     },
+
+    // check if date is out of Gantt range 
+    outOfGanttRange(date){
+      date = new Date(date).getTime();
+      const startDate = new Date(this.options.startDate).getTime();
+      const endDate = new Date(this.options.endDate).getTime();
+      return date < startDate || date > endDate;
+    }
   };
 
   global.ztGantt = ZTGantt;
