@@ -1846,7 +1846,7 @@
       }
 
       this.element = ele || this.element;
-      let options = this.options;
+      const options = this.options;
       this.options.currentLanguage = this.options.i18n[this.options.localLang];
       this.zoomInit("initial");
       function createNestedTree(
@@ -1874,66 +1874,47 @@
         return tree;
       }
 
-      // create a copy of the data and add "_id" key in the all data objects
+      // create a copy of the data
       if (this.options.arrangeData) {
         this.originalData = [...this.options.data];
-
-        // set _id to all the tasks
-        let count = 0;
-        for (let i = 0; i < this.originalData.length; i++) {
-          this.originalData[i]._id = count;
-          count += 1;
-        }
       }
 
-      for (let i = 0; i < this.originalData.length; i++) {
-        if (
-          this.originalData[i].start_date !== undefined &&
-          isNaN(new Date(this.originalData[i].start_date)) &&
-          this.options.date_format
-        ) {
-          this.originalData[i].start_date = this.getDateTimeComponents(
-            this.originalData[i].start_date
-          );
-        } else {
-          this.hasHours = false;
-          if (
-            this.originalData[i].start_date !== undefined &&
-            isNaN(this.originalData[i].start_date)
-          ) {
-            this.getDateTimeComponents(this.originalData[i].start_date);
-            if (
-              this.hasHours !== true &&
-              !isNaN(new Date(this.originalData[i].start_date))
-            ) {
-              this.originalData[i].start_date = new Date(
-                new Date(this.originalData[i].start_date).setHours(0, 0, 0, 0)
-              );
+      const originalData = this.originalData;
+      const { date_format } = options;
+      const originalDataLength = originalData.length;
+
+      // Process start_date
+      for (let i = 0; i < originalDataLength; i++) {
+        if (originalData[i].start_date !== undefined) {
+          let startDate = originalData[i].start_date;
+          const parsedStartDate = new Date(startDate);
+          if (isNaN(parsedStartDate) && date_format) {
+            console.log(parsedStartDate, "parsedStartDate");
+            originalData[i].start_date = this.getDateTimeComponents(startDate);
+          } else {
+            this.hasHours = false;
+            if (isNaN(startDate)) {
+              this.getDateTimeComponents(this.originalData[i].start_date);
+              if (this.hasHours !== true && !isNaN(parsedStartDate)) {
+                originalData[i].start_date = this.stripTime(parsedStartDate);
+              }
             }
           }
         }
-        if (
-          this.originalData[i].end_date !== undefined &&
-          isNaN(new Date(this.originalData[i].end_date)) &&
-          this.options.date_format
-        ) {
-          this.originalData[i].end_date = this.getDateTimeComponents(
-            this.originalData[i].end_date
-          );
-        } else {
-          this.hasHours = false;
-          if (
-            this.originalData[i].end_date !== undefined &&
-            isNaN(this.originalData[i].end_date)
-          ) {
-            this.getDateTimeComponents(this.originalData[i].end_date);
-            if (
-              this.hasHours !== true &&
-              !isNaN(new Date(this.originalData[i].end_date))
-            ) {
-              this.originalData[i].end_date = new Date(
-                new Date(this.originalData[i].end_date).setHours(0, 0, 0, 0)
-              );
+
+        // Process end_date
+        if (originalData[i].end_date !== undefined) {
+          let endDate = originalData[i].end_date;
+          const parsedEndDate = new Date(endDate);
+          if (isNaN(parsedEndDate) && date_format) {
+            originalData[i].end_date = this.getDateTimeComponents(endDate);
+          } else {
+            this.hasHours = false;
+            if (isNaN(endDate)) {
+              this.getDateTimeComponents(endDate);
+              if (this.hasHours !== true && !isNaN(parsedEndDate)) {
+                this.originalData[i].end_date = this.stripTime(parsedEndDate);
+              }
             }
           }
         }
@@ -2084,16 +2065,12 @@
         headCell.classList.add("head-cell");
 
         //add custom class from user
-        if (typeof this.templates.grid_header_class === "function") {
-          let cssClass = this.templates.grid_header_class(
-            options.columns[i],
-            i
-          );
-          if (cssClass) {
-            cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-            headCell.classList.add(...cssClass);
-          }
-        }
+        this.addClassesFromFunction(
+          this.templates.grid_header_class,
+          headCell,
+          options.columns[i],
+          i
+        );
 
         headCell.setAttribute("data-column-index", i);
         headCell.style.width = (options.columns[i].width || 80) + "px";
@@ -2183,24 +2160,16 @@
         );
 
         //add custom classes from user
-        if (typeof this.templates.grid_row_class === "function") {
-          let startDate, endDate;
-          if (Array.isArray(options.data[j].children)) {
-            let taskData = [...options.data[j].children];
-            let dateData = this.getStartAndEndDate(taskData);
-            startDate = dateData.startDate;
-            endDate = dateData.endDate;
-          }
-          let cssClass = this.templates.grid_row_class(
-            startDate,
-            endDate,
-            options.data[j]
-          );
-          if (cssClass) {
-            cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-            dataItem.classList.add(...cssClass);
-          }
-        }
+        const { start_date, end_date } = this.getLargeAndSmallDate(
+          this.options.data[j]
+        );
+        this.addClassesFromFunction(
+          this.templates.grid_row_class,
+          dataItem,
+          start_date,
+          end_date,
+          this.options.data[j]
+        );
 
         dataItem.setAttribute("zt-gantt-data-task-id", j);
         dataItem.setAttribute("zt-gantt-task-id", options.data[j].id);
@@ -2242,7 +2211,6 @@
           }
         }
 
-        let start_date, end_date;
         // Handle mouseover event
         dataItem.addEventListener("mouseover", () => {
           this.updateTooltipBody(that.options.data[j]);
@@ -2300,16 +2268,12 @@
           cell.classList.add("zt-gantt-cell");
 
           //add custom class from user
-          if (typeof this.templates.grid_cell_class === "function") {
-            let cssClass = this.templates.grid_cell_class(
-              options.columns[k],
-              options.data[j]
-            );
-            if (cssClass) {
-              cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-              cell.classList.add(...cssClass);
-            }
-          }
+          this.addClassesFromFunction(
+            this.templates.grid_cell_class,
+            cell,
+            this.options.columns[k],
+            this.options.data[j]
+          );
 
           cell.style.width = (options.columns[k].width || 80) + "px";
           options.columns[k].align
@@ -2544,10 +2508,9 @@
           ) {
             continue;
           }
-          let dateFormat =
-            typeof options.scales[i].format == "function"
-              ? options.scales[i].format(new Date(dates[j]))
-              : this.formatDateToString(options.scales[i].format, dates[j]);
+          let dateFormat = this.isFunction(options.scales[i].format)
+            ? options.scales[i].format(new Date(dates[j]))
+            : this.formatDateToString(options.scales[i].format, dates[j]);
           let colDates;
 
           // if date scale unit is week || month || year || (day && step > 1)
@@ -2578,17 +2541,13 @@
           dateCell.classList.add("zt-gantt-scale-cell");
 
           //add custom class from user
-          if (typeof this.templates.scale_cell_class === "function") {
-            let cssClass = this.templates.scale_cell_class(
-              dates[j],
-              options.scales[i],
-              i
-            );
-            if (cssClass) {
-              cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-              dateCell.classList.add(...cssClass);
-            }
-          }
+          this.addClassesFromFunction(
+            this.templates.scale_cell_class,
+            dateCell,
+            dates[j],
+            this.options.scales[i],
+            i
+          );
 
           dateCell.innerHTML = `<span class="date-scale">${dateFormat}</span>`;
           if (
@@ -2629,10 +2588,9 @@
             for (let k = dateStartHour; k < 24; k++) {
               let hourCell = dateCell.cloneNode(true);
 
-              let dateFormat =
-                typeof options.scales[i].format == "function"
-                  ? options.scales[i].format(cellDate)
-                  : this.formatDateToString(options.scales[i].format, cellDate);
+              let dateFormat = this.isFunction(options.scales[i].format)
+                ? options.scales[i].format(cellDate)
+                : this.formatDateToString(options.scales[i].format, cellDate);
 
               hourCell.innerHTML = dateFormat;
               cellDate.setHours(k + 1);
@@ -2683,24 +2641,16 @@
         );
 
         //add custom classes from user
-        if (typeof this.templates.task_row_class === "function") {
-          let startDate, endDate;
-          if (Array.isArray(options.data[j].children)) {
-            let taskData = [...options.data[j].children];
-            let dateData = this.getStartAndEndDate(taskData);
-            startDate = dateData.startDate;
-            endDate = dateData.endDate;
-          }
-          let cssClass = this.templates.task_row_class(
-            startDate,
-            endDate,
-            options.data[j]
-          );
-          if (cssClass) {
-            cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-            scaleRow.classList.add(...cssClass);
-          }
-        }
+        const { start_date, end_date } = this.getLargeAndSmallDate(
+          options.data[j]
+        );
+        this.addClassesFromFunction(
+          this.templates.task_row_class,
+          scaleRow,
+          start_date,
+          end_date,
+          this.options.data[j]
+        );
 
         scaleRow.setAttribute("zt-gantt-data-task-id", j);
         scaleRow.style.height = options.row_height + "px";
@@ -2726,16 +2676,12 @@
           }
 
           //add custom classes from user
-          if (typeof this.templates.timeline_cell_class === "function") {
-            let cssClass = this.templates.timeline_cell_class(
-              options.data[j],
-              dates[k]
-            );
-            if (cssClass) {
-              cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-              scaleCell.classList.add(...cssClass);
-            }
-          }
+          this.addClassesFromFunction(
+            this.templates.timeline_cell_class,
+            scaleCell,
+            this.options.data[j],
+            dates[k]
+          );
 
           if (this.options.zoomLevel !== "day") {
             if (this.options.zoomLevel === "hour") {
@@ -2973,17 +2919,13 @@
         }
 
         //add custom class from user
-        if (typeof this.templates.task_class === "function") {
-          let cssClass = this.templates.task_class(
-            start_date,
-            end_date,
-            this.options.data[j]
-          );
-          if (cssClass) {
-            cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-            ztGanttBarTask.classList.add(...cssClass);
-          }
-        }
+        this.addClassesFromFunction(
+          this.templates.task_class,
+          ztGanttBarTask,
+          start_date,
+          end_date,
+          this.options.data[j]
+        );
 
         ztGanttBarTask.setAttribute("task-parent", j);
         ztGanttBarTask.setAttribute("data-task-pos", 0);
@@ -3187,10 +3129,9 @@
         }
 
         // link control pointers
-        let isAddLinks =
-          typeof this.options.addLinks === "function"
-            ? this.options.addLinks(this.options.data[j])
-            : this.options.addLinks;
+        let isAddLinks = this.isFunction(this.options.addLinks)
+          ? this.options.addLinks(this.options.data[j])
+          : this.options.addLinks;
 
         if (isAddLinks === true) {
           // left point
@@ -3230,10 +3171,9 @@
         }
 
         //add custom task color picker
-        let isCustomColor =
-          typeof this.options.taskColor === "function"
-            ? this.options.taskColor(this.options.data[j])
-            : this.options.taskColor;
+        let isCustomColor = this.isFunction(this.options.taskColor)
+          ? this.options.taskColor(this.options.data[j])
+          : this.options.taskColor;
 
         if (isCustomColor) {
           let colorPicker = document.createElement("div");
@@ -3861,6 +3801,13 @@
       return (
         i && r && a && t.setTime(t.getTime() + 36e5 * (24 - t.getHours())), t
       );
+    },
+
+    // Function to strip time from date
+    stripTime: function (date) {
+      const dateOnly = new Date(date);
+      dateOnly.setHours(0, 0, 0, 0);
+      return dateOnly;
     },
 
     // request browser fullscreen
@@ -5104,10 +5051,17 @@
     },
 
     createLightbox: function (task) {
+      if (this.lightbox) return;
       const lightbox = document.getElementById("zt-gantt-lightbox");
       const lightboxBackdrop = document.getElementById(
         "zt-gantt-lightbox-backdrop"
       );
+
+      this.lightbox = {
+        lightbox,
+        lightboxBackdrop,
+      };
+
       if (lightbox) {
         lightbox.remove();
         lightboxBackdrop.remove();
@@ -5163,12 +5117,12 @@
 
     // hide lightbox
     hideLightbox: function () {
-      const lightbox = document.getElementById("zt-gantt-lightbox");
-      const backdrop = document.getElementById("zt-gantt-lightbox-backdrop");
-      if (lightbox) {
-        lightbox.style.display = "none";
-        backdrop.style.display = "none";
-      }
+      if (!this.lightbox) return;
+
+      const { lightbox, lightboxBackdrop } = this.lightbox;
+      const backdrop = lightboxBackdrop;
+      lightbox.style.display = "none";
+      backdrop.style.display = "none";
     },
 
     // add Task
@@ -5265,19 +5219,29 @@
       const regexIgnorePattern =
         /<[^>]+?\szt-gantt-ignore=(["'])(true)\1[^>]*>.*?<\/[^>]+?>/g;
 
+      // Function to escape quotes and commas in the CSV content
+      function escapeCSV(value) {
+        if (typeof value === "string") {
+          value = value.replace(regexIgnorePattern, "").replace(/<[^>]*>/g, "");
+          if (
+            value.includes(",") ||
+            value.includes('"') ||
+            value.includes("\n")
+          ) {
+            value = `"${value.replace(/"/g, '""')}"`;
+          }
+        }
+        return value;
+      }
+
       // Create the header row
       let headerRow = this.options.columns
-        .map((col) =>
-          col.label
-            .replaceAll(",", " ")
-            .replaceAll(regexIgnorePattern, "")
-            .replace(/<[^>]*>/g, "")
-        )
+        .map((col) => escapeCSV(col.label))
         .join(",");
+
       let right = this.options.rightGrid;
       if (right) {
-        headerRow +=
-          "," + right.map((col) => col.label.replaceAll(",", " ")).join(",");
+        headerRow += "," + right.map((col) => escapeCSV(col.label)).join(",");
       }
 
       csv += headerRow + "\n";
@@ -5290,23 +5254,9 @@
         let csvData = "";
 
         array.forEach((obj) => {
-          let rowData = columns.map((col) =>
-            col
-              .template(obj)
-              .replaceAll(",", " ")
-              .replaceAll(regexIgnorePattern, "")
-              .replace(/<[^>]*>/g, "")
-          );
+          let rowData = columns.map((col) => escapeCSV(col.template(obj)));
           if (right) {
-            rowData.push(
-              ...right.map((col) =>
-                col
-                  .template(obj)
-                  .replaceAll(",", " ")
-                  .replaceAll(regexIgnorePattern, "")
-                  .replace(/<[^>]*>/g, "")
-              )
-            );
+            rowData.push(...right.map((col) => escapeCSV(col.template(obj))));
           }
           csvData += rowData.join(",") + "\n";
 
@@ -5322,11 +5272,12 @@
       let link = document.createElement("a");
       link.setAttribute(
         "href",
-        "data:application/vnd.ms-excel," + encodeURIComponent(csv)
+        "data:text/csv;charset=utf-8," + encodeURIComponent(csv)
       );
-      link.setAttribute("download", `${name}.xls`);
+      link.setAttribute("download", `${name}.csv`);
       // Programmatically trigger the download
       link.click();
+      link.remove();
     },
 
     // function for calling api
@@ -5413,45 +5364,16 @@
           );
 
           //add custom classes from user
-          if (typeof this.templates.grid_row_class === "function") {
-            let startDate, endDate;
-            let start_date, end_date;
-            start_date = taskData[l].start_date;
-            end_date = taskData[l].end_date || taskData[l].start_date;
-
-            if (taskData[l].children && taskData[l].children.length > 0) {
-              let data = [...taskData[l].children];
-              let startAndEndDate = this.getStartAndEndDate(data);
-              let start = startAndEndDate.startDate;
-              let end = startAndEndDate.endDate;
-
-              const setDate = (date) => {
-                const d = new Date(date);
-                d.setHours(0, 0, 0, 0);
-                return d;
-              };
-
-              const dates = [
-                setDate(start_date),
-                setDate(start),
-                setDate(end_date),
-                setDate(end),
-              ];
-
-              start_date = new Date(Math.min(...dates));
-              end_date = new Date(Math.max(...dates));
-            }
-
-            let cssClass = this.templates.grid_row_class(
-              startDate,
-              endDate,
-              taskData[l]
-            );
-            if (cssClass) {
-              cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-              dataItem.classList.add(...cssClass);
-            }
-          }
+          const { start_date, end_date } = this.getLargeAndSmallDate(
+            taskData[l]
+          );
+          this.addClassesFromFunction(
+            this.templates.grid_row_class,
+            dataItem,
+            start_date,
+            end_date,
+            taskData[l]
+          );
 
           dataItem.setAttribute("zt-gantt-data-task-id", `${taskParents}`);
           dataItem.setAttribute("zt-gantt-task-id", taskData[l].id);
@@ -5463,9 +5385,7 @@
           dataItem.addEventListener("dblclick", handleDblClick);
 
           function handleDblClick(e) {
-            if (e.target.classList.contains("zt-gantt-tree-icon")) {
-              return;
-            }
+            if (e.target.classList.contains("zt-gantt-tree-icon")) return;
 
             // custom event handler
             const onBeforeTaskDblClick = new CustomEvent(
@@ -5558,16 +5478,12 @@
             cell.classList.add("zt-gantt-cell");
 
             //add custom class from user
-            if (typeof this.templates.grid_cell_class === "function") {
-              let cssClass = this.templates.grid_cell_class(
-                options.columns[k],
-                taskData[l]
-              );
-              if (cssClass) {
-                cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-                cell.classList.add(...cssClass);
-              }
-            }
+            this.addClassesFromFunction(
+              this.templates.grid_cell_class,
+              cell,
+              this.options.columns[k],
+              taskData[l]
+            );
 
             cell.style.width = (options.columns[k].width || 80) + "px";
             options.columns[k].align
@@ -5788,27 +5704,14 @@
         );
 
         //add custom classes from user
-        if (typeof this.templates.task_row_class === "function") {
-          let startDate, endDate;
-          if (Array.isArray(taskData[l].children)) {
-            let data = [...taskData[l].children];
-            let dateData = this.getStartAndEndDate(data);
-            startDate = dateData.startDate;
-            endDate = dateData.endDate;
-          } else {
-            startDate = taskData[l].start_date;
-            endDate = taskData[l].end_date;
-          }
-          let cssClass = this.templates.task_row_class(
-            startDate,
-            endDate,
-            taskData[l]
-          );
-          if (cssClass) {
-            cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-            scaleRow.classList.add(...cssClass);
-          }
-        }
+        const { start_date, end_date } = this.getLargeAndSmallDate(taskData[l]);
+        this.addClassesFromFunction(
+          this.templates.task_row_class,
+          scaleRow,
+          start_date,
+          end_date,
+          taskData[l]
+        );
 
         scaleRow.setAttribute("zt-gantt-data-task-id", taskParents);
         scaleRow.style.height = `${options.row_height}px`;
@@ -5836,16 +5739,12 @@
           }
 
           //add custom classes from user
-          if (typeof this.templates.timeline_cell_class === "function") {
-            let cssClass = this.templates.timeline_cell_class(
-              taskData[l],
-              dates[k]
-            );
-            if (cssClass) {
-              cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-              scaleCell.classList.add(...cssClass);
-            }
-          }
+          this.addClassesFromFunction(
+            this.templates.timeline_cell_class,
+            scaleCell,
+            taskData[l],
+            dates[k]
+          );
 
           if (this.options.zoomLevel !== "day") {
             scaleCell.style.left = rangeCount + "px";
@@ -6021,17 +5920,13 @@
         }
 
         //add custom class from user
-        if (typeof this.templates.task_class === "function") {
-          let cssClass = this.templates.task_class(
-            start_date,
-            end_date,
-            taskData[k]
-          );
-          if (cssClass) {
-            cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-            ztGanttBarTask.classList.add(...cssClass);
-          }
-        }
+        this.addClassesFromFunction(
+          this.templates.task_class,
+          ztGanttBarTask,
+          start_date,
+          end_date,
+          taskData[k]
+        );
 
         ztGanttBarTask.setAttribute("task-parent", taskParents);
         ztGanttBarTask.setAttribute("data-task-pos", k);
@@ -6168,10 +6063,9 @@
         }
 
         // link control pointers
-        let isAddLinks =
-          typeof this.options.addLinks === "function"
-            ? this.options.addLinks(taskData[k])
-            : this.options.addLinks;
+        let isAddLinks = this.isFunction(this.options.addLinks)
+          ? this.options.addLinks(taskData[k])
+          : this.options.addLinks;
 
         if (isAddLinks === true) {
           // left point
@@ -6252,10 +6146,9 @@
         }
 
         //add custom task color picker
-        let isCustomColor =
-          typeof this.options.taskColor === "function"
-            ? this.options.taskColor(taskData[k])
-            : this.options.taskColor;
+        let isCustomColor = this.isFunction(this.options.taskColor)
+          ? this.options.taskColor(taskData[k])
+          : this.options.taskColor;
 
         if (isCustomColor) {
           let colorPicker = document.createElement("div");
@@ -6451,16 +6344,12 @@
         headCell.classList.add("right-head-cell");
 
         //add custom class from user
-        if (typeof this.templates.grid_header_class === "function") {
-          let cssClass = this.templates.grid_header_class(
-            options.columns[i],
-            i
-          );
-          if (cssClass) {
-            cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-            headCell.classList.add(...cssClass);
-          }
-        }
+        this.addClassesFromFunction(
+          this.templates.grid_header_class,
+          headCell,
+          this.options.columns[i],
+          i
+        );
 
         headCell.setAttribute("data-column-index", `r-${i}`);
         headCell.style.width = (options.columns[i].width || 80) + "px";
@@ -6512,24 +6401,16 @@
         dataItem.classList.add("zt-gantt-row-item", "zt-gantt-d-flex");
 
         //add custom classes from user
-        if (typeof this.templates.grid_row_class === "function") {
-          let startDate, endDate;
-          if (Array.isArray(options.data[j].children)) {
-            let taskData = [...options.data[j].children];
-            let dateData = this.getStartAndEndDate(taskData);
-            startDate = dateData.startDate;
-            endDate = dateData.endDate;
-          }
-          let cssClass = this.templates.grid_row_class(
-            startDate,
-            endDate,
-            options.data[j]
-          );
-          if (cssClass) {
-            cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-            dataItem.classList.add(...cssClass);
-          }
-        }
+        const { start_date, end_date } = this.getLargeAndSmallDate(
+          options.data[j]
+        );
+        this.addClassesFromFunction(
+          this.templates.grid_row_class,
+          dataItem,
+          start_date,
+          end_date,
+          this.options.data[j]
+        );
 
         dataItem.setAttribute("zt-gantt-data-task-id", j);
         dataItem.setAttribute("zt-gantt-task-id", options.data[j].id);
@@ -6584,16 +6465,12 @@
           cell.classList.add("zt-gantt-cell");
 
           //add custom class from user
-          if (typeof this.templates.grid_cell_class === "function") {
-            let cssClass = this.templates.grid_cell_class(
-              options.columns[k],
-              options.data[j]
-            );
-            if (cssClass) {
-              cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-              cell.classList.add(...cssClass);
-            }
-          }
+          this.addClassesFromFunction(
+            this.templates.grid_cell_class,
+            cell,
+            this.options.columns[k],
+            this.options.data[j]
+          );
 
           cell.style.width = (options.columns[k].width || 80) + "px";
           options.columns[k].align
@@ -8999,6 +8876,7 @@
       if (!dateTimeString) {
         return;
       }
+
       const format = this.options.date_format;
       const regex = /%([dmyhis])|(\b\w+\b)/gi;
       const dateTimeParts = dateTimeString.split(/[^\w]+|T/);
@@ -9422,17 +9300,13 @@
           }
 
           //add custom class from user
-          if (typeof this.templates.task_class === "function") {
-            let cssClass = this.templates.task_class(
-              task.start_date,
-              task.end_date,
-              task
-            );
-            if (cssClass) {
-              cssClass = cssClass.trim().replace(/\s+/g, " ").split(" ");
-              ztGanttBarTask.classList.add(...cssClass);
-            }
-          }
+          this.addClassesFromFunction(
+            this.templates.task_class,
+            ztGanttBarTask,
+            task.start_date,
+            task.end_date,
+            task
+          );
 
           ztGanttBarTask.setAttribute("task-parent", j);
           ztGanttBarTask.setAttribute("data-task-pos", 0);
@@ -9631,10 +9505,9 @@
           }
 
           // link control pointers
-          let isAddLinks =
-            typeof this.options.addLinks === "function"
-              ? this.options.addLinks(task)
-              : this.options.addLinks;
+          let isAddLinks = this.isFunction(this.options.addLinks)
+            ? this.options.addLinks(task)
+            : this.options.addLinks;
 
           if (isAddLinks === true) {
             // left point
@@ -9664,10 +9537,9 @@
           }
 
           //add custom task color picker
-          let isCustomColor =
-            typeof this.options.taskColor === "function"
-              ? this.options.taskColor(task)
-              : this.options.taskColor;
+          let isCustomColor = this.isFunction(this.options.taskColor)
+            ? this.options.taskColor(task)
+            : this.options.taskColor;
 
           if (isCustomColor) {
             let colorPicker = document.createElement("div");
@@ -9801,9 +9673,16 @@
     },
 
     getLargeAndSmallDate: function (taskData) {
-      const { children, start_date, end_date } = taskData;
-      const startAndEndDate = this.getStartAndEndDate([...children]);
-      const { startDate, endDate } = startAndEndDate;
+      const { children = [], start_date = null, end_date = null } = taskData;
+
+      let startDate, endDate;
+      if (children?.length) {
+        const startAndEndDate = this.getStartAndEndDate([...children]);
+        ({ startDate, endDate } = startAndEndDate);
+      } else {
+        startDate = start_date;
+        endDate = end_date;
+      }
 
       const setDate = (date) => {
         const d = new Date(date);
@@ -9996,10 +9875,10 @@
 
     // check if date is out of Gantt range
     outOfGanttRange: function (date) {
-      date = new Date(date).getTime();
-      const startDate = new Date(this.options.startDate).getTime();
-      const endDate = new Date(this.options.endDate).getTime();
-      return date < startDate || date > endDate;
+      const targetDate = this.stripTime(date).getTime();
+      const startDate = this.stripTime(this.options.startDate).getTime();
+      const endDate = this.stripTime(this.options.endDate).getTime();
+      return targetDate < startDate && targetDate > endDate;
     },
 
     // function to create tooltip
@@ -10086,6 +9965,41 @@
         tooltip.style.display = "block";
       } else {
         this.hideTooltip();
+      }
+    },
+
+    //method to check the given value is function or not
+    isFunction: function (value) {
+      return typeof value === "function";
+    },
+
+    //  Trims leading and trailing whitespace, and add classes to the element
+    addClass: function (element, classString) {
+      if (classString) {
+        // Trim leading and trailing whitespace, replace multiple spaces with a single space,
+        // then split the string by spaces
+        const classes = classString.trim().replace(/\s+/g, " ").split(" ");
+        // Add each class to the element
+        element.classList.add(...classes);
+      }
+    },
+
+    /**
+     * Checks if the specified property of an object is a function, and if so,
+     * calls it with the provided parameters. If the function returns a value,
+     * trims whitespace, splits the result by spaces, and adds the resulting classes
+     * to the specified element's class list.
+     * @param {function} func - The function which return the css classes.
+     * @param {HTMLElement} element - The HTML element to which classes will be added.
+     * @param {...any} params - Parameters to be passed to the function if it exists.
+     */
+    addClassesFromFunction: function (func, element, ...params) {
+      // Check if the property is a function
+      if (this.isFunction(func)) {
+        // Call the function with the provided parameters
+        let cssClass = func(...params);
+        // Check if the function returned a value
+        this.addClass(element, cssClass);
       }
     },
   };
