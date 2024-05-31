@@ -1764,8 +1764,6 @@
     },
 
     init: function () {
-      let that = this;
-
       this.options.currentLanguage = this.options.i18n[this.options.localLang];
 
       /*for Safari below v16 */
@@ -1791,13 +1789,7 @@
       window.removeEventListener("resize", this.handleResizeWindow);
       window.addEventListener("resize", this.handleResizeWindow);
 
-      let tooltip = document.createElement("div");
-      tooltip.classList.add("zt-gantt-tooltip");
-      tooltip.id = "zt-gantt-tooltip";
-      tooltip.style.display = "none";
-      let isTooltipExist = document.querySelector("#zt-gantt-tooltip");
-      if (isTooltipExist) isTooltipExist.remove();
-      document.body.append(tooltip);
+      this.createTooltip();
     },
 
     handleResizeWindow(event) {
@@ -2011,39 +2003,6 @@
         this.createRightSidebar(newGridOptions, mainContainer);
       }
 
-      let tooltip = document.querySelector("#zt-gantt-tooltip");
-
-      this.element.removeEventListener("mousemove", handleMouseMove);
-      this.element.addEventListener("mousemove", handleMouseMove);
-
-      if (!tooltip) {
-        tooltip = document.createElement("div");
-        tooltip.classList.add("zt-gantt-tooltip");
-        tooltip.id = "zt-gantt-tooltip";
-        tooltip.style.display = "none";
-        document.body.append(tooltip);
-      }
-
-      function handleMouseMove(e) {
-        tooltip.style.top = e.y + 25 + window.scrollY + "px";
-        tooltip.style.left = e.x + 10 + window.scrollX + "px";
-        if (
-          tooltip.offsetLeft + tooltip.offsetWidth >
-          window.screen.width - 15
-        ) {
-          let left = e.x - tooltip.offsetWidth + window.scrollX;
-          tooltip.style.left = `${left < 0 ? 0 : left}px`;
-        }
-        if (
-          tooltip.offsetTop + tooltip.offsetHeight >
-          document.body.offsetHeight - 5
-        ) {
-          tooltip.style.top = `${
-            e.y - tooltip.offsetHeight + window.scrollY
-          }px`;
-        }
-      }
-
       verScroll =
         document.querySelector(".zt-gantt-ver-scroll")?.scrollTop || 0;
       horScroll =
@@ -2066,7 +2025,7 @@
 
       // add all markers
       for (let marker of this.options.customMarker) {
-        if(this.outOfGanttRange(marker?.start_date)) continue;
+        if (this.outOfGanttRange(marker?.start_date)) continue;
         this.addMarkerToGantt(marker);
       }
 
@@ -2285,41 +2244,12 @@
 
         let start_date, end_date;
         // Handle mouseover event
-        dataItem.addEventListener("mouseover", handleMouseOver);
-
-        function handleMouseOver(e) {
-          let tooltip = document.getElementById("zt-gantt-tooltip");
-          tooltip.innerHTML = "";
-
-          start_date = options.data[j].start_date;
-          end_date = options.data[j].end_date;
-
-          if (that.options.data[j].children?.length) {
-            ({ start_date, end_date } = that.getLargeAndSmallDate(
-              that.options.data[j]
-            ));
-          }
-
-          let tooltipContent = that.templates.tooltip_text(
-            start_date,
-            end_date,
-            options.data[j]
-          );
-
-          if (tooltipContent !== false) {
-            tooltip.innerHTML = tooltipContent;
-            tooltip.style.display = "block";
-          }
-        }
+        dataItem.addEventListener("mouseover", () => {
+          this.updateTooltipBody(that.options.data[j]);
+        });
 
         // Handle mouseleave event
-        dataItem.addEventListener("mouseleave", handleMouseLeave);
-
-        function handleMouseLeave(e) {
-          let tooltip = document.getElementById("zt-gantt-tooltip");
-          tooltip.innerHTML = "";
-          tooltip.style.display = "none";
-        }
+        dataItem.addEventListener("mouseleave", this.hideTooltip.bind(this));
 
         this.addClickListener(dataItem, (e) => {
           if (e.target.classList.contains("zt-gantt-tree-icon")) {
@@ -2401,39 +2331,33 @@
 
           ztGanttBlank.innerHTML = this.templates.grid_blank(options.data[j]);
 
+          // function to get content HTML
+          const getContentHTML = () => {
+            return (
+              this.options.columns[k].template(this.options.data[j]) ||
+              this.options.data[j][this.options.columns[k].name] ||
+              " "
+            );
+          };
+
           // content of the column
-          content.innerHTML =
-            options.columns[k].template(options.data[j]) ||
-            options.data[j][options.columns[k].name] ||
-            " ";
+          content.innerHTML = getContentHTML();
 
           this.attachEvent("onAfterTaskUpdate", (e) => {
-            content.innerHTML =
-              options.columns[k].template(options.data[j]) ||
-              options.data[j][options.columns[k].name] ||
-              " ";
+            content.innerHTML = getContentHTML();
           });
 
           // update content innerHTML on after progress drag
           this.attachEvent("onAfterProgressDrag", (e) => {
-            content.innerHTML =
-              options.columns[k].template(options.data[j]) ||
-              options.data[j][options.columns[k].name] ||
-              " ";
+            content.innerHTML = getContentHTML();
           });
 
           this.attachEvent("onTaskDrag", (e) => {
-            content.innerHTML =
-              options.columns[k].template(options.data[j]) ||
-              options.data[j][options.columns[k].name] ||
-              " ";
+            content.innerHTML = getContentHTML();
           });
 
           this.attachEvent("onAfterTaskDrag", (e) => {
-            content.innerHTML =
-              options.columns[k].template(options.data[j]) ||
-              options.data[j][options.columns[k].name] ||
-              " ";
+            content.innerHTML = getContentHTML();
           });
 
           if (options.columns[k].tree) {
@@ -2944,7 +2868,7 @@
 
         // add all markers
         for (let marker of this.options.customMarker) {
-          if(this.outOfGanttRange(marker?.start_date)) continue;
+          if (this.outOfGanttRange(marker?.start_date)) continue;
           this.addMarkerToGantt(marker);
         }
 
@@ -3144,40 +3068,17 @@
           }
         }
 
+        const userAgent = navigator.userAgent;
+
         // Handle mouseover event
         ztGanttBarTask.addEventListener("mouseover", handleMouseOver);
-        let userAgent = navigator.userAgent;
+
         function handleMouseOver(e) {
           if (/^((?!chrome|android).)*safari/i.test(userAgent)) {
             ztGanttBarTask.classList.add("hovered");
           }
 
-          start_date = that.options.data[j].start_date;
-          end_date = that.options.data[j].end_date;
-
-          if (that.options.data[j].children?.length) {
-            ({ start_date, end_date } = that.getLargeAndSmallDate(
-              that.options.data[j]
-            ));
-          }
-
-          let tooltip = document.getElementById("zt-gantt-tooltip");
-          tooltip.innerHTML = "";
-
-          let tooltipContent = that.templates.tooltip_text(
-            that.options.data[j].type === "milestone"
-              ? that.options.data[j].start_date
-              : start_date,
-            that.options.data[j].type === "milestone"
-              ? that.options.data[j].end_date || that.options.data[j].start_date
-              : end_date || start_date,
-            that.options.data[j]
-          );
-
-          if (tooltipContent !== false) {
-            tooltip.innerHTML = tooltipContent;
-            tooltip.style.display = "block";
-          }
+          that.updateTooltipBody(that.options.data[j]);
         }
 
         // Handle mouseleave event
@@ -3188,9 +3089,7 @@
             ztGanttBarTask.classList.remove("hovered");
           }
 
-          let tooltip = document.getElementById("zt-gantt-tooltip");
-          tooltip.innerHTML = "";
-          tooltip.style.display = "none";
+          that.hideTooltip();
         }
 
         if (
@@ -3797,7 +3696,7 @@
 
     // add today flag
     addTodayFlag: function () {
-      // return from here if current date is out of range 
+      // return from here if current date is out of range
       if (this.outOfGanttRange(new Date())) return;
 
       let isTodayExist = document.getElementById("zt-gantt-marker-today");
@@ -4055,9 +3954,7 @@
       }
 
       // manage tooltip
-      let tooltip = document.getElementById("zt-gantt-tooltip");
-      tooltip.innerHTML = "";
-      tooltip.style.display = "none";
+      this.hideTooltip();
 
       // handle custom event
       const onCollapse = new CustomEvent("onCollapse", {
@@ -5327,15 +5224,16 @@
       const updatedTaskIndex = this.originalData.findIndex(
         (item) => item.id === task.id
       );
+
       if (updatedTaskIndex !== -1) {
         this.originalData[updatedTaskIndex] = {
           ...this.originalData[updatedTaskIndex],
           ...task,
         };
 
-        this.eachTask((item) => {
+        this.eachTask((item, parentTask, index) => {
           if (item.id === task.id) {
-            task = this.originalData[updatedTaskIndex];
+            parentTask[index] = this.originalData[updatedTaskIndex];
           }
         });
 
@@ -5598,42 +5496,13 @@
             }
           }
 
-          let start_date, end_date;
           // Handle mouseover event
-          dataItem.addEventListener("mouseover", handleMouseOver);
-
-          function handleMouseOver() {
-            let tooltip = document.getElementById("zt-gantt-tooltip");
-            tooltip.innerHTML = "";
-            start_date = taskData[l].start_date;
-            end_date = taskData[l].end_date || taskData[l].start_date;
-
-            if (taskData[l]?.children?.length) {
-              ({ start_date, end_date } = that.getLargeAndSmallDate(
-                taskData[l]
-              ));
-            }
-
-            let tooltipContent = that.templates.tooltip_text(
-              start_date,
-              end_date,
-              taskData[l]
-            );
-
-            if (tooltipContent !== false) {
-              tooltip.innerHTML = tooltipContent;
-              tooltip.style.display = "block";
-            }
-          }
+          dataItem.addEventListener("mouseover", () =>
+            this.updateTooltipBody(taskData[l])
+          );
 
           // Handle mouseleave event
-          dataItem.addEventListener("mouseleave", handleMouseLeave);
-
-          function handleMouseLeave() {
-            let tooltip = document.getElementById("zt-gantt-tooltip");
-            tooltip.innerHTML = "";
-            tooltip.style.display = "none";
-          }
+          dataItem.addEventListener("mouseleave", this.hideTooltip.bind(this));
 
           this.addClickListener(dataItem, (e) => {
             if (e.target.classList.contains("zt-gantt-tree-icon")) {
@@ -6241,39 +6110,17 @@
           }
         }
 
+        const userAgent = navigator.userAgent;
+
         // Handle mouseover event
         ztGanttBarTask.addEventListener("mouseover", handleMouseOver);
-
-        let userAgent = navigator.userAgent;
 
         function handleMouseOver() {
           if (/^((?!chrome|android).)*safari/i.test(userAgent)) {
             ztGanttBarTask.classList.add("hovered");
           }
-          let tooltip = document.getElementById("zt-gantt-tooltip");
-          tooltip.innerHTML = "";
 
-          let start_date = taskData[k].start_date;
-          let end_date = taskData[k].end_date || taskData[k].start_date;
-
-          if (taskData[k].children?.length) {
-            ({ start_date, end_date } = that.getLargeAndSmallDate(taskData[k]));
-          }
-
-          let tooltipContent = that.templates.tooltip_text(
-            taskData[k].type === "milestone"
-              ? taskData[k].start_date
-              : start_date,
-            taskData[k].type === "milestone"
-              ? taskData[k].end_date || taskData[k].start_date
-              : end_date || start_date,
-            taskData[k]
-          );
-
-          if (tooltipContent !== false) {
-            tooltip.innerHTML = tooltipContent;
-            tooltip.style.display = "block";
-          }
+          that.updateTooltipBody(taskData[k]);
         }
 
         // Handle mouseleave event
@@ -6283,9 +6130,8 @@
           if (/^((?!chrome|android).)*safari/i.test(userAgent)) {
             ztGanttBarTask.classList.remove("hovered");
           }
-          let tooltip = document.getElementById("zt-gantt-tooltip");
-          tooltip.innerHTML = "";
-          tooltip.style.display = "none";
+
+          that.hideTooltip();
         }
 
         if (
@@ -6691,40 +6537,12 @@
         dataItem.style.lineHeight = options.row_height + "px";
         let that = this;
         // Handle mouseover event
-        dataItem.addEventListener("mouseover", handleMouseOver);
-
-        function handleMouseOver(e) {
-          let tooltip = document.getElementById("zt-gantt-tooltip");
-          tooltip.innerHTML = "";
-
-          let start_date = options.data[j]?.start_date;
-          let end_date = options.data[j]?.end_date;
-
-          if (that.options.data[j].children?.length) {
-            ({ start_date, end_date } = that.getLargeAndSmallDate(
-              that.options.data[j]
-            ));
-          }
-
-          let tooltipContent = that.templates.tooltip_text(
-            start_date,
-            end_date,
-            options.data[j]
-          );
-
-          if (tooltipContent !== false) {
-            tooltip.innerHTML = tooltipContent;
-            tooltip.style.display = "block";
-          }
-        }
+        dataItem.addEventListener("mouseover", () =>
+          this.updateTooltipBody(this.options.data[j])
+        );
 
         // Handle mouseleave event
-        dataItem.addEventListener("mouseleave", handleMouseLeave);
-        function handleMouseLeave(event) {
-          let tooltip = document.getElementById("zt-gantt-tooltip");
-          tooltip.innerHTML = "";
-          tooltip.style.display = "none";
-        }
+        dataItem.addEventListener("mouseleave", this.hideTooltip.bind(this));
 
         this.addClickListener(dataItem, (e) => {
           if (e.target.classList.contains("zt-gantt-tree-icon")) {
@@ -7313,7 +7131,7 @@
     // add custom marker to gantt
     addMarkerToGantt: function (data) {
       let markerArea = document.querySelector(".zt-gantt-marker-area");
-      
+
       if (!markerArea) {
         markerArea = document.createElement("div");
         markerArea.classList.add("zt-gantt-marker-area");
@@ -7425,15 +7243,17 @@
     },
 
     eachTask: function (callBack) {
+      // Recursive function to iterate over nested data
       const iterateOverData = (array) => {
-        array.forEach((task) => {
-          callBack(task);
+        array.forEach((task, index) => {
+          callBack(task, array, index);
           if (Array.isArray(task.children)) {
             iterateOverData(task.children);
           }
         });
       };
 
+      // Start iteration from the root of the data
       iterateOverData(this.options.data);
     },
 
@@ -9420,13 +9240,13 @@
 
     destroy: function () {
       const layout = document.querySelector("#zt-gantt-layout");
-      const tooltip = document.querySelector("#zt-gantt-tooltip");
+
       if (layout) {
         layout.remove();
       }
-      if (tooltip) {
-        tooltip.remove();
-      }
+
+      if (this.tooltip) this.tooltip.remove();
+
       document.removeEventListener(
         "webkitfullscreenchange",
         this.handleFullScreenChangeSafari
@@ -9695,36 +9515,16 @@
             }
           }
 
+          const userAgent = navigator.userAgent;
+
           // Handle mouseover event
           ztGanttBarTask.addEventListener("mouseover", handleMouseOver);
-          let userAgent = navigator.userAgent;
           function handleMouseOver(e) {
             if (/^((?!chrome|android).)*safari/i.test(userAgent)) {
               ztGanttBarTask.classList.add("hovered");
             }
 
-            let start_date = task.start_date;
-            let end_date = task.end_date || task.start_date;
-
-            if (task.children?.length) {
-              ({ start_date, end_date } = that.getLargeAndSmallDate(task));
-            }
-
-            let tooltip = document.getElementById("zt-gantt-tooltip");
-            tooltip.innerHTML = "";
-
-            let tooltipContent = that.templates.tooltip_text(
-              task.type === "milestone" ? task.start_date : start_date,
-              task.type === "milestone"
-                ? task.end_date || task.start_date
-                : end_date || start_date,
-              task
-            );
-
-            if (tooltipContent !== false) {
-              tooltip.innerHTML = tooltipContent;
-              tooltip.style.display = "block";
-            }
+            that.updateTooltipBody(task);
           }
 
           // Handle mouseleave event
@@ -9735,9 +9535,7 @@
               ztGanttBarTask.classList.remove("hovered");
             }
 
-            let tooltip = document.getElementById("zt-gantt-tooltip");
-            tooltip.innerHTML = "";
-            tooltip.style.display = "none";
+            that.hideTooltip();
           }
 
           if (
@@ -10189,17 +9987,107 @@
       return function (...args) {
         const context = this;
         clearTimeout(this.debounceTimeout);
-        this.debounceTimeout = setTimeout(() => func.apply(context, args), wait);
+        this.debounceTimeout = setTimeout(
+          () => func.apply(context, args),
+          wait
+        );
       };
     },
 
-    // check if date is out of Gantt range 
-    outOfGanttRange(date){
+    // check if date is out of Gantt range
+    outOfGanttRange: function (date) {
       date = new Date(date).getTime();
       const startDate = new Date(this.options.startDate).getTime();
       const endDate = new Date(this.options.endDate).getTime();
       return date < startDate || date > endDate;
-    }
+    },
+
+    // function to create tooltip
+    createTooltip: function () {
+      // if tooltip exist then return
+      if (this.tooltip) return;
+
+      const tooltip = document.createElement("div");
+      tooltip.classList.add("zt-gantt-tooltip");
+      tooltip.id = "zt-gantt-tooltip";
+      tooltip.style.display = "none";
+      document.body.append(tooltip);
+      this.tooltip = tooltip;
+
+      this.element.removeEventListener(
+        "mousemove",
+        this.updateTooltipPosition.bind(this)
+      );
+      this.element.addEventListener(
+        "mousemove",
+        this.updateTooltipPosition.bind(this)
+      );
+    },
+
+    // function to update tooltip position
+    updateTooltipPosition: function (e) {
+      const tooltip = this.tooltip;
+      const scrollY = window.scrollY;
+      const scrollX = window.scrollX;
+      const screenWidth = window.innerWidth; // Use innerWidth for the viewport width
+      const bodyHeight = document.documentElement.clientHeight; // Use clientHeight for the viewport height
+
+      // Calculate new positions
+      let top = e.clientY + 25; // Use clientY for viewport-relative coordinates
+      let left = e.clientX + 10; // Use clientX for viewport-relative coordinates
+
+      // Adjust left position if tooltip goes beyond screen width
+      if (left + tooltip.offsetWidth > screenWidth - 15) {
+        left = e.clientX - tooltip.offsetWidth;
+        if (left < 0) left = 0;
+      }
+
+      // Adjust top position if tooltip goes beyond body height
+      if (top + tooltip.offsetHeight > bodyHeight - 5) {
+        top = e.clientY - tooltip.offsetHeight;
+      }
+
+      // Apply the new positions
+      tooltip.style.top = `${top + scrollY}px`;
+      tooltip.style.left = `${left + scrollX}px`;
+    },
+
+    // function to hide tooltip
+    hideTooltip: function () {
+      const tooltip = this.tooltip;
+
+      if (!tooltip) return;
+
+      tooltip.innerHTML = "";
+      tooltip.style.display = "none";
+    },
+
+    // function to update tooltip innerHTML
+    updateTooltipBody: function (task) {
+      const tooltip = this.tooltip;
+
+      if (!tooltip) return;
+
+      start_date = task.start_date;
+      end_date = task.end_date;
+
+      if (task.children?.length) {
+        ({ start_date, end_date } = this.getLargeAndSmallDate(task));
+      }
+
+      const tooltipContent = this.templates.tooltip_text(
+        start_date,
+        end_date,
+        task
+      );
+
+      if (tooltipContent !== false) {
+        tooltip.innerHTML = tooltipContent;
+        tooltip.style.display = "block";
+      } else {
+        this.hideTooltip();
+      }
+    },
   };
 
   global.ztGantt = ZTGantt;
