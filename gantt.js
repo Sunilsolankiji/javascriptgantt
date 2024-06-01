@@ -70,7 +70,7 @@
         splitTask: opt.splitTask || false,
         links: opt.links || [],
         arrangeData: true,
-        addTaskOnDrag: opt.addTaskOnDrag || false,
+        selectAreaOnDrag: opt.selectAreaOnDrag || false,
         taskProgress: opt.taskProgress !== undefined ? opt.taskProgress : true,
         mouseScroll: opt.mouseScroll || false,
         ctrlKeyRequiredForMouseScroll:
@@ -2794,8 +2794,8 @@
         }
       }
 
-      if (this.options.addTaskOnDrag === true) {
-        this.addTaskOnDrag(rightDataContainer);
+      if (this.options.selectAreaOnDrag === true) {
+        this.selectAreaOnDrag(rightDataContainer);
       }
     },
 
@@ -6670,7 +6670,7 @@
       if (
         this.options.mouseScroll &&
         (this.options.ctrlKeyRequiredForMouseScroll ||
-          !this.options.addTaskOnDrag)
+          !this.options.selectAreaOnDrag)
       ) {
         this.addMouseScroll(verticalScroll, horScroll);
       }
@@ -6788,7 +6788,12 @@
       }
     },
 
-    // function to get a task from the main data or can also pass your data with same structure as main data
+    /**
+     * Retrieves a task from the data based on its ID.
+     * @param {number | string} id - The ID of the task to retrieve.
+     * @param {Array} data - The data array to search for the task (defaults to options.data).
+     * @returns {Object|null} - The task object if found, otherwise null.
+     */
     getTask: function (id, data = this.options.data) {
       function findObjectById(array, id) {
         for (let item of array) {
@@ -6809,7 +6814,12 @@
       return findObjectById(data, id);
     },
 
-    // filter tasks based on user conditions
+    /**
+     * Filter tasks based on user-defined conditions.
+     * @param {Function} condition - The condition function used to filter tasks.
+     * @param {boolean} isFilter - Indicates whether to apply the filter or reset.
+     * @param {boolean} findRecursive - Indicates whether to find recursive parent-child tasks.
+     */
     filterTask: function (condition, isFilter, findRecursive = false) {
       const debouncedFilterTask = this.debounce(
         (condition, isFilter, findRecursive = false) => {
@@ -7152,7 +7162,12 @@
       return pixels;
     },
 
-    // function to create links between tasks
+    /**
+     * Creates links between tasks.
+     * @param {string | number} sourceId - The id of the source task.
+     * @param {string | number} targetId - The id of the target task.
+     * @param {object} link - The link object containing link type information.
+     */
     createLinks: function (sourceId, targetId, link) {
       let linksArea = document.querySelector("#zt-gantt-links-area");
 
@@ -7165,7 +7180,7 @@
 
       let linkType = link.type || 0;
 
-      let createLink = this.isTaskExist(source, target);
+      const createLink = this.isTaskExistOrHidden(source, target);
 
       if (!createLink) {
         return;
@@ -7493,7 +7508,14 @@
       });
     },
 
-    // function to update the position of the links
+    /**
+     * Function to update the position of a link between two tasks.
+     * @param {HTMLElement} source - The source task element.
+     * @param {HTMLElement} target - The target task element.
+     * @param {HTMLElement} link - The link element.
+     * @param {number} rowHeight - The height of a row.
+     * @param {object} linkObj - The link object containing information about the link.
+     */
     updateLinkPosition: function (source, target, link, rowHeight, linkObj) {
       let sourceLeft = source.offsetLeft,
         sourceWidth = source.offsetWidth,
@@ -7844,7 +7866,10 @@
       link.innerHTML = taskLink.innerHTML;
     },
 
-    // function to delete link
+    /**
+     * Function to delete a link by its ID.
+     * @param {string | number} id - The ID of the link to be deleted.
+     */
     deleteLink: function (id) {
       let link = document.querySelector(`[link-id="${id}"]`);
       if (link !== undefined && link !== null) {
@@ -7859,7 +7884,13 @@
       }
     },
 
-    // function to create new link
+    /**
+     * Function to create a new link between two tasks.
+     * @param {HTMLElement} linkPoint - The link point element.
+     * @param {HTMLElement} source - The source task element.
+     * @param {string | number} sourceId - The ID of the source task.
+     * @param {string} type - The type of link point ('left' or 'right').
+     */
     createNewLink: function (linkPoint, source, sourceId, type) {
       let strech = false,
         startX,
@@ -8208,7 +8239,11 @@
       return scaleObj;
     },
 
-    addTaskOnDrag: function (timeLine) {
+    /**
+     * Function to select an area on the Gantt chart by dragging the mouse.
+     * @param {HTMLElement} timeLine - The timeline element.
+     */
+    selectAreaOnDrag: function (timeLine) {
       let startX,
         taskBarArea,
         hasMoved = false,
@@ -8320,7 +8355,7 @@
             parent: isNaN(taskParent) ? taskParent : +taskParent,
           };
           // handle custom event
-          that.dispatchEvent("addTaskOnDrag", { task });
+          that.dispatchEvent("selectAreaOnDrag", { task });
         }
         hasMoved = false;
       }
@@ -8401,6 +8436,13 @@
       }
     },
 
+    /**
+     * Function to handle dragging of the task progress bar.
+     * @param {HTMLElement} resizer - The resizer element used to drag the progress.
+     * @param {HTMLElement} progress - The progress bar element.
+     * @param {HTMLElement} taskBar - The task bar element.
+     * @param {Object} task - The task data object.
+     */
     dragTaskProgress: function (resizer, progress, taskBar, task) {
       let startX,
         dragging = false,
@@ -8512,7 +8554,9 @@
       }
     },
 
-    // function to update Body
+    /**
+     * Updates the body of the Gantt chart.
+     */
     updateBody: function () {
       this.verScroll =
         document.querySelector(".zt-gantt-ver-scroll")?.scrollTop || 0;
@@ -8532,6 +8576,9 @@
       );
     },
 
+    /**
+     * Automatically schedules tasks based on their dependencies.
+     */
     autoScheduling: function () {
       const { links } = this.options;
       const linksLength = links?.length;
@@ -8636,7 +8683,14 @@
       return taskEndDate;
     },
 
-    // check for cycle in task links
+    /**
+     * Checks if there is a cycle in the task dependencies, starting from the given source and target tasks.
+     *
+     * @param {string | number} currentSource - The ID of the current source task.
+     * @param {string | number} currentTarget - The ID of the current target task.
+     * @param {string | number} [linkId=""] - The ID of the link being checked (optional).
+     * @returns {boolean} - Returns true if a cycle is detected, false otherwise.
+     */
     hasCycle: function (currentSource, currentTarget, linkId = "") {
       if (!currentTarget) return false;
 
@@ -8689,6 +8743,14 @@
       throw new Error(error);
     },
 
+    /**
+     * Displays a toast notification with a specified title, message, and type.
+     * The toast can be dismissed by clicking on it or automatically after a delay.
+     *
+     * @param {string|null} title - The title of the toast notification (optional).
+     * @param {string} message - The message of the toast notification.
+     * @param {string} type - The type of the toast notification, used for styling.
+     */
     toastr: function (title = null, message, type) {
       let toastrArea = document.querySelector(".zt-gantt-toastr-area");
       if (!toastrArea) {
@@ -8847,6 +8909,16 @@
       }
     },
 
+    /**
+     * Adds event listeners to a color input to change the color of a taskbar,
+     * task progress, and taskbar content. Dispatches a custom event when the color changes.
+     *
+     * @param {HTMLElement} taskbar - The taskbar element to change the color of.
+     * @param {HTMLInputElement} colorInput - The color input element.
+     * @param {HTMLElement} taskProgress - The task progress element to change the color of.
+     * @param {HTMLElement} taskbarContent - The taskbar content element to change the color of.
+     * @param {Object} task - The task object associated with the taskbar.
+     */
     changeTaskbarColor: function (
       taskbar,
       colorInput,
@@ -8977,6 +9049,10 @@
       this.updateBody();
     },
 
+    /**
+     * Destroys the Gantt chart by removing its layout, tooltip, and event listeners,
+     * and resetting the main element.
+     */
     destroy: function () {
       const layout = document.querySelector("#zt-gantt-layout");
 
@@ -8985,6 +9061,12 @@
       }
 
       if (this.tooltip) this.tooltip.remove();
+
+      if (this.lightbox){
+        this.lightbox.lightbox.remove();
+        this.lightbox.lightboxBackdrop.remove();
+        this.lightbox = null;
+      }
 
       document.removeEventListener(
         "webkitfullscreenchange",
@@ -9000,7 +9082,14 @@
       this.element = newElement;
     },
 
-    isTaskExist: function (source, target) {
+    /**
+     * Checks if the source and target elements exist and are not hidden.
+     *
+     * @param {HTMLElement | null} source - The source element to check.
+     * @param {HTMLElement | null} target - The target element to check.
+     * @returns {boolean} - Returns true if both elements exist and are not hidden, false otherwise.
+     */
+    isTaskExistOrHidden: function (source, target) {
       let sourceStyle = source ? window.getComputedStyle(source) : null;
       let targetStyle = target ? window.getComputedStyle(target) : null;
 
