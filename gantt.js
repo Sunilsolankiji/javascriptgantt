@@ -1805,12 +1805,7 @@
       }
 
       // handle custom event
-      const onResize = new CustomEvent("onResize", {
-        detail: {
-          event: event,
-        },
-      });
-      this.element.dispatchEvent(onResize);
+      this.dispatchEvent("onResize", { event });
     },
 
     handleFullScreenChangeSafari() {
@@ -1950,19 +1945,8 @@
       }
 
       // set all task expanded initially if collapse is false
-      if (!options.collapse && options.openedTasks.length === 0) {
-        let openedTasks = [];
-
-        for (let i = 0; i < this.options.data.length; i++) {
-          openedTasks.push(this.options.data[i].id);
-          if (this.options.data[i].children) {
-            openedTasks = this.setAllExpand(
-              this.options.data[i].children,
-              openedTasks
-            );
-          }
-        }
-        this.options.openedTasks = [...new Set(openedTasks)];
+      if (!options.collapse && options?.openedTasks?.length === 0) {
+        this.options.openedTasks = this.setAllExpand(this.options.data, []);
       }
 
       if (this.fullScreen === true) {
@@ -2190,12 +2174,9 @@
           }
 
           // custom event handler
-          const onBeforeTaskDblClick = new CustomEvent("onBeforeTaskDblClick", {
-            detail: {
-              task: that.options.data[j],
-            },
+          that.dispatchEvent("onBeforeTaskDblClick", {
+            task: that.options.data[j],
           });
-          that.element.dispatchEvent(onBeforeTaskDblClick);
 
           // if onBeforeTaskDblClick return false then do not drag the task
           if (that.eventValue === false) {
@@ -2203,12 +2184,7 @@
             return;
           }
 
-          const onTaskDblClick = new CustomEvent("onTaskDblClick", {
-            detail: {
-              task: that.options.data[j],
-            },
-          });
-          that.element.dispatchEvent(onTaskDblClick);
+          that.dispatchEvent("onTaskDblClick", { task: that.options.data[j] });
 
           that.showLightBox(that.options.data[j]);
         }
@@ -2364,9 +2340,6 @@
 
                 if (toggleTreeIcon.classList.contains("zt-gantt-tree-close")) {
                   that.options.openedTasks.push(options.data[j].id);
-                  that.options.openedTasks = [
-                    ...new Set(that.options.openedTasks),
-                  ];
 
                   for (const child of that.options.data[j].children) {
                     if (child.children && child.children.length > 0) {
@@ -2399,13 +2372,10 @@
                 that.createScrollbar(mainContainer, options);
 
                 // custom event of toggle tree
-                const onTaskToggle = new CustomEvent("onTaskToggle", {
-                  detail: {
-                    task: options.data[j],
-                    isTaskOpened,
-                  },
+                that.dispatchEvent("onTaskToggle", {
+                  task: that.options.data[j],
+                  isTaskOpened,
                 });
-                that.element.dispatchEvent(onTaskToggle);
               });
             } else if (!this.options.splitTask) {
               cell.append(ztGanttBlank);
@@ -2744,25 +2714,23 @@
 
           // handle cell click event
           let that = this;
+          const cellDate = that.formatDateToString(
+            that.options.zoomLevel === "day"
+              ? "%Y-%m-%d"
+              : that.options.zoomLevel === "week"
+              ? "W-%W"
+              : that.options.zoomLevel === "month"
+              ? "M-%m"
+              : that.options.zoomLevel === "quarter"
+              ? "Q-%q"
+              : "%Y",
+            date
+          );
           this.addClickListener(scaleCell, function (e) {
-            const onCellClick = new CustomEvent("onCellClick", {
-              detail: {
-                task: options.data[j],
-                cellDate: that.formatDateToString(
-                  that.options.zoomLevel === "day"
-                    ? "%Y-%m-%d"
-                    : that.options.zoomLevel === "week"
-                    ? "W-%W"
-                    : that.options.zoomLevel === "month"
-                    ? "M-%m"
-                    : that.options.zoomLevel === "quarter"
-                    ? "Q-%q"
-                    : "%Y",
-                  date
-                ),
-              },
+            that.dispatchEvent("onCellClick", {
+              task: that.options.data[j],
+              cellDate,
             });
-            that.element.dispatchEvent(onCellClick);
           });
         }
 
@@ -2987,12 +2955,9 @@
 
         function handleDblClick(e) {
           // custom event handler
-          const onBeforeTaskDblClick = new CustomEvent("onBeforeTaskDblClick", {
-            detail: {
-              task: that.options.data[j],
-            },
+          that.dispatchEvent("onBeforeTaskDblClick", {
+            task: that.options.data[j],
           });
-          that.element.dispatchEvent(onBeforeTaskDblClick);
 
           // if onBeforeTaskDblClick return false then do not drag the task
           if (that.eventValue === false) {
@@ -3000,12 +2965,7 @@
             return;
           }
 
-          const onTaskDblClick = new CustomEvent("onTaskDblClick", {
-            detail: {
-              task: that.options.data[j],
-            },
-          });
-          that.element.dispatchEvent(onTaskDblClick);
+          that.dispatchEvent("onTaskDblClick", { task: that.options.data[j] });
 
           that.showLightBox(that.options.data[j]);
         }
@@ -3836,13 +3796,7 @@
         }
       }
 
-      // handle custom event
-      const onExpand = new CustomEvent("onExpand", {
-        detail: {
-          type: "requestFullScreen",
-        },
-      });
-      this.element.dispatchEvent(onExpand);
+      this.dispatchEvent("onExpand", { type: "requestFullScreen" });
 
       if (
         this.calculateTimeLineWidth("updated") !==
@@ -3904,29 +3858,15 @@
       this.hideTooltip();
 
       // handle custom event
-      const onCollapse = new CustomEvent("onCollapse", {
-        detail: {
-          type: "exitFullScreen",
-        },
-      });
-      this.element.dispatchEvent(onCollapse);
+      this.dispatchEvent("onCollapse", { type: "exitFullScreen" });
     },
 
     // expand all tree
     expandAll: function () {
       const childRows = document.querySelectorAll(".zt-gantt-child-row");
       const toggleIcons = document.querySelectorAll(".zt-gantt-tree-close");
-      let openedTasks = [];
 
-      for (let i = 0; i < this.options.data.length; i++) {
-        openedTasks.push(this.options.data[i].id);
-        if (this.options.data[i].children) {
-          openedTasks = this.setAllExpand(
-            this.options.data[i].children,
-            openedTasks
-          );
-        }
-      }
+      let openedTasks = this.setAllExpand(this.options.data, []);
 
       for (let icon of toggleIcons) {
         icon.classList.remove("zt-gantt-tree-close");
@@ -3940,7 +3880,7 @@
         }
       }
 
-      this.options.openedTasks = [...new Set(openedTasks)];
+      this.options.openedTasks = openedTasks;
       this.createTaskBars();
       let mainContainer = document.querySelector("#zt-gantt-layout");
       this.createScrollbar(mainContainer, this.options);
@@ -4087,15 +4027,12 @@
           }
 
           // handle custom event
-          const onBeforeTaskDrop = new CustomEvent("onBeforeTaskDrop", {
-            detail: {
-              task,
-              mode: type === "move" ? "move" : "resize",
-              parentTask: parentTask,
-              oldParentTask: that.getTask(task.parent),
-            },
+          that.dispatchEvent("onBeforeTaskDrop", {
+            task,
+            mode: type === "move" ? "move" : "resize",
+            parentTask: parentTask,
+            oldParentTask: that.getTask(task.parent),
           });
-          that.element.dispatchEvent(onBeforeTaskDrop);
 
           if (type === "move" && that.eventValue === false) {
             taskBar.style.top = startTop + "px";
@@ -4161,14 +4098,11 @@
           }
 
           // handle custom event
-          const onAfterTaskDrag = new CustomEvent("onAfterTaskDrag", {
-            detail: {
-              task: task,
-              mode: type === "move" ? "move" : "resize",
-              parentTask: that.getTask(task.parent),
-            },
+          that.dispatchEvent("onAfterTaskDrag", {
+            task,
+            mode: type === "move" ? "move" : "resize",
+            parentTask: that.getTask(task.parent),
           });
-          that.element.dispatchEvent(onAfterTaskDrag);
         }
         resizeTask = false;
       }
@@ -4177,13 +4111,10 @@
       function resize(e) {
         if (resizeTask === false) {
           // custom event handler
-          const onBeforeTaskDrag = new CustomEvent("onBeforeTaskDrag", {
-            detail: {
-              task: task,
-              mode: type === "move" ? "move" : "resize",
-            },
+          that.dispatchEvent("onBeforeTaskDrag", {
+            task,
+            mode: type === "move" ? "move" : "resize",
           });
-          that.element.dispatchEvent(onBeforeTaskDrag);
         }
 
         resizeTask = true;
@@ -4329,14 +4260,11 @@
           }
 
           // emmit event of moveTask
-          const onTaskDrag = new CustomEvent("onTaskDrag", {
-            detail: {
-              originalTask: originalTask,
-              task: task,
-              mode: "move",
-            },
+          that.dispatchEvent("onTaskDrag", {
+            originalTask,
+            task,
+            mode: "move",
           });
-          that.element.dispatchEvent(onTaskDrag);
 
           that.updateTask(
             task,
@@ -4400,14 +4328,11 @@
           ];
 
         // emmit the dragTask event
-        const onTaskDrag = new CustomEvent("onTaskDrag", {
-          detail: {
-            originalTask: originalTask,
-            task: task,
-            mode: "resize",
-          },
+        that.dispatchEvent("onTaskDrag", {
+          originalTask,
+          task,
+          mode: "resize",
         });
-        that.element.dispatchEvent(onTaskDrag);
 
         // if taskStartDate is less than the gantt range
         if (!taskStartDate) {
@@ -5165,10 +5090,11 @@
       });
 
       // this.render();
-      this.options.openedTasks.push(+task.parent);
-      this.options.openedTasks.push(task.id);
+      if (!this.options.openedTasks.includes(+task.parent)) {
+        this.options.openedTasks.push(+task.parent);
+      }
 
-      this.options.openedTasks = [...new Set(this.options.openedTasks)];
+      this.options.openedTasks.push(task.id);
       this.hideLightbox();
     },
 
@@ -5180,12 +5106,7 @@
           this.originalData.splice(i, 1);
           this.render();
           this.hideLightbox();
-          const onTaskDelete = new CustomEvent("onTaskDelete", {
-            detail: {
-              task: task,
-            },
-          });
-          this.element.dispatchEvent(onTaskDelete);
+          this.dispatchEvent("onTaskDelete", { task });
           break;
         }
       }
@@ -5211,13 +5132,7 @@
 
         this.updateTaskDuration();
         this.hideLightbox();
-
-        const onAfterTaskUpdate = new CustomEvent("onAfterTaskUpdate", {
-          detail: {
-            task: task,
-          },
-        });
-        this.element.dispatchEvent(onAfterTaskUpdate);
+        this.dispatchEvent("onAfterTaskUpdate", { task });
       }
     },
 
@@ -5406,15 +5321,7 @@
             if (e.target.classList.contains("zt-gantt-tree-icon")) return;
 
             // custom event handler
-            const onBeforeTaskDblClick = new CustomEvent(
-              "onBeforeTaskDblClick",
-              {
-                detail: {
-                  task: taskData[l],
-                },
-              }
-            );
-            that.element.dispatchEvent(onBeforeTaskDblClick);
+            that.dispatchEvent("onBeforeTaskDblClick", { task: taskData[l] });
 
             // if onBeforeTaskDblClick return false then do not drag the task
             if (that.eventValue === false) {
@@ -5422,12 +5329,7 @@
               return;
             }
 
-            const onTaskDblClick = new CustomEvent("onTaskDblClick", {
-              detail: {
-                task: taskData[l],
-              },
-            });
-            that.element.dispatchEvent(onTaskDblClick);
+            that.dispatchEvent("onTaskDblClick", { task: taskData[l] });
 
             that.showLightBox(taskData[l]);
           }
@@ -5603,9 +5505,6 @@
                       toggleTreeIcon.classList.contains("zt-gantt-tree-close")
                     ) {
                       that.options.openedTasks.push(taskData[l].id);
-                      that.options.openedTasks = [
-                        ...new Set(that.options.openedTasks),
-                      ];
 
                       let t = 0;
                       for (const child of taskData[l].children) {
@@ -5645,13 +5544,10 @@
                     that.createScrollbar(mainContainer, options);
 
                     // custom event of toggle tree
-                    const onTaskToggle = new CustomEvent("onTaskToggle", {
-                      detail: {
-                        task: taskData[l],
-                        isTaskOpened,
-                      },
+                    that.dispatchEvent("onTaskToggle", {
+                      task: taskData[l],
+                      isTaskOpened,
                     });
-                    that.element.dispatchEvent(onTaskToggle);
                   });
                 }, 0);
               } else {
@@ -5815,25 +5711,21 @@
 
           // handle cell click event
           let that = this;
+
+          const cellDate = that.formatDateToString(
+            that.options.zoomLevel === "day"
+              ? "%Y-%m-%d"
+              : that.options.zoomLevel === "week"
+              ? "W-%W"
+              : that.options.zoomLevel === "month"
+              ? "M-%m"
+              : that.options.zoomLevel === "quarter"
+              ? "Q-%q"
+              : "%Y",
+            date
+          );
           scaleCell.addEventListener("click", function (e) {
-            const onCellClick = new CustomEvent("onCellClick", {
-              detail: {
-                task: taskData[l],
-                cellDate: that.formatDateToString(
-                  that.options.zoomLevel === "day"
-                    ? "%Y-%m-%d"
-                    : that.options.zoomLevel === "week"
-                    ? "W-%W"
-                    : that.options.zoomLevel === "month"
-                    ? "M-%m"
-                    : that.options.zoomLevel === "quarter"
-                    ? "Q-%q"
-                    : "%Y",
-                  date
-                ),
-              },
-            });
-            that.element.dispatchEvent(onCellClick);
+            that.dispatchEvent("onCellClick", { task: taskData[l], cellDate });
           });
         }
 
@@ -5996,25 +5888,15 @@
 
         function handleDblClick(e) {
           // custom event handler
-          const onBeforeTaskDblClick = new CustomEvent("onBeforeTaskDblClick", {
-            detail: {
-              task: taskData[k],
-            },
-          });
-          that.element.dispatchEvent(onBeforeTaskDblClick);
+          that.dispatchEvent("onBeforeTaskDblClick", { task: taskData[k] });
 
-          // if onBeforeTaskDblClick return false then do not drag the task
+          // if onBeforeTaskDblClick return false then end here
           if (that.eventValue === false) {
             that.eventValue = true;
             return;
           }
 
-          const onTaskDblClick = new CustomEvent("onTaskDblClick", {
-            detail: {
-              task: taskData[k],
-            },
-          });
-          that.element.dispatchEvent(onTaskDblClick);
+          that.dispatchEvent("onTaskDblClick", { task: taskData[k] });
 
           that.showLightBox(taskData[k]);
         }
@@ -6293,7 +6175,6 @@
           }
         }
       }
-
       expandTasksRecursive(data);
       return openedTasks;
     },
@@ -6551,9 +6432,6 @@
                     toggleTreeIcon.classList.contains("zt-gantt-tree-close")
                   ) {
                     that.options.openedTasks.push(options.data[j].id);
-                    that.options.openedTasks = [
-                      ...new Set(that.options.openedTasks),
-                    ];
                     for (const child of that.options.data[j].children) {
                       if (child.children) {
                         that.setCollapseAll(child.children, child.id, "open");
@@ -6588,13 +6466,10 @@
                   toggleTreeIcon.classList.toggle("zt-gantt-tree-open");
 
                   // custom event of toggle tree
-                  const onTaskToggle = new CustomEvent("onTaskToggle", {
-                    detail: {
-                      task: options.data[j],
-                      isTaskOpened,
-                    },
+                  that.dispatchEvent("onTaskToggle", {
+                    task: that.options.data[j],
+                    isTaskOpened,
                   });
-                  that.element.dispatchEvent(onTaskToggle);
                 });
               }, 0);
             } else {
@@ -6720,12 +6595,8 @@
         if (rightSideBar) {
           rightSideBar.scrollTop = calendar.scrollTop;
         }
-        const onScroll = new CustomEvent("onScroll", {
-          detail: {
-            event: e,
-          },
-        });
-        that.element.dispatchEvent(onScroll);
+
+        that.dispatchEvent("onScroll", { event: e });
       }
 
       sidebar.removeEventListener("scroll", handleSidebarScroll);
@@ -7077,9 +6948,13 @@
       }
     },
 
-    // attach events
+    /**
+     * Attaches an event listener to the element and handles the event callback.
+     *
+     * @param {string} name - The name of the event to listen for.
+     * @param {Function} callback - The callback function to execute when the event is triggered.
+     */
     attachEvent: function (name, callback) {
-      this.element.addEventListener(name, handleEvent);
       const eventNamesToCheck = [
         "onBeforeTaskDrag",
         "onBeforeTaskDrop",
@@ -7087,7 +6962,11 @@
         "onBeforeLinkAdd",
         "onBeforeTaskDblClick",
       ];
+
+      this.element.addEventListener(name, handleEvent);
+
       let that = this;
+
       function handleEvent(e) {
         if (eventNamesToCheck.includes(name)) {
           that.eventValue = callback(e.detail);
@@ -7096,6 +6975,17 @@
           callback(e.detail);
         }
       }
+    },
+
+    /**
+     * Dispatches a custom event with the provided event name and detail.
+     *
+     * @param {string} eventName - The name of the custom event to dispatch.
+     * @param {any} detail - Additional data to include with the event.
+     */
+    dispatchEvent: function (eventName, detail) {
+      const event = new CustomEvent(eventName, { detail });
+      this.element.dispatchEvent(event);
     },
 
     // get the position of a cell
@@ -7201,8 +7091,9 @@
         this.openTask(task.parent);
       }
 
-      this.options.openedTasks.push(id);
-      this.options.openedTasks = [...new Set(this.options.openedTasks)];
+      if (!this.options.openedTasks.includes(id)) {
+        this.options.openedTasks.push(id);
+      }
       this.createTaskBars();
 
       children.forEach((child) => {
@@ -7228,14 +7119,10 @@
       this.options.data = [...this.originalData, ...uniqueData];
       this.options.arrangeData = true;
 
-      if (
-        this.options.collapse === false &&
-        this.options.openedTasks.length > 0
-      ) {
+      if (this.options.collapse === false) {
         // Set opened tasks
         const uniqueIds = uniqueData.map((task) => task.id);
         this.options.openedTasks.push(...uniqueIds);
-        this.options.openedTasks = [...new Set(this.options.openedTasks)];
       }
     },
 
@@ -7306,12 +7193,7 @@
       let that = this;
       // handle double click event
       taskLink.addEventListener("dblclick", function (e) {
-        const onLinkDblClick = new CustomEvent("onLinkDblClick", {
-          detail: {
-            link: link,
-          },
-        });
-        that.element.dispatchEvent(onLinkDblClick);
+        that.dispatchEvent("onLinkDblClick", { link });
       });
 
       let startLine = document.createElement("div");
@@ -7972,12 +7854,8 @@
         if (linkIndex !== -1) {
           this.options.links.splice(linkIndex, 1);
         }
-        const onDeleteLink = new CustomEvent("onDeleteLink", {
-          detail: {
-            link: linkobj,
-          },
-        });
-        this.element.dispatchEvent(onDeleteLink);
+
+        this.dispatchEvent("onDeleteLink", { link: linkobj });
       }
     },
 
@@ -8045,14 +7923,11 @@
           let hasCycle = that.hasCycle(sourceId, targetId);
 
           // handle custom event
-          const onBeforeLinkAdd = new CustomEvent("onBeforeLinkAdd", {
-            detail: {
-              sourceId: sourceId,
-              targetId: targetId,
-              type: linkType,
-            },
+          that.dispatchEvent("onBeforeLinkAdd", {
+            sourceId,
+            targetId,
+            type: linkType,
           });
-          that.element.dispatchEvent(onBeforeLinkAdd);
 
           if (that.eventValue === false) {
             that.eventValue = true;
@@ -8076,12 +7951,7 @@
             that.options.links.push(link);
 
             // handle custom event
-            const onLinkAdd = new CustomEvent("onLinkAdd", {
-              detail: {
-                link: link,
-              },
-            });
-            that.element.dispatchEvent(onLinkAdd);
+            that.dispatchEvent("onLinkAdd", { link });
           }
         }
         strech = false;
@@ -8450,12 +8320,7 @@
             parent: isNaN(taskParent) ? taskParent : +taskParent,
           };
           // handle custom event
-          const addTaskOnDrag = new CustomEvent("addTaskOnDrag", {
-            detail: {
-              task: task,
-            },
-          });
-          that.element.dispatchEvent(addTaskOnDrag);
+          that.dispatchEvent("addTaskOnDrag", { task });
         }
         hasMoved = false;
       }
@@ -8574,23 +8439,13 @@
             }
           });
           // handle custom event
-          const onAfterProgressDrag = new CustomEvent("onAfterProgressDrag", {
-            detail: {
-              task: task,
-            },
-          });
-          that.element.dispatchEvent(onAfterProgressDrag);
+          that.dispatchEvent("onAfterProgressDrag", { task });
         }
         dragging = false;
       }
 
       function resize(e) {
-        const onBeforeProgressDrag = new CustomEvent("onBeforeProgressDrag", {
-          detail: {
-            task: task,
-          },
-        });
-        that.element.dispatchEvent(onBeforeProgressDrag);
+        that.dispatchEvent("onBeforeProgressDrag", { task });
 
         // if onBeforeProgressDrag return false then do not drag the Progress
         if (that.eventValue === false) {
@@ -8732,12 +8587,7 @@
 
         this.updateTask(task, taskStartDate, taskEndDate, target);
 
-        const onAutoScheduling = new CustomEvent("onAutoScheduling", {
-          detail: {
-            task: task,
-          },
-        });
-        this.element.dispatchEvent(onAutoScheduling);
+        this.dispatchEvent("onAutoScheduling", { task });
       }
     },
 
@@ -9042,13 +8892,10 @@
         setColorToOriginalData(e.target.value);
 
         // handle custom event
-        const onColorChange = new CustomEvent("onColorChange", {
-          detail: {
-            taskColor: e.target.value,
-            task: task,
-          },
+        that.dispatchEvent("onColorChange", {
+          taskColor: e.target.value,
+          task,
         });
-        that.element.dispatchEvent(onColorChange);
       });
 
       colorInput.addEventListener("input", function (e) {
@@ -9375,15 +9222,7 @@
 
           function handleDblClick(e) {
             // custom event handler
-            const onBeforeTaskDblClick = new CustomEvent(
-              "onBeforeTaskDblClick",
-              {
-                detail: {
-                  task: task,
-                },
-              }
-            );
-            that.element.dispatchEvent(onBeforeTaskDblClick);
+            that.dispatchEvent("onBeforeTaskDblClick", { task });
 
             // if onBeforeTaskDblClick return false then do not drag the task
             if (that.eventValue === false) {
@@ -9391,12 +9230,7 @@
               return;
             }
 
-            const onTaskDblClick = new CustomEvent("onTaskDblClick", {
-              detail: {
-                task: task,
-              },
-            });
-            that.element.dispatchEvent(onTaskDblClick);
+            that.dispatchEvent("onTaskDblClick", { task });
 
             that.showLightBox(task);
           }
@@ -9868,15 +9702,12 @@
 
       editor.addEventListener("blur", () => {
         // handle custom event
-        const onBeforeSave = new CustomEvent("onBeforeSave", {
-          detail: {
-            task: cellData,
-            columnName: editorData.map_to,
-            oldValue: cellData[editorData.map_to],
-            newValue: editor.value,
-          },
+        this.dispatchEvent("onBeforeSave", {
+          task: cellData,
+          columnName: editorData.map_to,
+          oldValue: cellData[editorData.map_to],
+          newValue: editor.value,
         });
-        this.element.dispatchEvent(onBeforeSave);
 
         cellData[editorData.map_to] = editor.value;
 
@@ -9884,15 +9715,12 @@
 
         this.removeInlineEditor(editorWraper);
         // handle custom event
-        const onSave = new CustomEvent("onSave", {
-          detail: {
-            task: cellData,
-            columnName: editorData.map_to,
-            oldValue: cellData[editorData.map_to],
-            newValue: editor.value,
-          },
+        this.dispatchEvent("onSave", {
+          task: cellData,
+          columnName: editorData.map_to,
+          oldValue: cellData[editorData.map_to],
+          newValue: editor.value,
         });
-        this.element.dispatchEvent(onSave);
       });
     },
 

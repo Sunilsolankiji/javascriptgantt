@@ -702,6 +702,7 @@
       });
       ZT_Gantt.attachEvent("onLinkDblClick", (event) => {
         // console.log("onLinkDblClick: ", event);
+        // ZT_Gantt.deleteLink(event.link.id);
       });
       ZT_Gantt.attachEvent("onBeforeLinkAdd", (event) => {
         // console.log("onBeforeLinkAdd: ", event);
@@ -777,10 +778,16 @@
         // console.log("onColorChange: ", event);
       });
       ZT_Gantt.attachEvent("onBeforeTaskDblClick", (event) => {
-        // console.log("onColorChange: ", event);
+        // console.log("onBeforeTaskDblClick: ", event);
         // if(event.task.id === 3){
         //   return false;
         // }
+      });
+      ZT_Gantt.attachEvent("onBeforeSave", (event) => {
+        // console.log("onBeforeSave: ", event);
+      });
+      ZT_Gantt.attachEvent("onSave", (event) => {
+        // console.log("onSave: ", event);
       });
 
       let fullscreen = false;
