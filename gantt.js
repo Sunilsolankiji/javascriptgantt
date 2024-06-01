@@ -1790,6 +1790,10 @@
       window.addEventListener("resize", this.handleResizeWindow);
 
       this.createTooltip();
+
+      if (this.templates?.showLightBox !== false) {
+        this.createLightbox();
+      }
     },
 
     handleResizeWindow(event) {
@@ -2206,9 +2210,7 @@
           });
           that.element.dispatchEvent(onTaskDblClick);
 
-          if (this.templates.showLightBox !== false) {
-            that.createLightbox(that.options.data[j]);
-          }
+          that.showLightBox(that.options.data[j]);
         }
 
         // Handle mouseover event
@@ -3005,9 +3007,7 @@
           });
           that.element.dispatchEvent(onTaskDblClick);
 
-          if (that.templates.showLightBox !== false) {
-            that.createLightbox(that.options.data[j]);
-          }
+          that.showLightBox(that.options.data[j]);
         }
 
         const userAgent = navigator.userAgent;
@@ -5050,75 +5050,93 @@
       return totalWidth;
     },
 
-    createLightbox: function (task) {
+    // create lightbox
+    createLightbox: function () {
       if (this.lightbox) return;
-      const lightbox = document.getElementById("zt-gantt-lightbox");
-      const lightboxBackdrop = document.getElementById(
-        "zt-gantt-lightbox-backdrop"
-      );
+
+      const lightbox = document.createElement("div");
+      const lightboxBackdrop = document.createElement("div");
 
       this.lightbox = {
         lightbox,
         lightboxBackdrop,
       };
 
-      if (lightbox) {
-        lightbox.remove();
-        lightboxBackdrop.remove();
-      }
-      let lightBoxContainer = document.createElement("div");
-      let backdrop = document.createElement("div");
-      lightBoxContainer.classList.add("zt-gantt-lightbox");
-      lightBoxContainer.id = "zt-gantt-lightbox";
-      backdrop.classList.add("zt-gantt-lightbox-backdrop");
-      backdrop.id = "zt-gantt-lightbox-backdrop";
-      lightBoxContainer.setAttribute("role", "dialog");
-      lightBoxContainer.innerHTML =
+      lightbox.style.display = "none";
+      lightboxBackdrop.style.display = "none";
+
+      lightbox.classList.add("zt-gantt-lightbox");
+      lightbox.id = "zt-gantt-lightbox";
+      lightboxBackdrop.classList.add("zt-gantt-lightbox-backdrop");
+      lightboxBackdrop.id = "zt-gantt-lightbox-backdrop";
+      lightbox.setAttribute("role", "dialog");
+
+      document.body.append(lightboxBackdrop);
+      document.body.append(lightbox);
+    },
+
+    // show lightbox
+    showLightBox: function (task) {
+      if (!this.lightbox) return;
+
+      const { lightbox, lightboxBackdrop } = this.lightbox;
+
+      lightbox.innerHTML =
         this.templates.showLightBox?.(task) ||
         `<div class="zt-gantt-task-title">
-      <span>${task.text}</span>
-    </div>
-    <div><p>${this.options.currentLanguage.label.description}</p></div>
-    <div>
-    <textarea rows="4" id="lightbox-text-area" placeholder="Description">${task.text}</textarea>
-    </div>
-    <div class='lightbox-footer'>
-    <button role="save">${this.options.currentLanguage.buttons.save}</button>
-    <button role="cancel">${this.options.currentLanguage.buttons.cancel}</button>
-    <button role="delete">${this.options.currentLanguage.buttons.delete}</button>
-    </div>   
-    `;
-      document.body.append(backdrop);
-      document.body.append(lightBoxContainer);
-      let that = this;
-      // hide lightbox
-      let cancelbtn = document.querySelector("[role=cancel]");
-      cancelbtn.addEventListener("click", handleCancelClick);
-      function handleCancelClick() {
-        that.hideLightbox();
-      }
+    <span>${task.text}</span>
+  </div>
+  <div><p>${this.options.currentLanguage.label.description}</p></div>
+  <div>
+  <textarea rows="4" id="lightbox-text-area" placeholder="Description">${task.text}</textarea>
+  </div>
+  <div class='lightbox-footer'>
+  <button role="save">${this.options.currentLanguage.buttons.save}</button>
+  <button role="cancel">${this.options.currentLanguage.buttons.cancel}</button>
+  <button role="delete">${this.options.currentLanguage.buttons.delete}</button>
+  </div>   
+  `;
 
-      // delete task
-      let deletebtn = document.querySelector("[role=delete]");
-      deletebtn.addEventListener("click", handleDeleteClick);
-      function handleDeleteClick() {
-        that.deleteTask(task.id);
-      }
+      lightbox.style.display = "block";
+      lightboxBackdrop.style.display = "block";
 
-      // update task
-      let savebtn = document.querySelector("[role=save]");
-      savebtn.addEventListener("click", handleSaveClick);
-      function handleSaveClick() {
-        let value = document.querySelector("#lightbox-text-area").value;
-        task.text = value;
-        that.updateTaskData(task);
+      if (
+        !this.templates?.showLightBox &&
+        !this.isFunction(this.templates?.showLightBox)
+      ) {
+        const that = this;
+
+        // hide lightbox
+        const cancelbtn = document.querySelector("[role=cancel]");
+
+        cancelbtn.addEventListener("click", handleCancelClick);
+        function handleCancelClick() {
+          that.hideLightbox();
+        }
+
+        // delete task
+        const deletebtn = document.querySelector("[role=delete]");
+
+        deletebtn.addEventListener("click", handleDeleteClick);
+        function handleDeleteClick() {
+          that.deleteTask(task.id);
+        }
+
+        // update task
+        const savebtn = document.querySelector("[role=save]");
+        const textarea = document.querySelector("#lightbox-text-area");
+
+        savebtn.addEventListener("click", handleSaveClick);
+        function handleSaveClick() {
+          task.text = textarea.value;
+          that.updateTaskData(task);
+        }
       }
     },
 
     // hide lightbox
     hideLightbox: function () {
       if (!this.lightbox) return;
-
       const { lightbox, lightboxBackdrop } = this.lightbox;
       const backdrop = lightboxBackdrop;
       lightbox.style.display = "none";
@@ -5411,9 +5429,7 @@
             });
             that.element.dispatchEvent(onTaskDblClick);
 
-            if (that.templates.showLightBox !== false) {
-              that.createLightbox(taskData[l]);
-            }
+            that.showLightBox(taskData[l]);
           }
 
           // Handle mouseover event
@@ -6000,9 +6016,7 @@
           });
           that.element.dispatchEvent(onTaskDblClick);
 
-          if (that.templates.showLightBox !== false) {
-            that.createLightbox(taskData[k]);
-          }
+          that.showLightBox(taskData[k]);
         }
 
         const userAgent = navigator.userAgent;
@@ -9384,9 +9398,7 @@
             });
             that.element.dispatchEvent(onTaskDblClick);
 
-            if (that.templates.showLightBox !== false) {
-              that.createLightbox(task);
-            }
+            that.showLightBox(task);
           }
 
           const userAgent = navigator.userAgent;
@@ -9672,6 +9684,12 @@
       return totalGanttHeight;
     },
 
+    /**
+     * Determines the earliest start date and the latest end date from task data or its children.
+     *
+     * @param {Object} taskData - The task object.
+     * @returns {Object} - An object containing the earliest start date and the latest end date.
+     */
     getLargeAndSmallDate: function (taskData) {
       const { children = [], start_date = null, end_date = null } = taskData;
 
@@ -9700,6 +9718,14 @@
       return { start_date: minDate, end_date: maxDate };
     },
 
+    /**
+     * Adds mouse scroll functionality to the Gantt chart.
+     * function to add mouse scroll in gantt with  ctrl+click or with click only,
+     * based on this.options.mouseScroll or this.options.ctrlKeyRequiredForMouseScroll
+     *
+     * @param {HTMLElement} verticalScroll - The vertical scrollbar element.
+     * @param {HTMLElement} horizontalScroll - The horizontal scrollbar element.
+     */
     addMouseScroll: function (verticalScroll, horizontalScroll) {
       const timeLine = document.querySelector("#zt-gantt-right-cell");
       timeLine.addEventListener("mousedown", handleMouseDown);
@@ -9743,7 +9769,12 @@
       }
     },
 
-    // sort Gantt data
+    /**
+     * Sorts the Gantt chart data based on a specified field and sort order.
+     *
+     * @param {string} sortBy - The field by which the data should be sorted.
+     * @param {boolean} isAsc - Indicates whether the sort order is ascending (true) or descending (false).
+     */
     sort: function (sortBy, isAsc) {
       const sortOrderMultiplier = isAsc ? 1 : -1;
 
@@ -9767,7 +9798,10 @@
       this.render();
     },
 
-    // Function to safely get the field value from the object
+    /**
+     * Function to safely get the field value from the object,
+     * this is a support function for sort method
+     */
     getFieldValue: function (object, fieldName) {
       return fieldName
         .split(".")
@@ -9777,6 +9811,14 @@
         );
     },
 
+    /**
+     * Adds an inline editor to a cell for editing cell data.
+     *
+     * @param {Object} cellData - The data associated with the cell.
+     * @param {Object} editorData - The configuration data for the editor.
+     * @param {HTMLElement} cell - The cell element to which the editor is attached.
+     * @param {HTMLElement} sidebarDataContainer - The container element for the editor.
+     */
     addInlineEditor: function (
       cellData,
       editorData,
@@ -9785,48 +9827,45 @@
     ) {
       const editorWraper = document.createElement("div");
       editorWraper.classList.add("zt-gantt-inline-editor-wraper");
-      editorWraper.style.top = `${cell.offsetTop}px`;
-      editorWraper.style.left = `${cell.offsetLeft}px`;
-      editorWraper.style.height = `${cell.offsetHeight}px`;
-      editorWraper.style.width = `${cell.offsetWidth}px`;
+      editorWraper.style.cssText = `
+        top: ${cell.offsetTop}px;
+        left: ${cell.offsetLeft}px;
+        height: ${cell.offsetHeight}px;
+        width: ${cell.offsetWidth}px;
+    `;
 
-      let editor;
+      const editor = document.createElement(
+        editorData.type === "select" ? "select" : "input"
+      );
+      editor.type =
+        editorData.type === "select" ? editorData.value : editorData.type;
+      editor.name = editorData.map_to;
 
-      if (
-        editorData.type == "number" ||
-        editorData.type == "date" ||
-        editorData.type == "text"
-      ) {
-        editor = document.createElement("input");
-        editor.type = editorData.type;
-        editor.name = editorData.map_to;
-        if (editorData.type == "date") {
-          let date = this.formatDateToString(
-            "%Y-%m-%d",
-            cellData[editorData.map_to]
-          );
-          editor.value = date;
-        } else {
-          editor.value = cellData[editorData.map_to];
-          editor.min = editorData.min;
-          editor.max = editorData.max;
-        }
-      } else if (editorData.type == "select") {
-        editor = document.createElement("select");
-        editor.type = editorData.value;
-        editor.name = editorData.map_to;
+      if (editorData.type === "select") {
         editor.value = cellData[editorData.map_to];
-        editorData.options.forEach((element) => {
-          let option = document.createElement("option");
-          option.innerHTML = element;
-          option.value = element;
-          editor.append(option);
+        editorData.options.forEach((option) => {
+          const optionElem = document.createElement("option");
+          optionElem.innerHTML = option;
+          optionElem.value = option;
+          editor.appendChild(optionElem);
         });
+      } else if (editorData.type === "date") {
+        editor.value = this.formatDateToString(
+          "%Y-%m-%d",
+          cellData[editorData.map_to]
+        );
+      } else {
+        editor.value = cellData[editorData.map_to];
+        editor.min = editorData.min;
+        editor.max = editorData.max;
       }
+
       editorWraper.append(editor);
 
       sidebarDataContainer.append(editorWraper);
+
       editor.focus();
+
       editor.addEventListener("blur", () => {
         // handle custom event
         const onBeforeSave = new CustomEvent("onBeforeSave", {
@@ -9840,7 +9879,9 @@
         this.element.dispatchEvent(onBeforeSave);
 
         cellData[editorData.map_to] = editor.value;
+
         this.updateTaskData(cellData);
+
         this.removeInlineEditor(editorWraper);
         // handle custom event
         const onSave = new CustomEvent("onSave", {
@@ -9855,13 +9896,25 @@
       });
     },
 
+    /**
+     * Removes an inline editor element from the DOM.
+     *
+     * @param {HTMLElement} editor - The inline editor element to be removed.
+     */
     removeInlineEditor: function (editor) {
       if (editor) {
         editor.remove();
       }
     },
 
-    // Utility function to create a debounced version of a function
+    /**
+     * Creates a debounced version of a function, which delays its execution until after
+     * a certain wait time has elapsed without further calls.
+     *
+     * @param {Function} func - The function to debounce.
+     * @param {number} wait - The time in milliseconds to wait before executing the debounced function.
+     * @returns {Function} - Returns the debounced function.
+     */
     debounce: function (func, wait) {
       return function (...args) {
         const context = this;
@@ -9873,7 +9926,12 @@
       };
     },
 
-    // check if date is out of Gantt range
+    /**
+     * Checks if a given date is outside the range of the Gantt chart range.
+     *
+     * @param {Date} date - The date to check.
+     * @returns {boolean} - Returns true if the date is outside the Gantt chart range, otherwise false.
+     */
     outOfGanttRange: function (date) {
       const targetDate = this.stripTime(date).getTime();
       const startDate = this.stripTime(this.options.startDate).getTime();
@@ -9881,7 +9939,10 @@
       return targetDate < startDate && targetDate > endDate;
     },
 
-    // function to create tooltip
+    /**
+     * Creates a tooltip element if it does not already exist.
+     * Attaches necessary event listeners for tooltip positioning.
+     */
     createTooltip: function () {
       // if tooltip exist then return
       if (this.tooltip) return;
@@ -9903,17 +9964,21 @@
       );
     },
 
-    // function to update tooltip position
+    /**
+     * Updates the position of the tooltip based on the mouse cursor's coordinates.
+     *
+     * @param {MouseEvent} e - The mouse event containing cursor coordinates.
+     */
     updateTooltipPosition: function (e) {
       const tooltip = this.tooltip;
       const scrollY = window.scrollY;
       const scrollX = window.scrollX;
-      const screenWidth = window.innerWidth; // Use innerWidth for the viewport width
-      const bodyHeight = document.documentElement.clientHeight; // Use clientHeight for the viewport height
+      const screenWidth = window.innerWidth;
+      const bodyHeight = document.documentElement.clientHeight;
 
       // Calculate new positions
-      let top = e.clientY + 25; // Use clientY for viewport-relative coordinates
-      let left = e.clientX + 10; // Use clientX for viewport-relative coordinates
+      let top = e.clientY + 25;
+      let left = e.clientX + 10;
 
       // Adjust left position if tooltip goes beyond screen width
       if (left + tooltip.offsetWidth > screenWidth - 15) {
@@ -9931,7 +9996,9 @@
       tooltip.style.left = `${left + scrollX}px`;
     },
 
-    // function to hide tooltip
+    /**
+     * Hides the tooltip by clearing its content and setting its display style to 'none'.
+     */
     hideTooltip: function () {
       const tooltip = this.tooltip;
 
@@ -9968,18 +10035,26 @@
       }
     },
 
-    //method to check the given value is function or not
+    /**
+     * Checks if the given value is a function.
+     *
+     * @param {*} value - The value to check.
+     * @returns {boolean} - Returns true if the value is a function, otherwise false.
+     */
     isFunction: function (value) {
       return typeof value === "function";
     },
 
-    //  Trims leading and trailing whitespace, and add classes to the element
+    /**
+     * Trims leading and trailing whitespace from a class string,
+     * replaces multiple spaces with a single space, and adds the resulting classes to the element.
+     *
+     * @param {HTMLElement} element - The element to which classes will be added.
+     * @param {string} classString - A string containing one or more class names, possibly separated by whitespace.
+     */
     addClass: function (element, classString) {
       if (classString) {
-        // Trim leading and trailing whitespace, replace multiple spaces with a single space,
-        // then split the string by spaces
         const classes = classString.trim().replace(/\s+/g, " ").split(" ");
-        // Add each class to the element
         element.classList.add(...classes);
       }
     },
@@ -9994,11 +10069,9 @@
      * @param {...any} params - Parameters to be passed to the function if it exists.
      */
     addClassesFromFunction: function (func, element, ...params) {
-      // Check if the property is a function
       if (this.isFunction(func)) {
         // Call the function with the provided parameters
         let cssClass = func(...params);
-        // Check if the function returned a value
         this.addClass(element, cssClass);
       }
     },
