@@ -1741,25 +1741,24 @@
       };
     },
 
-    // get array of dates between the range of dates
-    getDates(startDate, endDate) {
-      if (typeof startDate !== "number") {
-        startDate = new Date(startDate).setHours(0, 0, 0, 0);
-      }
-      if (typeof endDate !== "number") {
-        endDate = new Date(endDate).setHours(0, 0, 0, 0);
-      }
+    // Get array of dates between the range of startDate and endDate
+    getDates: function (startDate, endDate) {
+      // Convert to timestamps and normalize to start of the day
+      const start = new Date(startDate).setHours(0, 0, 0, 0);
+      const end = new Date(endDate).setHours(0, 0, 0, 0);
+
+      // Array to hold the dates
       const dates = [];
-      let currentDate = startDate;
-      const addDays = function (days) {
-        const date = new Date(this.valueOf());
-        date.setDate(date.getDate() + days);
-        return date.setHours(0, 0, 0, 0);
-      };
-      while (currentDate <= endDate) {
+
+      // Loop through each date from start to end
+      for (
+        let currentDate = start;
+        currentDate <= end;
+        currentDate += 86400000
+      ) {
         dates.push(currentDate);
-        currentDate = addDays.call(currentDate, 1);
       }
+
       return dates;
     },
 
@@ -1938,9 +1937,7 @@
       let dates = this.dates;
       const weekday = this.options.dateFormat.day_short;
       if (!options.fullWeek) {
-        dates = dates.filter((date) => {
-          return !options.weekends.includes(weekday[new Date(date).getDay()]);
-        });
+        dates = this.filterWeekends(dates);
         this.dates = dates;
       }
 
@@ -1991,19 +1988,27 @@
         verScroll || 0,
         horScroll || 0
       );
-
-      // add all markers
-      for (let marker of this.options.customMarker) {
-        if (this.outOfGanttRange(marker?.start_date)) continue;
-        this.addMarkerToGantt(marker);
+      
+      const rightDataContainer = document.querySelector("#zt-gantt-scale-data");
+      if(!this.markerArea){
+        markerArea = document.createElement("div");
+        markerArea.classList.add("zt-gantt-marker-area");
+        this.markerArea = markerArea;
+        
+        // add all markers
+        for (let marker of this.options.customMarker) {
+          if (this.outOfGanttRange(marker?.start_date)) continue;
+          this.addMarkerToGantt(marker);
+        }
       }
+      rightDataContainer.append(this.markerArea);
+      
 
       // add today marker
       if (options.todayMarker) {
         this.addTodayFlag();
       }
 
-      let rightDataContainer = document.querySelector("#zt-gantt-scale-data");
       let linksArea = document.createElement("div");
       linksArea.classList.add("zt-gantt-links-area");
       linksArea.id = "zt-gantt-links-area";
@@ -2486,13 +2491,7 @@
           let colDates;
 
           // if date scale unit is week || month || year || (day && step > 1)
-          if (
-            (options.scales[i].unit == "day" && options.scales[i].step > 1) ||
-            options.scales[i].unit == "week" ||
-            options.scales[i].unit == "month" ||
-            options.scales[i].unit == "quarter" ||
-            options.scales[i].unit == "year"
-          ) {
+          if (isMultiUnitScale(options.scales[i])) {
             colDates = this.initColSizes(
               options.scales[i].unit,
               options.scales[i].step,
@@ -2501,14 +2500,15 @@
 
             // remove weekoff days
             if (!options.fullWeek) {
-              colDates.dateCount = colDates.dateCount.filter((date) => {
-                return !options.weekends.includes(
-                  options.dateFormat.day_short[new Date(date).getDay()]
-                );
-              });
+              colDates.dateCount = this.filterWeekends(colDates.dateCount);
             }
           }
 
+          function isMultiUnitScale(scale) {
+            return scale.unit === "day" && scale.step > 1 ||
+                   ["week", "month", "quarter", "year"].includes(scale.unit);
+          }
+          
           let dateCell = document.createElement("div");
           dateCell.classList.add("zt-gantt-scale-cell");
 
@@ -2602,15 +2602,20 @@
       let ztGanttTaskData = document.createElement("div");
       ztGanttTaskData.classList.add("zt-gantt-task-data");
 
+      const timelineRowTemplate = this.createRowTemplate();
       // grid data loop
       for (let j = 0; j < options.data.length; j++) {
-        let scaleRow = document.createElement("div");
-        scaleRow.classList.add(
-          "zt-gantt-task-row",
-          options.selectedRow === `${options.data[j].id}`
-            ? "zt-gantt-selected"
-            : "zt-gantt-task-row"
-        );
+        const isTaskExist = this.getTask(options.data[j].id, this.searchedData);
+
+        if (this.searchedData && !isTaskExist) continue;
+
+        const timelineRow = timelineRowTemplate.cloneNode(true);
+        const isSelected = options.selectedRow === `${options.data[j].id}`;
+
+        if (isSelected) timelineRow.classList.add("zt-gantt-selected");
+
+        timelineRow.setAttribute("zt-gantt-data-task-id", j);
+        timelineRow.setAttribute("zt-gantt-task-id", options.data[j].id);
 
         //add custom classes from user
         const { start_date, end_date } = this.getLargeAndSmallDate(
@@ -2618,135 +2623,28 @@
         );
         this.addClassesFromFunction(
           this.templates.task_row_class,
-          scaleRow,
+          timelineRow,
           start_date,
           end_date,
           this.options.data[j]
         );
 
-        scaleRow.setAttribute("zt-gantt-data-task-id", j);
-        scaleRow.style.height = options.row_height + "px";
-        let cellEndDate = new Date(0);
-        let rangeCount = 0;
-        for (let k = 0; k < dates.length; k++) {
-          let date = new Date(dates[k]);
-          if (new Date(cellEndDate).getTime() >= date.setHours(0, 0, 0, 0)) {
-            continue;
-          }
-          let colDates;
-          let scaleCell = document.createElement("div");
-          scaleCell.classList.add("zt-gantt-task-cell");
-          if (this.options.zoomLevel !== "day") {
-            colDates = this.initColSizes(this.options.zoomLevel, 1, date);
-          } else {
-            scaleCell.classList.add(
-              options.weekends.includes(weekday[date.getDay()])
-                ? "zt-gantt-weekend-cell"
-                : "zt-gantt-weekday-cell",
-              k == 0 ? "zt-gantt-border-left-none" : "zt-gantt-task-cell"
-            );
-          }
-
-          //add custom classes from user
-          this.addClassesFromFunction(
-            this.templates.timeline_cell_class,
-            scaleCell,
-            this.options.data[j],
-            dates[k]
-          );
-
-          if (this.options.zoomLevel !== "day") {
-            if (this.options.zoomLevel === "hour") {
-              scaleCell.style.left = rangeCount + "px";
-              scaleCell.style.width = this.calculateGridWidth(date) + "px";
-            } else {
-              scaleCell.style.left = rangeCount + "px";
-              scaleCell.style.width =
-                colDates.dateCount.length * this.calculateGridWidth(date) +
-                "px";
-            }
-          } else {
-            scaleCell.style.left = this.calculateGridWidth(date) * k + "px";
-            scaleCell.style.width = this.calculateGridWidth(date) + "px";
-          }
-
-          scaleCell.setAttribute(
-            "zt-gantt-cell-date",
-            this.formatDateToString(
-              this.options.zoomLevel === "day"
-                ? "%Y-%m-%d"
-                : this.options.zoomLevel === "week"
-                ? "W-%W"
-                : this.options.zoomLevel === "month"
-                ? "M-%m"
-                : this.options.zoomLevel === "quarter"
-                ? "Q-%q"
-                : "%Y",
-              date
-            )
-          );
-
-          scaleCell.setAttribute("zt-gantt-task-id", options.data[j].id);
-          let currentDate = new Date(date).setHours(0);
-          if (this.options.zoomLevel === "hour") {
-            let cellWidth = this.calculateGridWidth(date);
-            const fragment = document.createDocumentFragment();
-            for (let i = 0; i < 24; i++) {
-              let hourCell = scaleCell.cloneNode(true);
-              hourCell.style.left = rangeCount + "px";
-              hourCell.style.width = cellWidth + "px";
-              rangeCount += cellWidth;
-              // scaleRow.append(hourCell);
-              fragment.appendChild(hourCell);
-            }
-            scaleRow.append(fragment);
-          } else if (
-            this.options.zoomLevel !== "day" &&
-            new Date(cellEndDate).getTime() < currentDate
-          ) {
-            rangeCount +=
-              colDates.dateCount.length * this.calculateGridWidth(date);
-            cellEndDate = new Date(colDates.endDate);
-            scaleRow.append(scaleCell);
-          } else if (this.options.zoomLevel === "day") {
-            scaleRow.append(scaleCell);
-          }
-
-          // handle cell click event
-          let that = this;
-          const cellDate = that.formatDateToString(
-            that.options.zoomLevel === "day"
-              ? "%Y-%m-%d"
-              : that.options.zoomLevel === "week"
-              ? "W-%W"
-              : that.options.zoomLevel === "month"
-              ? "M-%m"
-              : that.options.zoomLevel === "quarter"
-              ? "Q-%q"
-              : "%Y",
-            date
-          );
-          this.addClickListener(scaleCell, function (e) {
-            that.dispatchEvent("onCellClick", {
-              task: that.options.data[j],
-              cellDate,
+        // handle cell click event
+        this.addClickListener(timelineRow, (e) => {
+          if (e.target.closest(".zt-gantt-task-cell")) {
+            this.dispatchEvent("onCellClick", {
+              task: this.options.data[j],
+              cellDate: e.target.getAttribute("zt-gantt-cell-date"),
             });
-          });
-        }
+          }
+        });
 
-        let isTaskExist = this.getTask(options.data[j].id, this.searchedData);
-        if (!this.searchedData || isTaskExist) {
-          ztGanttTaskData.append(scaleRow);
-        }
+        ztGanttTaskData.append(timelineRow);
 
         // if children exist
-        if (
-          options.data[j].children &&
-          this.options.data[j].children.length > 0 &&
-          !this.options.splitTask
-        ) {
+        if (this.options.data[j]?.children?.length && !this.options.splitTask) {
           this.createBodyChildTask(
-            options.data[j].children,
+            this.options.data[j].children,
             options,
             j,
             dates,
@@ -2782,11 +2680,18 @@
           this.horScroll || 0
         );
 
-        // add all markers
-        for (let marker of this.options.customMarker) {
-          if (this.outOfGanttRange(marker?.start_date)) continue;
-          this.addMarkerToGantt(marker);
+        if(!this.markerArea){
+          markerArea = document.createElement("div");
+          markerArea.classList.add("zt-gantt-marker-area");
+          this.markerArea = markerArea;
+          
+          // add all markers
+          for (let marker of this.options.customMarker) {
+            if (this.outOfGanttRange(marker?.start_date)) continue;
+            this.addMarkerToGantt(marker);
+          }
         }
+        rightDataContainer.append(this.markerArea);
 
         // add today marker
         if (options.todayMarker) {
@@ -2797,6 +2702,107 @@
       if (this.options.selectAreaOnDrag === true) {
         this.selectAreaOnDrag(rightDataContainer);
       }
+    },
+
+    createRowTemplate: function () {
+      const { options, dates } = this;
+      const weekday = options.dateFormat.day_short;
+
+      let timeLineRow = document.createElement("div");
+      timeLineRow.classList.add("zt-gantt-task-row");
+
+      timeLineRow.style.height = options.row_height + "px";
+      let cellEndDate = new Date(0);
+      let rangeCount = 0;
+
+      const dateFormat =
+        this.options.zoomLevel === "day"
+          ? "%Y-%m-%d"
+          : this.options.zoomLevel === "week"
+          ? "W-%W"
+          : this.options.zoomLevel === "month"
+          ? "M-%m"
+          : this.options.zoomLevel === "quarter"
+          ? "Q-%q"
+          : "%Y";
+
+      for (let k = 0; k < dates.length; k++) {
+        let date = new Date(dates[k]);
+
+        if (new Date(cellEndDate).getTime() >= date.setHours(0, 0, 0, 0))
+          continue;
+
+        let colDates;
+
+        let timelineCell = document.createElement("div");
+
+        timelineCell.classList.add("zt-gantt-task-cell");
+
+        if (this.options.zoomLevel !== "day") {
+          colDates = this.initColSizes(this.options.zoomLevel, 1, date);
+        } else {
+          timelineCell.classList.add(
+            options.weekends.includes(weekday[date.getDay()])
+              ? "zt-gantt-weekend-cell"
+              : "zt-gantt-weekday-cell",
+            k == 0 ? "zt-gantt-border-left-none" : "zt-gantt-task-cell"
+          );
+        }
+
+        //add custom classes from user
+        this.addClassesFromFunction(
+          this.templates.timeline_cell_class,
+          timelineCell,
+          dates[k]
+        );
+
+        if (this.options.zoomLevel !== "day") {
+          if (this.options.zoomLevel === "hour") {
+            timelineCell.style.left = rangeCount + "px";
+            timelineCell.style.width = this.calculateGridWidth(date) + "px";
+          } else {
+            timelineCell.style.left = rangeCount + "px";
+            timelineCell.style.width =
+              colDates.dateCount.length * this.calculateGridWidth(date) + "px";
+          }
+        } else {
+          timelineCell.style.left = this.calculateGridWidth(date) * k + "px";
+          timelineCell.style.width = this.calculateGridWidth(date) + "px";
+        }
+
+        timelineCell.setAttribute(
+          "zt-gantt-cell-date",
+          this.formatDateToString(dateFormat, date)
+        );
+
+        let currentDate = new Date(date).setHours(0);
+
+        if (this.options.zoomLevel === "hour") {
+          let cellWidth = this.calculateGridWidth(date);
+          const fragment = document.createDocumentFragment();
+          for (let i = 0; i < 24; i++) {
+            let hourCell = timelineCell.cloneNode(true);
+            hourCell.style.left = rangeCount + "px";
+            hourCell.style.width = cellWidth + "px";
+            rangeCount += cellWidth;
+            // timeLineRow.append(hourCell);
+            fragment.appendChild(hourCell);
+          }
+          timeLineRow.append(fragment);
+        } else if (
+          this.options.zoomLevel !== "day" &&
+          new Date(cellEndDate).getTime() < currentDate
+        ) {
+          rangeCount +=
+            colDates.dateCount.length * this.calculateGridWidth(date);
+          cellEndDate = new Date(colDates.endDate);
+          timeLineRow.append(timelineCell);
+        } else if (this.options.zoomLevel === "day") {
+          timeLineRow.append(timelineCell);
+        }
+      }
+
+      return timeLineRow;
     },
 
     // create taskBars
@@ -2837,11 +2843,7 @@
         }
 
         if (!this.options.fullWeek) {
-          cellBefore = cellBefore.filter((date) => {
-            return !this.options.weekends.includes(
-              this.options.dateFormat.day_short[new Date(date).getDay()]
-            );
-          });
+          cellBefore = this.filterWeekends(cellBefore);
         }
 
         if (isCellGreater) {
@@ -3024,11 +3026,7 @@
         let taskDates = this.getDates(start_date, end_date);
 
         if (!this.options.fullWeek) {
-          taskDates = taskDates.filter((date) => {
-            return !this.options.weekends.includes(
-              this.options.dateFormat.day_short[new Date(date).getDay()]
-            );
-          });
+          taskDates = this.filterWeekends(taskDates);
         }
 
         let taskProgress;
@@ -3599,6 +3597,11 @@
       // return from here if current date is out of range
       if (this.outOfGanttRange(new Date())) return;
 
+      const isFullWeek = this.options.fullWeek;
+      isWeekend = this.options.weekends.includes(this.options.dateFormat.day_short[new Date().getDay()])
+      
+      if (!isFullWeek && isWeekend) return;
+
       let isTodayExist = document.getElementById("zt-gantt-marker-today");
       if (!isTodayExist) {
         let todayFlag = document.createElement("div");
@@ -3609,7 +3612,6 @@
         todayFlagText.classList.add("zt-gantt-marker-today-text");
         todayFlagText.innerHTML = "Today";
         todayFlag.append(todayFlagText);
-        let calendarContainer = document.getElementById("zt-gantt-scale-data");
 
         // Calculate the difference in days
         let daysDiff = this.getDates(
@@ -3617,21 +3619,8 @@
           new Date()
         );
 
-        if (!this.options.fullWeek) {
-          daysDiff = daysDiff.filter((date) => {
-            return !this.options.weekends.includes(
-              this.options.dateFormat.day_short[new Date(date).getDay()]
-            );
-          });
-        }
-
-        if (
-          !this.options.fullWeek &&
-          this.options.weekends.includes(
-            this.options.dateFormat.day_short[new Date().getDay()]
-          )
-        ) {
-          return;
+        if (!isFullWeek) {
+          daysDiff = this.filterWeekends(daysDiff);
         }
 
         daysDiff = daysDiff.length - 1 || 0;
@@ -3639,9 +3628,8 @@
         let colWidth = this.calculateGridWidth(new Date(), "day");
         todayFlag.style.left = colWidth * daysDiff + colWidth / 2 + "px";
 
-        if (calendarContainer) {
-          calendarContainer.append(todayFlag);
-        }
+        this.markerArea.append(todayFlag);
+          
       }
     },
 
@@ -4520,11 +4508,7 @@
             }
 
             if (!that.options.fullWeek) {
-              cellBefore = cellBefore.filter((date) => {
-                return !that.options.weekends.includes(
-                  that.options.dateFormat.day_short[new Date(date).getDay()]
-                );
-              });
+              cellBefore = that.filterWeekends(cellBefore);
               taskDates = taskDates.filter((date) => {
                 return !that.options.weekends.includes(
                   that.options.dateFormat.day_short[new Date(date).getDay()]
@@ -4618,20 +4602,8 @@
                   }
 
                   if (!that.options.fullWeek) {
-                    cellBefore = cellBefore.filter((date) => {
-                      return !that.options.weekends.includes(
-                        that.options.dateFormat.day_short[
-                          new Date(date).getDay()
-                        ]
-                      );
-                    });
-                    taskDates = taskDates.filter((date) => {
-                      return !that.options.weekends.includes(
-                        that.options.dateFormat.day_short[
-                          new Date(date).getDay()
-                        ]
-                      );
-                    });
+                    cellBefore = that.filterWeekends(cellBefore);
+                    taskDates = that.filterWeekends(taskDates);
                   }
 
                   if (isCellGreater) {
@@ -5600,142 +5572,62 @@
       parentIdString,
       isOpened
     ) {
+      const timelineRowTemplate = this.createRowTemplate();
       // loop through all the children
       for (let l = 0; l < taskData.length; l++) {
-        let taskParents = `${parentIdString}${l}`;
-        let scaleRow = document.createElement("div");
+        const isTaskExist = this.getTask(taskData[l].id, this.searchedData);
+        if (this.searchedData && !isTaskExist) continue;
+
+        const taskParents = `${parentIdString}${l}`;
+        const timelineRow = timelineRowTemplate.cloneNode(true);
+        const isRowSelected = options.selectedRow === `${taskData[l].id}`;
         const isCollapsed = !options.openedTasks.includes(taskData[l].parent);
-        scaleRow.classList.add(
-          "zt-gantt-task-row",
+
+        // Array to hold the classes
+        const classes = [
           "zt-gantt-child-row",
           `zt-gantt-child-${taskData[l].parent}`,
-          isCollapsed || !isOpened ? "zt-gantt-d-none" : "zt-gantt-task-row",
-          options.selectedRow === `${taskData[l].id}`
-            ? "zt-gantt-selected"
-            : "zt-gantt-task-row"
-        );
+        ];
+
+        // Conditionally add classes based on `isCollapsed` and `isOpened`
+        if (isCollapsed || !isOpened) {
+          classes.push("zt-gantt-d-none");
+        }
+
+        // Conditionally add the selected class
+        if (isRowSelected) {
+          classes.push("zt-gantt-selected");
+        }
+
+        timelineRow.classList.add(...classes);
 
         //add custom classes from user
         const { start_date, end_date } = this.getLargeAndSmallDate(taskData[l]);
         this.addClassesFromFunction(
           this.templates.task_row_class,
-          scaleRow,
+          timelineRow,
           start_date,
           end_date,
           taskData[l]
         );
 
-        scaleRow.setAttribute("zt-gantt-data-task-id", taskParents);
-        scaleRow.style.height = `${options.row_height}px`;
-        let cellEndDate = new Date(0);
-        let rangeCount = 0;
-        // loop through all the dates
-        for (let k = 0; k < dates.length; k++) {
-          let date = new Date(dates[k]);
-          if (new Date(cellEndDate).getTime() >= date.setHours(0, 0, 0, 0)) {
-            continue;
+        timelineRow.setAttribute("zt-gantt-data-task-id", taskParents);
+        timelineRow.setAttribute("zt-gantt-task-id", taskData[l].id);
+
+        // handle cell click event
+        this.addClickListener(timelineRow, (e) => {
+          if (e.target.closest(".zt-gantt-task-cell")) {
+            this.dispatchEvent("onCellClick", {
+              task: taskData[l],
+              cellDate: e.target.getAttribute("zt-gantt-cell-date"),
+            });
           }
-          let colDates;
-          let scaleCell = document.createElement("div");
-          scaleCell.classList.add("zt-gantt-task-cell");
+        });
 
-          if (this.options.zoomLevel !== "day") {
-            colDates = this.initColSizes(this.options.zoomLevel, 1, date);
-          } else {
-            const isWeekend = options.weekends.includes(weekday[date.getDay()]);
-            const isFirstCell = k === 0;
-            scaleCell.classList.add(
-              isWeekend ? "zt-gantt-weekend-cell" : "zt-gantt-weekday-cell",
-              isFirstCell ? "zt-gantt-border-left-none" : "zt-gantt-task-cell"
-            );
-          }
-
-          //add custom classes from user
-          this.addClassesFromFunction(
-            this.templates.timeline_cell_class,
-            scaleCell,
-            taskData[l],
-            dates[k]
-          );
-
-          if (this.options.zoomLevel !== "day") {
-            scaleCell.style.left = rangeCount + "px";
-            scaleCell.style.width =
-              colDates.dateCount.length * this.calculateGridWidth(date) + "px";
-          } else {
-            scaleCell.style.left = `${this.calculateGridWidth(date) * k}px`;
-            scaleCell.style.width = `${this.calculateGridWidth(date)}px`;
-          }
-
-          scaleCell.setAttribute(
-            "zt-gantt-cell-date",
-            this.formatDateToString(
-              this.options.zoomLevel === "day"
-                ? "%Y-%m-%d"
-                : this.options.zoomLevel === "week"
-                ? "W-%W"
-                : this.options.zoomLevel === "month"
-                ? "M-%m"
-                : this.options.zoomLevel === "quarter"
-                ? "Q-%q"
-                : "%Y",
-              date
-            )
-          );
-
-          scaleCell.setAttribute("zt-gantt-task-id", taskData[l].id);
-          let currentDate = new Date(date).setHours(0);
-          if (this.options.zoomLevel === "hour") {
-            let cellWidth = this.calculateGridWidth(date);
-            let fragment = document.createDocumentFragment();
-            for (let i = 0; i < 24; i++) {
-              let hourCell = scaleCell.cloneNode(true);
-              hourCell.style.left = rangeCount + "px";
-              hourCell.style.width = cellWidth + "px";
-              rangeCount += cellWidth;
-              // scaleRow.append(hourCell);
-              fragment.appendChild(hourCell);
-            }
-            scaleRow.append(fragment);
-          } else if (
-            this.options.zoomLevel !== "day" &&
-            new Date(cellEndDate).getTime() < currentDate
-          ) {
-            rangeCount +=
-              colDates.dateCount.length * this.calculateGridWidth(date);
-            cellEndDate = new Date(colDates.endDate);
-            scaleRow.append(scaleCell);
-          } else if (this.options.zoomLevel === "day") {
-            scaleRow.append(scaleCell);
-          }
-
-          // handle cell click event
-          let that = this;
-
-          const cellDate = that.formatDateToString(
-            that.options.zoomLevel === "day"
-              ? "%Y-%m-%d"
-              : that.options.zoomLevel === "week"
-              ? "W-%W"
-              : that.options.zoomLevel === "month"
-              ? "M-%m"
-              : that.options.zoomLevel === "quarter"
-              ? "Q-%q"
-              : "%Y",
-            date
-          );
-          scaleCell.addEventListener("click", function (e) {
-            that.dispatchEvent("onCellClick", { task: taskData[l], cellDate });
-          });
-        }
-
-        let isTaskExist = this.getTask(taskData[l].id, this.searchedData);
-        if (!this.searchedData || isTaskExist) {
-          ztGanttTaskData.append(scaleRow);
-        }
+        ztGanttTaskData.append(timelineRow);
 
         // if children exist
-        if (taskData[l].children) {
+        if (taskData[l]?.children?.length) {
           this.createBodyChildTask(
             taskData[l].children,
             options,
@@ -5783,11 +5675,7 @@
         }
 
         if (!this.options.fullWeek) {
-          cellBefore = cellBefore.filter((date) => {
-            return !this.options.weekends.includes(
-              this.options.dateFormat.day_short[new Date(date).getDay()]
-            );
-          });
+          cellBefore = this.filterWeekends(cellBefore);
         }
 
         if (isCellGreater) {
@@ -6082,11 +5970,7 @@
         let taskDates = this.getDates(start_date, end_date);
 
         if (!this.options.fullWeek) {
-          taskDates = taskDates.filter((date) => {
-            return !this.options.weekends.includes(
-              this.options.dateFormat.day_short[new Date(date).getDay()]
-            );
-          });
+          taskDates = this.filterWeekends(taskDates);
         }
 
         if (taskData[k].type !== "milestone") {
@@ -6902,12 +6786,13 @@
 
     // add custom marker to gantt
     addMarkerToGantt: function (data) {
-      let markerArea = document.querySelector(".zt-gantt-marker-area");
+      const markerStartDate = new Date(data.start_date);
+      const isWeekend = this.options.weekends.includes(this.options.dateFormat.day_short[markerStartDate.getDay()])
+      const isFullWeek = this.options.fullWeek
 
-      if (!markerArea) {
-        markerArea = document.createElement("div");
-        markerArea.classList.add("zt-gantt-marker-area");
-      }
+      if (!isFullWeek && isWeekend) return;
+
+      const markerArea = this.markerArea;
 
       let flag = document.createElement("div");
       flag.classList.add(
@@ -6924,24 +6809,10 @@
       let calendarContainer = document.getElementById("zt-gantt-scale-data");
 
       const startDate = new Date(this.options.startDate);
-      const markerStartDate = new Date(data.start_date);
       let daysDiff = this.getDates(startDate, markerStartDate);
 
-      if (!this.options.fullWeek) {
-        const filteredDates = daysDiff.filter(
-          (date) =>
-            !this.options.weekends.includes(
-              this.options.dateFormat.day_short[new Date(date).getDay()]
-            )
-        );
-
-        if (
-          this.options.weekends.includes(
-            this.options.dateFormat.day_short[markerStartDate.getDay()]
-          )
-        ) {
-          return;
-        }
+      if (!isFullWeek) {
+        const filteredDates = this.filterWeekends(daysDiff);
 
         daysDiff = filteredDates.length - 1 || 0;
       } else {
@@ -6952,10 +6823,7 @@
 
       flag.style.left = colWidth * daysDiff + colWidth / 2 + "px";
 
-      if (calendarContainer) {
         markerArea.append(flag);
-        calendarContainer.append(markerArea);
-      }
     },
 
     /**
@@ -7013,11 +6881,7 @@
       }
 
       if (!this.options.fullWeek) {
-        cellBefore = cellBefore.filter((date) => {
-          return !this.options.weekends.includes(
-            this.options.dateFormat.day_short[new Date(date).getDay()]
-          );
-        });
+        cellBefore = this.filterWeekends(cellBefore);
       }
 
       cellBefore = isCellGreater
@@ -9062,7 +8926,7 @@
 
       if (this.tooltip) this.tooltip.remove();
 
-      if (this.lightbox){
+      if (this.lightbox) {
         this.lightbox.lightbox.remove();
         this.lightbox.lightboxBackdrop.remove();
         this.lightbox = null;
@@ -9204,11 +9068,7 @@
           }
 
           if (!this.options.fullWeek) {
-            cellBefore = cellBefore.filter((date) => {
-              return !this.options.weekends.includes(
-                this.options.dateFormat.day_short[new Date(date).getDay()]
-              );
-            });
+            cellBefore = this.filterWeekends(cellBefore);
           }
 
           if (isCellGreater) {
@@ -9377,11 +9237,7 @@
           let taskDates = this.getDates(start_date, end_date);
 
           if (!this.options.fullWeek) {
-            taskDates = taskDates.filter((date) => {
-              return !this.options.weekends.includes(
-                this.options.dateFormat.day_short[new Date(date).getDay()]
-              );
-            });
+            taskDates = this.filterWeekends(taskDates);
           }
 
           let taskProgress;
@@ -9991,6 +9847,20 @@
         let cssClass = func(...params);
         this.addClass(element, cssClass);
       }
+    },
+
+    /**
+     * Method to filter out weekends if fullWeek option is not enabled.
+     *
+     * @param {Array} dates - Array of date objects to be filtered.
+     * @returns {Array} Filtered array of date objects without weekends.
+     */
+    filterWeekends: function (dates) {
+      const weekday = this.options.dateFormat.day_short;
+      return dates.filter((date) => {
+        const dayName = weekday[new Date(date).getDay()];
+        return !this.options.weekends.includes(dayName);
+      });
     },
   };
 
