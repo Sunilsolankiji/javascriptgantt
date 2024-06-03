@@ -2631,7 +2631,7 @@
 
         // handle cell click event
         this.addClickListener(timelineRow, (e) => {
-          if (e.target.closest(".zt-gantt-task-cell")) {
+          if (e.target.classList.contains("zt-gantt-task-cell")) {
             this.dispatchEvent("onCellClick", {
               task: this.options.data[j],
               cellDate: e.target.getAttribute("zt-gantt-cell-date"),
@@ -2651,7 +2651,8 @@
             weekday,
             ztGanttTaskData,
             j,
-            this.options.openedTasks.includes(this.options.data[j].id)
+            this.options.openedTasks.includes(this.options.data[j].id),
+            timelineRowTemplate
           );
         }
       }
@@ -5570,9 +5571,9 @@
       weekday,
       ztGanttTaskData,
       parentIdString,
-      isOpened
+      isOpened,
+      timelineRowTemplate
     ) {
-      const timelineRowTemplate = this.createRowTemplate();
       // loop through all the children
       for (let l = 0; l < taskData.length; l++) {
         const isTaskExist = this.getTask(taskData[l].id, this.searchedData);
@@ -5616,7 +5617,7 @@
 
         // handle cell click event
         this.addClickListener(timelineRow, (e) => {
-          if (e.target.closest(".zt-gantt-task-cell")) {
+          if (e.target.classList.contains("zt-gantt-task-cell")) {
             this.dispatchEvent("onCellClick", {
               task: taskData[l],
               cellDate: e.target.getAttribute("zt-gantt-cell-date"),
@@ -5638,7 +5639,8 @@
             taskParents,
             isOpened
               ? this.options.openedTasks.includes(taskData[l].id)
-              : isOpened
+              : isOpened,
+            timelineRowTemplate
           );
         }
       }
@@ -8567,19 +8569,19 @@
       let currentSourceTask = this.getTask(currentSource);
 
       if (
-        (currentSourceTask?.children?.length && findTask(currentSourceTask)) ||
-        (currentTargetTask?.children?.length && findTask(currentTargetTask))
+        (currentSourceTask?.children?.length && findTask(currentSourceTask, currentTarget)) ||
+        (currentTargetTask?.children?.length && findTask(currentTargetTask, currentSource))
       ) {
         return true;
       }
 
       // check is child or parent
-      function findTask(parentTask) {
+      function findTask(parentTask, targetId) {
         for (const task of parentTask?.children) {
-          if (task?.id == currentTarget || task?.id == currentSource) {
+          if (task?.id == targetId) {
             return true;
           } else if (task?.children?.length) {
-            return findTask(task, type);
+            return findTask(task, targetId);
           }
         }
         return false;
