@@ -1887,7 +1887,6 @@
           let startDate = originalData[i].start_date;
           const parsedStartDate = new Date(startDate);
           if (isNaN(parsedStartDate) && date_format) {
-            console.log(parsedStartDate, "parsedStartDate");
             originalData[i].start_date = this.getDateTimeComponents(startDate);
           } else {
             this.hasHours = false;
@@ -1988,27 +1987,26 @@
         verScroll || 0,
         horScroll || 0
       );
-      
+
       const rightDataContainer = document.querySelector("#zt-gantt-scale-data");
-      if(!this.markerArea){
+      if (!this.markerArea) {
         markerArea = document.createElement("div");
         markerArea.classList.add("zt-gantt-marker-area");
         this.markerArea = markerArea;
-        
+
         // add all markers
         for (let marker of this.options.customMarker) {
           if (this.outOfGanttRange(marker?.start_date)) continue;
           this.addMarkerToGantt(marker);
         }
+
+        if (options.todayMarker) {
+          this.addTodayFlag();
+        }
       }
       rightDataContainer.append(this.markerArea);
-      
 
       // add today marker
-      if (options.todayMarker) {
-        this.addTodayFlag();
-      }
-
       let linksArea = document.createElement("div");
       linksArea.classList.add("zt-gantt-links-area");
       linksArea.id = "zt-gantt-links-area";
@@ -2317,7 +2315,7 @@
 
             if (
               options.data[j].children &&
-              options.data[j].children.length > 0 &&
+              options.data[j]?.children?.length &&
               !this.options.splitTask
             ) {
               // tree icon
@@ -2332,53 +2330,38 @@
               cell.append(treeIcon);
 
               // toggle children
-              let that = this;
-              let toggleTreeIcon = treeIcon;
-              this.addClickListener(toggleTreeIcon, () => {
-                let children = document.getElementsByClassName(
-                  `zt-gantt-child-${options.data[j].id}`
-                );
-
-                const isTaskOpened = toggleTreeIcon.classList.contains(
+              this.addClickListener(treeIcon, () => {
+                const isTaskOpened = treeIcon.classList.contains(
                   "zt-gantt-tree-close"
                 );
 
-                if (toggleTreeIcon.classList.contains("zt-gantt-tree-close")) {
-                  that.options.openedTasks.push(options.data[j].id);
-
-                  for (const child of that.options.data[j].children) {
-                    if (child.children && child.children.length > 0) {
-                      that.setCollapseAll(child.children, child.id, "open");
-                    }
-                  }
+                if (isTaskOpened) {
+                  this.options.openedTasks.push(options.data[j].id);
                 } else {
-                  const openedTasks = that.options.openedTasks.indexOf(
+                  const openedTasks = this.options.openedTasks.indexOf(
                     options.data[j].id
                   );
                   if (openedTasks > -1) {
-                    that.options.openedTasks.splice(openedTasks, 1);
-                  }
-
-                  for (const child of this.options.data[j].children) {
-                    if (child.children && child.children.length > 0) {
-                      that.setCollapseAll(child.children, child.id, "collapse");
-                    }
+                    this.options.openedTasks.splice(openedTasks, 1);
                   }
                 }
 
-                that.createTaskBars();
-                for (let i = 0; i < children.length; i++) {
-                  children[i].classList.toggle("zt-gantt-d-none");
-                  children[i].classList.toggle("zt-gantt-d-flex");
-                }
+                this.setCollapseAll(
+                  this.options.data[j].children,
+                  this.options.data[j].id,
+                  isTaskOpened ? "open" : "collapse"
+                );
 
-                toggleTreeIcon.classList.toggle("zt-gantt-tree-close");
-                toggleTreeIcon.classList.toggle("zt-gantt-tree-open");
-                that.createScrollbar(mainContainer, options);
+                this.createTaskBars();
+
+                treeIcon.classList.toggle("zt-gantt-tree-close");
+                treeIcon.classList.toggle("zt-gantt-tree-open");
+
+                this.createScrollbar(mainContainer, options);
 
                 // custom event of toggle tree
-                that.dispatchEvent("onTaskToggle", {
-                  task: that.options.data[j],
+                this.dispatchEvent("onTaskToggle", {
+                  task: this.options.data[j],
                   isTaskOpened,
                 });
               });
@@ -2505,10 +2488,12 @@
           }
 
           function isMultiUnitScale(scale) {
-            return scale.unit === "day" && scale.step > 1 ||
-                   ["week", "month", "quarter", "year"].includes(scale.unit);
+            return (
+              (scale.unit === "day" && scale.step > 1) ||
+              ["week", "month", "quarter", "year"].includes(scale.unit)
+            );
           }
-          
+
           let dateCell = document.createElement("div");
           dateCell.classList.add("zt-gantt-scale-cell");
 
@@ -2681,23 +2666,24 @@
           this.horScroll || 0
         );
 
-        if(!this.markerArea){
+        if (!this.markerArea) {
           markerArea = document.createElement("div");
           markerArea.classList.add("zt-gantt-marker-area");
           this.markerArea = markerArea;
-          
+
           // add all markers
           for (let marker of this.options.customMarker) {
             if (this.outOfGanttRange(marker?.start_date)) continue;
             this.addMarkerToGantt(marker);
           }
+          
+          // add today marker
+          if (options.todayMarker) {
+            this.addTodayFlag();
+          }
         }
         rightDataContainer.append(this.markerArea);
 
-        // add today marker
-        if (options.todayMarker) {
-          this.addTodayFlag();
-        }
       }
 
       if (this.options.selectAreaOnDrag === true) {
@@ -3599,8 +3585,10 @@
       if (this.outOfGanttRange(new Date())) return;
 
       const isFullWeek = this.options.fullWeek;
-      isWeekend = this.options.weekends.includes(this.options.dateFormat.day_short[new Date().getDay()])
-      
+      isWeekend = this.options.weekends.includes(
+        this.options.dateFormat.day_short[new Date().getDay()]
+      );
+
       if (!isFullWeek && isWeekend) return;
 
       let isTodayExist = document.getElementById("zt-gantt-marker-today");
@@ -3630,7 +3618,6 @@
         todayFlag.style.left = colWidth * daysDiff + colWidth / 2 + "px";
 
         this.markerArea.append(todayFlag);
-          
       }
     },
 
@@ -5463,66 +5450,42 @@
                 );
                 cell.append(treeIcon);
 
-                let that = this;
-                setTimeout(() => {
-                  let toggleTreeIcon = treeIcon;
-                  this.addClickListener(toggleTreeIcon, (event) => {
-                    let children = document.getElementsByClassName(
-                      `zt-gantt-child-${taskData[l].id}`
+                this.addClickListener(treeIcon, (event) => {
+                  const isTaskOpened = treeIcon.classList.contains(
+                    "zt-gantt-tree-close"
+                  );
+
+                  if (isTaskOpened) {
+                    this.options.openedTasks.push(taskData[l].id);
+                  } else {
+                    const openedTask = this.options.openedTasks.indexOf(
+                      taskData[l].id
                     );
-
-                    const isTaskOpened = toggleTreeIcon.classList.contains(
-                      "zt-gantt-tree-close"
-                    );
-                    if (
-                      toggleTreeIcon.classList.contains("zt-gantt-tree-close")
-                    ) {
-                      that.options.openedTasks.push(taskData[l].id);
-
-                      let t = 0;
-                      for (const child of taskData[l].children) {
-                        if (child.children) {
-                          that.setCollapseAll(child.children, child.id, "open");
-                        }
-                        t += 1;
-                      }
-                    } else {
-                      const openedTask = that.options.openedTasks.indexOf(
-                        taskData[l].id
-                      );
-                      if (openedTask > -1) {
-                        that.options.openedTasks.splice(openedTask, 1);
-                      }
-                      let t = 0;
-                      for (const child of taskData[l].children) {
-                        if (child.children) {
-                          that.setCollapseAll(
-                            child.children,
-                            child.id,
-                            "collapse"
-                          );
-                        }
-                        t += 1;
-                      }
+                    if (openedTask > -1) {
+                      this.options.openedTasks.splice(openedTask, 1);
                     }
-                    that.createTaskBars();
-                    toggleTreeIcon.classList.toggle("zt-gantt-tree-close");
-                    toggleTreeIcon.classList.toggle("zt-gantt-tree-open");
-                    for (let i = 0; i < children.length; i++) {
-                      children[i].classList.toggle("zt-gantt-d-none");
-                      children[i].classList.toggle("zt-gantt-d-flex");
-                    }
-                    let mainContainer =
-                      document.querySelector("#zt-gantt-layout");
-                    that.createScrollbar(mainContainer, options);
+                  }
 
-                    // custom event of toggle tree
-                    that.dispatchEvent("onTaskToggle", {
-                      task: taskData[l],
-                      isTaskOpened,
-                    });
+                  this.setCollapseAll(
+                    taskData[l].children,
+                    taskData[l].id,
+                    isTaskOpened ? "open" : "collapse"
+                  );
+
+                  this.createTaskBars();
+                  treeIcon.classList.toggle("zt-gantt-tree-close");
+                  treeIcon.classList.toggle("zt-gantt-tree-open");
+
+                  let mainContainer =
+                    document.querySelector("#zt-gantt-layout");
+                  this.createScrollbar(mainContainer, options);
+
+                  // custom event of toggle tree
+                  this.dispatchEvent("onTaskToggle", {
+                    task: taskData[l],
+                    isTaskOpened,
                   });
-                }, 0);
+                });
               } else {
                 cell.append(ztGanttBlank);
               }
@@ -6066,23 +6029,30 @@
     },
 
     setCollapseAll: function (data, parentId, type) {
-      const children = document.getElementsByClassName(
-        `zt-gantt-child-${parentId}`
-      );
+      if (!data) return;
 
       data.forEach((child) => {
-        if (child.children && child.children.length > 0) {
-          this.setCollapseAll(child.children, child.id, type);
+        if (child.children && child?.children?.length) {
+          const childType =
+            this.options.openedTasks.includes(parentId) && type === "open"
+              ? "open"
+              : "collapse";
+          this.setCollapseAll(child.children, child.id, childType);
         }
       });
+
+      const childrenSelector =
+        type === "collapse"
+          ? `.zt-gantt-child-${parentId}:not(.zt-gantt-d-none)`
+          : `.zt-gantt-child-${parentId}.zt-gantt-d-none`;
+
+      const children = this.element.querySelectorAll(childrenSelector);
 
       Array.from(children).forEach((child) => {
         if (type === "collapse") {
           child.classList.add("zt-gantt-d-none");
-        } else {
-          if (this.options.openedTasks.includes(parentId)) {
-            child.classList.remove("zt-gantt-d-none");
-          }
+        } else if (this.options.openedTasks.includes(parentId)) {
+          child.classList.remove("zt-gantt-d-none");
         }
       });
     },
@@ -6302,62 +6272,40 @@
               treeIcon.id = `toggle-tree-${j}`;
               cell.append(treeIcon);
               // toggle children
-              let that = this;
-              setTimeout(() => {
-                let toggleTreeIcon = treeIcon;
-                this.addClickListener(toggleTreeIcon, (event) => {
-                  let children = document.getElementsByClassName(
-                    `zt-gantt-child-${j}`
+
+              this.addClickListener(treeIcon, (event) => {
+                const isTaskOpened = treeIcon.classList.contains(
+                  "zt-gantt-tree-close"
+                );
+
+                if (isTaskOpened) {
+                  this.options.openedTasks.push(options.data[j].id);
+                } else {
+                  const openedTasks = this.options.openedTasks.indexOf(
+                    options.data[j]
                   );
-
-                  const isTaskOpened = toggleTreeIcon.classList.contains(
-                    "zt-gantt-tree-close"
-                  );
-
-                  if (
-                    toggleTreeIcon.classList.contains("zt-gantt-tree-close")
-                  ) {
-                    that.options.openedTasks.push(options.data[j].id);
-                    for (const child of that.options.data[j].children) {
-                      if (child.children) {
-                        that.setCollapseAll(child.children, child.id, "open");
-                      }
-                    }
-                  } else {
-                    const openedTasks = that.options.openedTasks.indexOf(
-                      options.data[j]
-                    );
-                    if (openedTasks > -1) {
-                      that.options.openedTasks.splice(openedTasks, 1);
-                    }
-                    for (const child of this.options.data[j].children) {
-                      if (child.children) {
-                        that.setCollapseAll(
-                          child.children,
-                          child.id,
-                          "collapse"
-                        );
-                      }
-                    }
+                  if (openedTasks > -1) {
+                    this.options.openedTasks.splice(openedTasks, 1);
                   }
+                }
 
-                  that.createTaskBars();
+                this.setCollapseAll(
+                  this.options.data[j].children,
+                  this.options.data[j].id,
+                  isTaskOpened ? "open" : "collapse"
+                );
 
-                  for (let i = 0; i < children.length; i++) {
-                    children[i].classList.toggle("zt-gantt-d-none");
-                    children[i].classList.toggle("zt-gantt-d-flex");
-                  }
+                this.createTaskBars();
 
-                  toggleTreeIcon.classList.toggle("zt-gantt-tree-close");
-                  toggleTreeIcon.classList.toggle("zt-gantt-tree-open");
+                treeIcon.classList.toggle("zt-gantt-tree-close");
+                treeIcon.classList.toggle("zt-gantt-tree-open");
 
-                  // custom event of toggle tree
-                  that.dispatchEvent("onTaskToggle", {
-                    task: that.options.data[j],
-                    isTaskOpened,
-                  });
+                // custom event of toggle tree
+                this.dispatchEvent("onTaskToggle", {
+                  task: this.options.data[j],
+                  isTaskOpened,
                 });
-              }, 0);
+              });
             } else {
               cell.append(ztGanttBlank);
             }
@@ -6789,8 +6737,10 @@
     // add custom marker to gantt
     addMarkerToGantt: function (data) {
       const markerStartDate = new Date(data.start_date);
-      const isWeekend = this.options.weekends.includes(this.options.dateFormat.day_short[markerStartDate.getDay()])
-      const isFullWeek = this.options.fullWeek
+      const isWeekend = this.options.weekends.includes(
+        this.options.dateFormat.day_short[markerStartDate.getDay()]
+      );
+      const isFullWeek = this.options.fullWeek;
 
       if (!isFullWeek && isWeekend) return;
 
@@ -6825,7 +6775,7 @@
 
       flag.style.left = colWidth * daysDiff + colWidth / 2 + "px";
 
-        markerArea.append(flag);
+      markerArea.append(flag);
     },
 
     /**
@@ -8569,8 +8519,10 @@
       let currentSourceTask = this.getTask(currentSource);
 
       if (
-        (currentSourceTask?.children?.length && findTask(currentSourceTask, currentTarget)) ||
-        (currentTargetTask?.children?.length && findTask(currentTargetTask, currentSource))
+        (currentSourceTask?.children?.length &&
+          findTask(currentSourceTask, currentTarget)) ||
+        (currentTargetTask?.children?.length &&
+          findTask(currentTargetTask, currentSource))
       ) {
         return true;
       }
