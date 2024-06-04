@@ -173,7 +173,7 @@
   border-top: 1px solid var(--primary-border);
 }
 
-.zt-gantt-right-cell .zt-gantt-scale {
+.zt-gantt-timeline-cell .zt-gantt-scale {
   overflow-x: hidden;
   overflow-y: hidden;
   position: sticky;
@@ -209,7 +209,7 @@
 
 .zt-gantt-left-cell,
 .zt-gantt-right-sidebar-cell,
-.zt-gantt-right-cell {
+.zt-gantt-timeline-cell {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
   scrollbar-width: none;
@@ -220,7 +220,7 @@
 /* WebKit (Safari/Chrome) */
 .zt-gantt-left-cell::-webkit-scrollbar,
 .zt-gantt-right-sidebar-cell::-webkit-scrollbar,
-.zt-gantt-right-cell::-webkit-scrollbar {
+.zt-gantt-timeline-cell::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
@@ -252,7 +252,7 @@
   flex-shrink: 0;
 }
 
-.zt-gantt-right-cell {
+.zt-gantt-timeline-cell {
   height: 100%;
   overflow: auto;
 }
