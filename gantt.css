@@ -161,7 +161,7 @@
   text-align: center;
 }
 
-.zt-gantt-scale-container {
+.zt-gantt-scale-row {
   position: relative;
   height: 29px;
   background-color: var(--timeline-scale-background);
@@ -169,7 +169,7 @@
   width: 100%;
 }
 
-.zt-gantt-scale-container:not(:nth-child(1)) {
+.zt-gantt-scale-row:not(:nth-child(1)) {
   border-top: 1px solid var(--primary-border);
 }
 
@@ -335,7 +335,7 @@
   background-color: var(--selected-background);
 }
 
-.zt-gantt-scale-data {
+.zt-gantt-timeline-data {
   position: relative;
   overflow: hidden;
 }
