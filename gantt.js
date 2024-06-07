@@ -15,7 +15,7 @@
  * ========================================================= */
 
 (function (global) {
-  let ZTGantt = function (element, options, templates) {
+  const ztGantt = function (element, options, templates) {
     this.element = element;
     this.initializeOptions(options);
     this.initTemplates(templates);
@@ -28,22 +28,19 @@
     this.init();
   };
 
-  ZTGantt.prototype = {
-    constructor: ZTGantt,
+  ztGantt.prototype = {
+    constructor: ztGantt,
 
     // initialize Options
-    initializeOptions: function (opt) {
-      if (opt == null) {
-        opt = {};
-      }
+    initializeOptions: function (opt = {}) {
       this.options = {
         date_format: opt.date_format,
         columns: opt.columns || [],
         rightGrid: opt.rightGrid,
         data: opt.data || [],
-        collapse: opt.collapse !== undefined ? opt.collapse : true,
-        fullWeek: opt.fullWeek !== undefined ? opt.fullWeek : true,
-        todayMarker: opt.todayMarker !== undefined ? opt.todayMarker : true,
+        collapse: opt.collapse !== false,
+        fullWeek: opt.fullWeek !== false,
+        todayMarker: opt.todayMarker !== false,
         weekends: opt.weekends || [],
         startDate: opt.startDate,
         endDate: opt.endDate,
@@ -65,18 +62,15 @@
         taskOpacity: opt.taskOpacity || 0.8,
         addLinks: opt.addLinks || false,
         exportApi: opt.exportApi,
-        updateLinkOnDrag:
-          opt.updateLinkOnDrag !== undefined ? opt.updateLinkOnDrag : true,
+        updateLinkOnDrag: opt.updateLinkOnDrag !== false,
         splitTask: opt.splitTask || false,
         links: opt.links || [],
         arrangeData: true,
         selectAreaOnDrag: opt.selectAreaOnDrag || false,
-        taskProgress: opt.taskProgress !== undefined ? opt.taskProgress : true,
+        taskProgress: opt.taskProgress !== false,
         mouseScroll: opt.mouseScroll || false,
         ctrlKeyRequiredForMouseScroll:
-          opt.ctrlKeyRequiredForMouseScroll !== undefined
-            ? opt.ctrlKeyRequiredForMouseScroll
-            : true,
+          opt.ctrlKeyRequiredForMouseScroll !== false,
         sort: opt.sort || false,
         dateFormat: {
           month_full: [
@@ -1687,49 +1681,17 @@
     },
 
     // initialize templates
-    initTemplates: function (templ) {
-      if (templ == null) {
-        templ = {};
-      }
-
+    initTemplates: function (templ = {}) {
       this.templates = {
         tooltip_text:
           templ.tooltip_text ||
-          function (start, end, task) {
-            return (
-              "<b>Task:</b> " +
-              task.text +
-              "<br/><b>Start date:</b> " +
-              start +
-              "<br/><b>End date:</b> " +
-              end
-            );
-          },
-        taskbar_text:
-          templ.taskbar_text ||
-          function (start, end, task) {
-            return task.text;
-          },
-        task_drag:
-          templ.task_drag ||
-          function (mode, task) {
-            return true;
-          },
-        grid_folder:
-          templ.grid_folder ||
-          function (task) {
-            return " ";
-          },
-        grid_file:
-          templ.grid_file ||
-          function (task) {
-            return " ";
-          },
-        grid_blank:
-          templ.grid_blank ||
-          function (task) {
-            return " ";
-          },
+          ((start, end, task) =>
+            `<b>Task:</b> ${task.text}<br/><b>Start date:</b> ${start}<br/><b>End date:</b> ${end}`),
+        taskbar_text: templ.taskbar_text || ((start, end, task) => task.text),
+        task_drag: templ.task_drag || (() => true),
+        grid_folder: templ.grid_folder || (() => ""),
+        grid_file: templ.grid_file || (() => ""),
+        grid_blank: templ.grid_blank || (() => ""),
         showLightBox: templ.showLightBox || undefined,
         grid_header_class: templ.grid_header_class || undefined,
         grid_row_class: templ.grid_row_class || undefined,
@@ -1936,7 +1898,7 @@
       this.options.arrangeData = false;
 
       if (!this.options.startDate || !this.options.endDate) {
-        const { startDate, endDate } = this.getStartAndEndDate(data);
+        const { startDate, endDate } = this.getStartAndEndDate(this.options.data);
         this.options.startDate = this.options.startDate || startDate;
         this.options.endDate = this.options.endDate || endDate;
       }
@@ -2015,7 +1977,7 @@
       );
 
       if (!this.markerArea) {
-        markerArea = document.createElement("div");
+        const markerArea = document.createElement("div");
         markerArea.classList.add("zt-gantt-marker-area");
         this.markerArea = markerArea;
 
@@ -2288,20 +2250,20 @@
           // content of the column
           content.innerHTML = getContentHTML();
 
-          this.attachEvent("onAfterTaskUpdate", (e) => {
+          this.attachEvent("onAfterTaskUpdate", () => {
             content.innerHTML = getContentHTML();
           });
 
           // update content innerHTML on after progress drag
-          this.attachEvent("onAfterProgressDrag", (e) => {
+          this.attachEvent("onAfterProgressDrag", () => {
             content.innerHTML = getContentHTML();
           });
 
-          this.attachEvent("onTaskDrag", (e) => {
+          this.attachEvent("onTaskDrag", () => {
             content.innerHTML = getContentHTML();
           });
 
-          this.attachEvent("onAfterTaskDrag", (e) => {
+          this.attachEvent("onAfterTaskDrag", () => {
             content.innerHTML = getContentHTML();
           });
 
@@ -2656,7 +2618,7 @@
         );
 
         if (!this.markerArea) {
-          markerArea = document.createElement("div");
+          const markerArea = document.createElement("div");
           markerArea.classList.add("zt-gantt-marker-area");
           this.markerArea = markerArea;
 
@@ -2946,7 +2908,7 @@
         // handle double click event
         ztGanttBarTask.addEventListener("dblclick", handleDblClick);
 
-        function handleDblClick(e) {
+        function handleDblClick() {
           // custom event handler
           that.dispatchEvent("onBeforeTaskDblClick", {
             task: that.options.data[j],
@@ -2968,7 +2930,7 @@
         // Handle mouseover event
         ztGanttBarTask.addEventListener("mouseover", handleMouseOver);
 
-        function handleMouseOver(e) {
+        function handleMouseOver() {
           if (/^((?!chrome|android).)*safari/i.test(userAgent)) {
             ztGanttBarTask.classList.add("hovered");
           }
@@ -2979,7 +2941,7 @@
         // Handle mouseleave event
         ztGanttBarTask.addEventListener("mouseleave", handleMouseLeave);
 
-        function handleMouseLeave(event) {
+        function handleMouseLeave() {
           if (/^((?!chrome|android).)*safari/i.test(userAgent)) {
             ztGanttBarTask.classList.remove("hovered");
           }
@@ -3167,6 +3129,7 @@
           ztGanttBarTask.style.width = taskWidth + "px";
         }
 
+        let sideContent;
         if (this.options.data[j].type === "milestone") {
           sideContent = document.createElement("div");
           sideContent.classList.add("zt-gantt-side-content");
@@ -3185,7 +3148,7 @@
         }
         ztGanttBarTask.append(ztGanttBarTaskContent);
 
-        this.attachEvent("onAfterTaskUpdate", (event) => {
+        this.attachEvent("onAfterTaskUpdate", () => {
           const innerHTML = this.templates.taskbar_text(
             start_date.setHours(0),
             end_date.setHours(0),
@@ -3574,7 +3537,7 @@
       if (this.outOfGanttRange(new Date())) return;
 
       const isFullWeek = this.options.fullWeek;
-      isWeekend = this.options.weekends.includes(
+      const isWeekend = this.options.weekends.includes(
         this.options.dateFormat.day_short[new Date().getDay()]
       );
 
@@ -3943,7 +3906,7 @@
         document.addEventListener("mouseup", handleMouseUp, false);
       }
 
-      function handleMouseUp(e) {
+      function handleMouseUp() {
         autoScroll = false;
         taskBar.classList.remove("task-dragging");
         document.removeEventListener("mousemove", resize, false);
@@ -3980,7 +3943,7 @@
 
           if (taskId > -1 && taskId < allTaskbars.length) {
             let currentTask = that.getTask(taskPositionId);
-            parentId =
+            const parentId =
               taskParentId.length > 1 ? currentTask.parent : currentTask.id;
             parentTask = that.getTask(parentId);
           } else {
@@ -4835,8 +4798,13 @@
 
       let minWidth = this.options.minColWidth;
       const colCount = this.dates.length;
-      let level = date !== new Date(0) ? this.options.zoomLevel : "day";
+
+      const date0 = new Date(0);
+
+      const level = date !== date0 ? this.options.zoomLevel : "day";
+      
       date = new Date(date);
+
       switch (level) {
         case "hour":
           minWidth = levelType === "day" ? minWidth : minWidth / 24;
@@ -4854,7 +4822,7 @@
           minWidth = minWidth / 365;
           break;
         default:
-          minWidth = minWidth;
+          minWidth;
           break;
       }
       const gridWidth = Math.max(
@@ -5238,7 +5206,7 @@
           dataItem.setAttribute("zt-gantt-task-id", taskData[l].id);
           dataItem.style.height = options.row_height + "px";
           dataItem.style.lineHeight = options.row_height + "px";
-          
+
           const that = this;
 
           // handle double click event
@@ -5320,7 +5288,7 @@
               " ";
 
             // update content innerHTML on after task update
-            this.attachEvent("onAfterTaskUpdate", (e) => {
+            this.attachEvent("onAfterTaskUpdate", () => {
               content.innerHTML =
                 options.columns[k].template(taskData[l]) ||
                 taskData[l][options.columns[k].name] ||
@@ -5328,7 +5296,7 @@
             });
 
             // update content innerHTML on after progress drag
-            this.attachEvent("onAfterProgressDrag", (e) => {
+            this.attachEvent("onAfterProgressDrag", () => {
               content.innerHTML =
                 options.columns[k].template(taskData[l]) ||
                 taskData[l][options.columns[k].name] ||
@@ -5336,7 +5304,7 @@
             });
 
             // update content innerHTML on task drag
-            this.attachEvent("onTaskDrag", (e) => {
+            this.attachEvent("onTaskDrag", () => {
               content.innerHTML =
                 options.columns[k].template(taskData[l]) ||
                 taskData[l][options.columns[k].name] ||
@@ -5344,7 +5312,7 @@
             });
 
             // update content innerHTML on after task drag
-            this.attachEvent("onAfterTaskDrag", (e) => {
+            this.attachEvent("onAfterTaskDrag", () => {
               content.innerHTML =
                 options.columns[k].template(taskData[l]) ||
                 taskData[l][options.columns[k].name] ||
@@ -5376,7 +5344,7 @@
                 );
                 cell.append(treeIcon);
 
-                this.addClickListener(treeIcon, (event) => {
+                this.addClickListener(treeIcon, () => {
                   const isTaskOpened = treeIcon.classList.contains(
                     "zt-gantt-tree-close"
                   );
@@ -5661,7 +5629,7 @@
         // handle double click event
         ztGanttBarTask.addEventListener("dblclick", handleDblClick);
 
-        function handleDblClick(e) {
+        function handleDblClick() {
           // custom event handler
           that.dispatchEvent("onBeforeTaskDblClick", { task: taskData[k] });
 
@@ -5891,7 +5859,7 @@
           );
         }
 
-        this.attachEvent("onAfterTaskUpdate", (event) => {
+        this.attachEvent("onAfterTaskUpdate", () => {
           if (taskData[k].type === "milestone") {
             sideContent.innerHTML = this.templates.taskbar_text(
               new Date(start_date),
@@ -6191,7 +6159,7 @@
               cell.append(treeIcon);
               // toggle children
 
-              this.addClickListener(treeIcon, (event) => {
+              this.addClickListener(treeIcon, () => {
                 const isTaskOpened = treeIcon.classList.contains(
                   "zt-gantt-tree-close"
                 );
@@ -6601,7 +6569,7 @@
             return data.reduce((result, item) => {
               if (condition(item)) {
                 if (!that.options.splitTask && !findRecursive) {
-                  const { children, ...flatItem } = item;
+                  const { ...flatItem } = item;
                   result.push(flatItem);
                 } else {
                   // find recursive parent child tasks
@@ -6674,8 +6642,6 @@
       flagText.classList.add("zt-gantt-marker-content");
       flagText.innerHTML = data.text;
       flag.append(flagText);
-
-      let calendarContainer = document.getElementById("zt-gantt-timeline-data");
 
       const startDate = new Date(this.options.startDate);
       let daysDiff = this.getDates(startDate, markerStartDate);
@@ -6908,7 +6874,7 @@
 
       let that = this;
       // handle double click event
-      taskLink.addEventListener("dblclick", function (e) {
+      taskLink.addEventListener("dblclick", function () {
         that.dispatchEvent("onLinkDblClick", { link });
       });
 
@@ -7193,18 +7159,18 @@
 
       if (this.options.updateLinkOnDrag) {
         // call updateLinkPosition function onTaskDrag
-        this.attachEvent("onTaskDrag", (e) => {
+        this.attachEvent("onTaskDrag", () => {
           this.updateLinkPosition(source, target, taskLink, rowHeight, link);
         });
       }
 
       // call updateLinkPosition function onAfterTaskDrag
-      this.attachEvent("onAfterTaskDrag", (e) => {
+      this.attachEvent("onAfterTaskDrag", () => {
         this.updateLinkPosition(source, target, taskLink, rowHeight, link);
       });
 
       // call updateLinkPosition function onAutoScheduling
-      this.attachEvent("onAutoScheduling", (e) => {
+      this.attachEvent("onAutoScheduling", () => {
         this.updateLinkPosition(source, target, taskLink, rowHeight, link);
       });
     },
@@ -7619,7 +7585,7 @@
         document.addEventListener("mouseup", handleMouseUp, false);
       }
 
-      function handleMouseUp(e) {
+      function handleMouseUp() {
         autoScroll = false;
         document.removeEventListener("mousemove", strechLink, false);
         document.removeEventListener("mouseup", handleMouseUp, false);
@@ -7673,12 +7639,13 @@
             !isLinkExist &&
             !hasCycle
           ) {
-            link = {
+            const link = {
               id: `${linkType}-${sourceId}-${targetId}`,
               source: sourceId,
               target: targetId,
               type: linkType,
             };
+
             that.createLinks(sourceId, targetId, link);
             that.options.links.push(link);
 
@@ -7876,7 +7843,7 @@
     // function to initialize zoom options
     zoomInit: function (type = "after") {
       let zoomLevels = this.options.zoomConfig;
-      for (levels of zoomLevels.levels) {
+      for (let levels of zoomLevels.levels) {
         if (this.options.zoomLevel == levels.name) {
           this.options.scale_height =
             levels.scale_height || this.options.scale_height;
@@ -8165,7 +8132,7 @@
         document.addEventListener("mouseup", handleMouseUp, false);
       }
 
-      function handleMouseUp(e) {
+      function handleMouseUp() {
         document.removeEventListener("mousemove", resize, false);
         document.removeEventListener("mouseup", handleMouseUp, false);
         if (dragging === true) {
@@ -8414,7 +8381,10 @@
 
       // check is child or parent
       function findTask(parentTask, targetId) {
-        for (const task of parentTask?.children) {
+        
+        if(!parentTask?.children?.length) return false;
+        
+        for (const task of parentTask.children) {
           if (task?.id == targetId) {
             return true;
           } else if (task?.children?.length) {
@@ -9004,7 +8974,7 @@
           // handle double click event
           ztGanttBarTask.addEventListener("dblclick", handleDblClick);
 
-          function handleDblClick(e) {
+          function handleDblClick() {
             // custom event handler
             that.dispatchEvent("onBeforeTaskDblClick", { task });
 
@@ -9023,7 +8993,7 @@
 
           // Handle mouseover event
           ztGanttBarTask.addEventListener("mouseover", handleMouseOver);
-          function handleMouseOver(e) {
+          function handleMouseOver() {
             if (/^((?!chrome|android).)*safari/i.test(userAgent)) {
               ztGanttBarTask.classList.add("hovered");
             }
@@ -9034,7 +9004,7 @@
           // Handle mouseleave event
           ztGanttBarTask.addEventListener("mouseleave", handleMouseLeave);
 
-          function handleMouseLeave(event) {
+          function handleMouseLeave() {
             if (/^((?!chrome|android).)*safari/i.test(userAgent)) {
               ztGanttBarTask.classList.remove("hovered");
             }
@@ -9211,6 +9181,7 @@
             ztGanttBarTask.style.width = taskWidth + "px";
           }
 
+          let sideContent;
           if (task.type === "milestone") {
             sideContent = document.createElement("div");
             sideContent.classList.add("zt-gantt-side-content");
@@ -9229,7 +9200,7 @@
           }
           ztGanttBarTask.append(ztGanttBarTaskContent);
 
-          this.attachEvent("onAfterTaskUpdate", (event) => {
+          this.attachEvent("onAfterTaskUpdate", () => {
             if (task.type === "milestone") {
               sideContent.innerHTML = this.templates.taskbar_text(
                 task.start_date.setHours(0),
@@ -9359,7 +9330,7 @@
         isScrolling = true;
       }
 
-      function handleMouseUp(event) {
+      function handleMouseUp() {
         isScrolling = false;
         document.removeEventListener("mousemove", scrollTimeline, false);
         document.removeEventListener("mouseup", handleMouseUp, false);
@@ -9618,12 +9589,7 @@
 
       if (!tooltip) return;
 
-      start_date = task.start_date;
-      end_date = task.end_date;
-
-      if (task.children?.length) {
-        ({ start_date, end_date } = this.getLargeAndSmallDate(task));
-      }
+      const { start_date, end_date } = this.getLargeAndSmallDate(task);
 
       const tooltipContent = this.templates.tooltip_text(
         start_date,
@@ -9755,5 +9721,5 @@
     },
   };
 
-  global.ztGantt = ZTGantt;
+  global.ztGantt = ztGantt;
 })(this);
