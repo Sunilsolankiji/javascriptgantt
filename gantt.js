@@ -1820,6 +1820,26 @@
       const options = this.options;
       this.options.currentLanguage = this.options.i18n[this.options.localLang];
       this.zoomInit("initial");
+
+      // create a copy of the data
+      if (this.options.arrangeData) {
+        this.originalData = [...this.options.data];
+      }
+
+      const originalData = this.originalData;
+      const { date_format } = options;
+
+      // process task start and end date
+      const processDate = (date) => {
+        const parsedDate = new Date(date);
+        if (isNaN(parsedDate) && date_format) {
+          return this.getDateTimeComponents(date);
+        } else if (!isNaN(parsedDate) && !parsedDate.getHours()) {
+          return this.stripTime(parsedDate);
+        }
+        return date;
+      };
+
       function createNestedTree(
         flatArray,
         parentIdKey = "parent",
@@ -1828,7 +1848,17 @@
         const tree = [];
 
         const map = {};
-        flatArray.forEach((item) => {
+        flatArray.forEach((item, i) => {
+          if (originalData[i].start_date !== undefined) {
+            originalData[i].start_date = processDate(
+              originalData[i].start_date
+            );
+          }
+
+          if (originalData[i].end_date !== undefined) {
+            originalData[i].end_date = processDate(originalData[i].end_date);
+          }
+
           const id = item[idKey];
           const parentId = item[parentIdKey];
 
@@ -1845,51 +1875,6 @@
         return tree;
       }
 
-      // create a copy of the data
-      if (this.options.arrangeData) {
-        this.originalData = [...this.options.data];
-      }
-
-      const originalData = this.originalData;
-      const { date_format } = options;
-      const originalDataLength = originalData.length;
-
-      for (let i = 0; i < originalDataLength; i++) {
-        // Process start_date
-        if (originalData[i].start_date !== undefined) {
-          let startDate = originalData[i].start_date;
-          const parsedStartDate = new Date(startDate);
-          if (isNaN(parsedStartDate) && date_format) {
-            originalData[i].start_date = this.getDateTimeComponents(startDate);
-          } else {
-            this.hasHours = false;
-            if (isNaN(startDate)) {
-              this.getDateTimeComponents(this.originalData[i].start_date);
-              if (this.hasHours !== true && !isNaN(parsedStartDate)) {
-                originalData[i].start_date = this.stripTime(parsedStartDate);
-              }
-            }
-          }
-        }
-
-        // Process end_date
-        if (originalData[i].end_date !== undefined) {
-          let endDate = originalData[i].end_date;
-          const parsedEndDate = new Date(endDate);
-          if (isNaN(parsedEndDate) && date_format) {
-            originalData[i].end_date = this.getDateTimeComponents(endDate);
-          } else {
-            this.hasHours = false;
-            if (isNaN(endDate)) {
-              this.getDateTimeComponents(endDate);
-              if (this.hasHours !== true && !isNaN(parsedEndDate)) {
-                this.originalData[i].end_date = this.stripTime(parsedEndDate);
-              }
-            }
-          }
-        }
-      }
-
       this.options.data = createNestedTree(this.originalData);
 
       // calculate and add duration and start and end date in all data objects
@@ -1898,7 +1883,9 @@
       this.options.arrangeData = false;
 
       if (!this.options.startDate || !this.options.endDate) {
-        const { startDate, endDate } = this.getStartAndEndDate(this.options.data);
+        const { startDate, endDate } = this.getStartAndEndDate(
+          this.options.data
+        );
         this.options.startDate = this.options.startDate || startDate;
         this.options.endDate = this.options.endDate || endDate;
       }
@@ -4802,7 +4789,7 @@
       const date0 = new Date(0);
 
       const level = date !== date0 ? this.options.zoomLevel : "day";
-      
+
       date = new Date(date);
 
       switch (level) {
@@ -6551,7 +6538,7 @@
           const that = this;
           let parents = [];
 
-          if (!isFilter || this.searchedData) {
+          if (!isFilter) {
             this.searchedData = undefined;
             this.options.openedTasks = [];
             this.render();
@@ -6560,10 +6547,8 @@
 
           const filteredData = filterAndFlatten(allData, condition);
 
-          if (isFilter === true) {
-            this.searchedData = filteredData;
-            this.render();
-          }
+          this.searchedData = filteredData;
+          this.render();
 
           function filterAndFlatten(data, condition) {
             return data.reduce((result, item) => {
@@ -8381,9 +8366,8 @@
 
       // check is child or parent
       function findTask(parentTask, targetId) {
-        
-        if(!parentTask?.children?.length) return false;
-        
+        if (!parentTask?.children?.length) return false;
+
         for (const task of parentTask.children) {
           if (task?.id == targetId) {
             return true;
@@ -8471,115 +8455,111 @@
       });
     },
 
-    getDateTimeComponents: function (dateTimeString) {
-      if (!dateTimeString) {
+    /**
+     * method to convert dateString to date object on based on date_format
+     * @param {string} dateString - Date string
+     * @returns returns the date object converted from datestring based on date_format
+     */
+    getDateTimeComponents: function (dateString) {
+      if (!dateString) {
         return;
       }
+      const formatString = this.options.date_format;
+      const formatMap = {
+        "%d": "day", // day with leading zero
+        "%j": "day", // day without leading zero
+        "%m": "month", // month with leading zero
+        "%n": "month", // month without leading zero
+        "%Y": "year", // four-digit year
+        "%y": "year", // two-digit year
+        "%H": "hour", // hour (24-hour clock) with leading zero
+        "%G": "hour", // hour (24-hour clock) without leading zero
+        "%h": "hour", // hour (12-hour clock) with leading zero
+        "%g": "hour", // hour (12-hour clock) without leading zero
+        "%i": "minute", // minutes with leading zero
+        "%s": "second", // seconds with leading zero
+        "%a": "amPm", // am/pm
+        "%A": "amPm", // AM/PM
+      };
+      // M, F, W, l, D,
 
-      const format = this.options.date_format;
-      const regex = /%([dmyhis])|(\b\w+\b)/gi;
-      const dateTimeParts = dateTimeString.split(/[^\w]+|T/);
-
-      let matchedParts = format.match(regex);
-      matchedParts = matchedParts.join(",").replaceAll("%", "").split(",");
-
-      const components = {
-        day: 1,
-        month: 0,
-        year: new Date().getFullYear(),
-        hour: 0,
-        minute: 0,
-        second: 0,
-        date: null,
+      const regexMap = {
+        "%d": "(\\d{2})",
+        "%j": "(\\d{1,2})",
+        "%m": "(\\d{2})",
+        "%n": "(\\d{1,2})",
+        "%Y": "(\\d{4})",
+        "%y": "(\\d{2})",
+        "%H": "(\\d{2})",
+        "%G": "(\\d{1,2})",
+        "%h": "(\\d{2})",
+        "%g": "(\\d{1,2})",
+        "%i": "(\\d{2})",
+        "%s": "(\\d{2})",
+        "%a": "(am|pm)",
+        "%A": "(AM|PM)",
       };
 
-      for (let i in matchedParts) {
-        const part = matchedParts[i];
-        const value = parseInt(dateTimeParts[i]);
-        switch (part) {
-          case "d":
-            components.day = value;
-            break;
-          case "m":
-            components.month = +value - 1;
-            break;
-          case "j":
-            components.day = value;
-            break;
-          case "n":
-            components.month = +value - 1;
-            break;
-          case "y":
-            components.year = parseYear(value);
-            break;
-          case "Y":
-            components.year = value;
-            break;
-          case "M":
-            components.month = getIndexByValue(
-              this.options.dateFormat.month_short,
-              value
-            );
-            break;
-          case "F":
-            components.month = getIndexByValue(
-              this.options.dateFormat.month_full,
-              value
-            );
-            break;
-          case "h":
-            components.hour = value;
-            this.hasHours = value ? true : false;
-            break;
-          case "g":
-            components.hour = value;
-            this.hasHours = value ? true : false;
-            break;
-          case "G":
-            components.hour = value;
-            this.hasHours = value ? true : false;
-            break;
-          case "H":
-            components.hour = value;
-            this.hasHours = value ? true : false;
-            break;
-          case "i":
-            components.minute = value;
-            break;
-          case "s":
-            components.second = value;
-            break;
-          default:
-            components.extra = value;
-            break;
+      // Build the regex pattern based on the format string
+      let regexPattern = formatString;
+      for (const [format, regex] of Object.entries(regexMap)) {
+        regexPattern = regexPattern.replace(format, regex);
+      }
+
+      const regex = new RegExp(regexPattern);
+      const matches = dateString.match(regex);
+
+      if (!matches) {
+        throw new Error(
+          `The date string "${dateString}" does not match the format string "${formatString}".`
+        );
+      }
+
+      const dateComponents = {
+        day: "01",
+        month: "01",
+        year: "1970",
+        hour: "00",
+        minute: "00",
+        second: "00",
+        amPm: "AM",
+      };
+
+      // Extract components based on the input format
+      let matchIndex = 1;
+      for (const part of formatString.match(/%[a-zA-Z]/g)) {
+        if (formatMap[part]) {
+          dateComponents[formatMap[part]] = matches[matchIndex++];
         }
       }
 
-      components.date = new Date(
-        components.year,
-        components.month,
-        components.day,
-        components.hour,
-        components.minute,
-        components.second
-      );
-      return components.date;
+      // Convert components to appropriate values
+      const day = parseInt(dateComponents.day, 10);
+      const month = parseInt(dateComponents.month, 10) - 1; // JavaScript months are 0-based
+      const year =
+        dateComponents.year.length === 2
+          ? (parseInt(dateComponents.year, 10) < 50 ? "20" : "19") +
+            dateComponents.year
+          : parseInt(dateComponents.year, 10);
+      const hour = parseInt(dateComponents.hour, 10);
+      const minute = parseInt(dateComponents.minute, 10);
+      const second = parseInt(dateComponents.second, 10);
 
-      function getIndexByValue(arr, value) {
-        return arr.findIndex((item) => item === value);
-      }
-
-      function parseYear(year) {
-        const currentYear = new Date().getFullYear();
-        const currentCentury = Math.floor(currentYear / 100) * 100;
-        const currentDecade = currentYear % 100;
-
-        if (year <= currentDecade) {
-          return currentCentury + year;
-        } else {
-          return currentCentury - 100 + year;
+      // Adjust for 12-hour clock if necessary
+      let finalHour = hour;
+      if (formatString.includes("%h") || formatString.includes("%g")) {
+        if (dateComponents.amPm.toLowerCase() === "pm" && hour < 12) {
+          finalHour += 12;
+        }
+        if (dateComponents.amPm.toLowerCase() === "am" && hour === 12) {
+          finalHour = 0;
         }
       }
+
+      // Create a Date object
+      const dateObject = new Date(year, month, day, finalHour, minute, second);
+
+      return dateObject;
     },
 
     /**
@@ -9491,7 +9471,7 @@
      * @returns {Function} - Returns the debounced function.
      */
     debounce: function (func, wait) {
-      return function (...args) {
+      return (...args) => {
         const context = this;
         clearTimeout(this.debounceTimeout);
         this.debounceTimeout = setTimeout(
