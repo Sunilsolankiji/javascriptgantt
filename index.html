@@ -425,6 +425,10 @@
       ZT_Gantt.options.taskColor = true;
       ZT_Gantt.options.taskOpacity = 0.7;
       ZT_Gantt.options.links = [
+        // 0 is  finish_to_start  
+        // 1 is  start_to_start  
+        // 2 is  finish_to_finish  
+        // 3 is  start_to_finish 
         { id: 1, source: 2, target: 23, type: 1 },
         { id: 2, source: 3, target: 6, type: 2 },
         { id: 3, source: 4, target: 23, type: 3 },

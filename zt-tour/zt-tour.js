@@ -161,7 +161,7 @@
     }
 
     removeAnnouncement(){
-      removeHint(true);
+      this.removeHint(true);
     }
 
     highlightStep(currentStep) {
@@ -468,7 +468,6 @@
           arrowSide = "right";
           arrowAlignment = "end";
         }
-      } else {
       }
 
       if (!arrowSide) {
@@ -1060,6 +1059,7 @@
 
     refreshStep() {
       const currentStep = this.getOption("currentStep");
+      if(!currentStep) return;
       const step = this.getOption("steps")[currentStep];
       const element = document.querySelector(step.element);
       this.trackActiveElement(element);

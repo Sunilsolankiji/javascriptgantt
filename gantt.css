@@ -304,6 +304,11 @@
   margin: 0 auto;
 }
 
+.zt-gantt-left-layout-resizer-wrap .zt-gantt-left-layout-resizer.resizing,
+.zt-gantt-timeline-resizer-wrap .zt-gantt-timeline-resizer.resizing {
+--resizer-background: #218eed;
+}
+
 .zt-gantt-grid-data {
   width: 100%;
   min-width: 100%;
