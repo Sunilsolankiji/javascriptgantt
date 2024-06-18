@@ -306,7 +306,7 @@
 
 .zt-gantt-left-layout-resizer-wrap .zt-gantt-left-layout-resizer.resizing,
 .zt-gantt-timeline-resizer-wrap .zt-gantt-timeline-resizer.resizing {
---resizer-background: #218eed;
+  --resizer-background: #218eed;
 }
 
 .zt-gantt-grid-data {
@@ -1139,4 +1139,19 @@
 .zt-gantt-inline-editor-wraper > select {
   height: 100%;
   width: 100%;
+}
+
+.drop-area {
+  position: absolute;
+  z-index: -1;
+  width: 100%;
+  border: 2px solid var(--task-area-border);
+  background: var(--task-area-background);
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.zt-gantt-timeline-data:has(.task-dragging) .drop-area{
+  z-index: 101;
+  opacity: 1;
 }

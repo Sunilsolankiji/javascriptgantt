@@ -98,7 +98,7 @@
         row_height: opt.row_height || 50,
         sidebarWidth: opt.sidebarWidth || 400,
         customMarker: opt.customMarker || [],
-        fullCell: opt.fullCell || true,
+        fullCell: opt.fullCell !== false,
         taskColor: opt.taskColor || false,
         taskOpacity: opt.taskOpacity || 0.8,
         addLinks: opt.addLinks || false,
@@ -112,6 +112,7 @@
         ctrlKeyRequiredForMouseScroll:
           opt.ctrlKeyRequiredForMouseScroll !== false,
         sort: opt.sort || false,
+        dropArea: opt.dropArea !== false,
         i18n: {
           hi: {
             month_full: [
@@ -2526,6 +2527,12 @@
       timelineDataContainer.classList.add("zt-gantt-timeline-data");
       timelineDataContainer.id = "zt-gantt-timeline-data";
 
+      if(this.options.dropArea){
+        const dropArea = document.createElement('div');
+        dropArea.classList.add('drop-area');
+        timelineDataContainer.appendChild(dropArea);
+      }
+
       const ztGanttTaskData = document.createElement("div");
       ztGanttTaskData.classList.add("zt-gantt-task-data");
 
@@ -3901,7 +3908,8 @@
         scrollThresholdBottom,
         scrollContainer,
         scrollThresholdRight,
-        scrollThresholdLeft;
+        scrollThresholdLeft,
+        allTaskbars;
 
       const timelineCellWidth = this.calculateGridWidth(task.start_date, "day");
 
@@ -3911,6 +3919,7 @@
       function handleMouseDown(event) {
         rightPanelScroll = document.getElementById("zt-gantt-timeline-cell");
         rightPanelScrollWidth = rightPanelScroll.scrollWidth;
+        allTaskbars = document.querySelectorAll(".zt-gantt-bar-task");
 
         scrollContainerTop =
           that.element.offsetTop + rightPanelScroll.offsetHeight;
@@ -3954,7 +3963,6 @@
         if (resizeTask === true) {
           let parentTask;
           const taskbarIndex = Math.floor(taskBar.offsetTop / that.options.row_height);
-          const allTaskbars = document.querySelectorAll(".zt-gantt-bar-task");
           const currentPosTaskbar = allTaskbars[taskbarIndex];
           const isTaskbarIndexInRange = taskbarIndex > -1 && taskbarIndex < allTaskbars.length;
           const taskParentId = currentPosTaskbar?.getAttribute("task-parent");
@@ -4164,6 +4172,21 @@
             }px`;
           }
           taskBar.classList.add("task-dragging");
+
+          if(that.options.dropArea){
+            const taskbarIndex = Math.floor(taskBar.offsetTop / that.options.row_height);
+            const currentPosTaskbar = allTaskbars[taskbarIndex];
+            const isTaskbarIndexInRange = taskbarIndex > -1 && taskbarIndex < allTaskbars.length;
+            if(isTaskbarIndexInRange){
+              const taskPos = currentPosTaskbar.getAttribute('task-parent');
+              const pos = taskPos?.slice(0,-1) || taskPos;
+              const rows = document.querySelectorAll(`[zt-gantt-data-task-id^="${pos}"].zt-gantt-task-row`);
+              const dropAreaHeight = rows[rows.length-1].offsetTop - rows[0].offsetTop + that.options.row_height;
+              const dropArea = document.querySelector('.drop-area');
+              dropArea.style.top = `${rows[0].offsetTop}px`
+              dropArea.style.height = `${dropAreaHeight}px`
+            }
+          }
 
           const taskbarOffsetLeft = taskBar.offsetLeft;
           const taskbarOffsetWith = taskBar.offsetWidth;
