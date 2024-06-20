@@ -409,6 +409,7 @@
   border: 1px solid var(--taskbar-border);
   border-radius: 3px;
   text-align: center;
+  transition: background-color border-color 0.15s ease;
 }
 
 .zt-gantt-bar-task.zt-gantt-bar-parent-task {

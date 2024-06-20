@@ -18,6 +18,8 @@
   class ztGantt {
     #arrangeData = true;
     #ganttHeight = 0;
+    #debounceTimers = new Map();
+    #searchedData = undefined;
     #dateFormat = {
       month_full: [
         "January",
@@ -107,7 +109,7 @@
         splitTask: opt.splitTask || false,
         links: opt.links || [],
         selectAreaOnDrag: opt.selectAreaOnDrag || false,
-        taskProgress: opt.taskProgress !== false,
+        taskProgress: opt.taskProgress || true,
         mouseScroll: opt.mouseScroll || false,
         ctrlKeyRequiredForMouseScroll:
           opt.ctrlKeyRequiredForMouseScroll !== false,
@@ -2114,11 +2116,9 @@
 
       // loop through all the data
       for (let j = 0; j < options.data.length; j++) {
-        let isTaskExist = this.getTask(options.data[j].id, this.searchedData);
+        if (!this.isTaskNotInSearchedData(options.data[j].id)) {
 
-        if (this.searchedData && !isTaskExist) continue;
-
-        if (this.searchedData) {
+        if (this.#searchedData) {
           this.options.openedTasks.push(options.data[j].id);
         }
 
@@ -2343,6 +2343,7 @@
         }
 
         leftDataContainer.append(dataItem);
+      }
 
         if (!this.options.splitTask && options.data[j]?.children?.length) {
           this.createSidebarChild(
@@ -2527,7 +2528,7 @@
       timelineDataContainer.classList.add("zt-gantt-timeline-data");
       timelineDataContainer.id = "zt-gantt-timeline-data";
 
-      if(this.options.dropArea){
+      if (this.options.dropArea) {
         const dropArea = document.createElement('div');
         dropArea.classList.add('drop-area');
         timelineDataContainer.appendChild(dropArea);
@@ -2539,9 +2540,7 @@
       const timelineRowTemplate = this.createRowTemplate();
       // grid data loop
       for (let j = 0; j < options.data.length; j++) {
-        const isTaskExist = this.getTask(options.data[j].id, this.searchedData);
-
-        if (this.searchedData && !isTaskExist) continue;
+        if (!this.isTaskNotInSearchedData(options.data[j].id)) {
 
         const timelineRow = timelineRowTemplate.cloneNode(true);
         const isSelected = options.selectedRow === `${options.data[j].id}`;
@@ -2575,7 +2574,7 @@
         });
 
         ztGanttTaskData.append(timelineRow);
-
+      }
         // if children exist
         if (this.options.data[j]?.children?.length && !this.options.splitTask) {
           this.createTimelineChildBody(
@@ -2661,12 +2660,12 @@
         this.options.zoomLevel === "day"
           ? "%Y-%m-%d"
           : this.options.zoomLevel === "week"
-          ? "W-%W"
-          : this.options.zoomLevel === "month"
-          ? "M-%m"
-          : this.options.zoomLevel === "quarter"
-          ? "Q-%q"
-          : "%Y";
+            ? "W-%W"
+            : this.options.zoomLevel === "month"
+              ? "M-%m"
+              : this.options.zoomLevel === "quarter"
+                ? "Q-%q"
+                : "%Y";
 
       for (let k = 0; k < dates.length; k++) {
         let date = new Date(dates[k]);
@@ -2766,14 +2765,8 @@
       ztGanttBarsArea.id = "zt-gantt-bars-area";
 
       for (let j = 0; j < this.options.data.length; j++) {
-        let isTaskExist = this.getTask(
-          this.options.data[j].id,
-          this.searchedData
-        );
-
-        if (this.searchedData && !isTaskExist) {
-          continue;
-        }
+        let cellStartDate = this.options.startDate;
+        if (!this.isTaskNotInSearchedData(this.options.data[j].id)) {
 
         let start_date = new Date(this.options.data[j].start_date);
         let end_date = new Date(this.options.data[j].end_date);
@@ -2784,7 +2777,6 @@
           ));
         }
 
-        let cellStartDate = this.options.startDate;
         let isCellGreater = true;
         let cellBefore = this.getDates(
           cellStartDate,
@@ -2981,7 +2973,7 @@
 
         let taskProgress;
         if (
-          this.options.taskProgress === true &&
+          this.options.taskProgress(this.options.data[j]) &&
           this.options.data[j].type !== "milestone"
         ) {
           let progressPer = this.options.data[j].progress || 0;
@@ -3168,7 +3160,7 @@
         ztGanttBarsArea.append(ztGanttBarTask);
 
         rowCount += 1;
-
+      }
         // if children exist
         if (
           this.options.data[j].children &&
@@ -3282,8 +3274,8 @@
           (resizeAreaWidth < (minWidth || 80)
             ? minWidth || 80
             : resizeAreaWidth > maxWidth
-            ? maxWidth
-            : resizeAreaWidth) + "px";
+              ? maxWidth
+              : resizeAreaWidth) + "px";
 
         ztGanttLayout.append(resizeArea);
         document.addEventListener("mousemove", resize, false);
@@ -3301,8 +3293,8 @@
             colWidth < (minWidth || 80)
               ? minWidth || 80
               : colWidth > maxWidth
-              ? maxWidth
-              : colWidth;
+                ? maxWidth
+                : colWidth;
           for (let col of columns) {
             col.style.width = colWidth + "px";
           }
@@ -4019,12 +4011,12 @@
               if (
                 (taskParentId !== currentTaskParentId ||
                   taskPosition !== currentTaskPosition) &&
-                  isTaskbarIndexInRange &&
+                isTaskbarIndexInRange &&
                 taskParentId !==
-                  currentTaskParentId.slice(
-                    0,
-                    currentTaskParentId.length - 1
-                  ) &&
+                currentTaskParentId.slice(
+                  0,
+                  currentTaskParentId.length - 1
+                ) &&
                 !that.options.splitTask
               ) {
                 updateData(taskParentId, task, taskPositionId);
@@ -4165,23 +4157,22 @@
 
           taskBar.style.left = `${left}px`;
           if (!that.options.splitTask) {
-            taskBar.style.top = `${
-              startTop +
+            taskBar.style.top = `${startTop +
               (e.y - startY) -
               (startRightPanelScrollTop - rightPanelScroll.scrollTop)
-            }px`;
+              }px`;
           }
           taskBar.classList.add("task-dragging");
 
-          if(that.options.dropArea){
+          if (that.options.dropArea) {
             const taskbarIndex = Math.floor(taskBar.offsetTop / that.options.row_height);
             const currentPosTaskbar = allTaskbars[taskbarIndex];
             const isTaskbarIndexInRange = taskbarIndex > -1 && taskbarIndex < allTaskbars.length;
-            if(isTaskbarIndexInRange){
+            if (isTaskbarIndexInRange) {
               const taskPos = currentPosTaskbar.getAttribute('task-parent');
-              const pos = taskPos?.slice(0,-1) || taskPos;
+              const pos = taskPos?.slice(0, -1) || taskPos;
               const rows = document.querySelectorAll(`[zt-gantt-data-task-id^="${pos}"].zt-gantt-task-row`);
-              const dropAreaHeight = rows[rows.length-1].offsetTop - rows[0].offsetTop + that.options.row_height;
+              const dropAreaHeight = rows[rows.length - 1].offsetTop - rows[0].offsetTop + that.options.row_height;
               const dropArea = document.querySelector('.drop-area');
               dropArea.style.top = `${rows[0].offsetTop}px`
               dropArea.style.height = `${dropAreaHeight}px`
@@ -4193,15 +4184,15 @@
 
           let taskStartDate =
             that.dates[
-              Math.round(taskbarOffsetLeft / timelineCellWidth) -
-                (task.type === "milestone" ? 1 : 0)
+            Math.round(taskbarOffsetLeft / timelineCellWidth) -
+            (task.type === "milestone" ? 1 : 0)
             ];
 
           let taskEndDate =
             that.dates[
-              Math.round(
-                (taskbarOffsetLeft + taskbarOffsetWith) / timelineCellWidth
-              ) - 1
+            Math.round(
+              (taskbarOffsetLeft + taskbarOffsetWith) / timelineCellWidth
+            ) - 1
             ];
 
           // if taskStartDate is less than the gantt range
@@ -4215,7 +4206,7 @@
             let dateDiff =
               Math.round(
                 (taskbarOffsetLeft + taskbarOffsetWith) /
-                  that.calculateGridWidth(task.start_date)
+                that.calculateGridWidth(task.start_date)
               ) - that.dates.length;
 
             taskEndDate = that.add(
@@ -4285,9 +4276,9 @@
 
         let taskEndDate =
           that.dates[
-            Math.round(
-              (taskbarOffsetLeft + taskbarOffsetWith) / timelineCellWidth
-            ) - 1
+          Math.round(
+            (taskbarOffsetLeft + taskbarOffsetWith) / timelineCellWidth
+          ) - 1
           ];
 
         // emmit the dragTask event
@@ -4356,9 +4347,9 @@
 
       let taskCurrentEnd = new Date(
         this.dates[
-          Math.floor(
-            (targetOffsetLeft + targetOffsetWidth - 1) / timelineCellWidth
-          )
+        Math.floor(
+          (targetOffsetLeft + targetOffsetWidth - 1) / timelineCellWidth
+        )
         ]
       );
 
@@ -4452,9 +4443,8 @@
             `[task-parent="${currentParentSelector}"]`
           );
 
-          currentParentSelector = `${currentParentSelector}${
-            allParents[i + 1]
-          }`;
+          currentParentSelector = `${currentParentSelector}${allParents[i + 1]
+            }`;
 
           if (currentLevel) {
             let { start_date, end_date } =
@@ -4841,7 +4831,7 @@
       }
       const gridWidth = Math.max(
         elementWidth /
-          (level === "hour" && levelType !== "day" ? colCount * 24 : colCount),
+        (level === "hour" && levelType !== "day" ? colCount * 24 : colCount),
         minWidth
       );
       return gridWidth;
@@ -5206,17 +5196,13 @@
       if (taskData && taskData?.length > 0) {
         // loop through all the children
         for (let l = 0; l < taskData.length; l++) {
-          let isTaskExist = this.getTask(taskData[l].id, this.searchedData);
+          let taskParents = `${parentIdString}${l}`;
+          if (!this.isTaskNotInSearchedData(taskData[l].id)){
 
-          if(this.searchedData && !isTaskExist){
-            continue;
-          }
-
-          if (this.searchedData) {
+          if (this.#searchedData) {
             this.options.openedTasks.push(taskData[l].id);
           }
 
-          let taskParents = `${parentIdString}${l}`;
           let dataItem = document.createElement("div");
           dataItem.classList.add(
             "zt-gantt-row-item",
@@ -5442,7 +5428,7 @@
           }
 
           leftDataContainer.append(dataItem);
-
+        }
           this.createSidebarChild(
             taskData[l].children,
             options,
@@ -5471,10 +5457,9 @@
     ) {
       // loop through all the children
       for (let l = 0; l < taskData.length; l++) {
-        const isTaskExist = this.getTask(taskData[l].id, this.searchedData);
-        if (this.searchedData && !isTaskExist) continue;
-
         const taskParents = `${parentIdString}${l}`;
+        if (!this.isTaskNotInSearchedData(taskData[l].id)) {
+
         const timelineRow = timelineRowTemplate.cloneNode(true);
         const isRowSelected = options.selectedRow === `${taskData[l].id}`;
         const isCollapsed = !options.openedTasks.includes(taskData[l].parent);
@@ -5521,7 +5506,7 @@
         });
 
         ztGanttTaskData.append(timelineRow);
-
+      }
         // if children exist
         if (taskData[l]?.children?.length) {
           this.createTimelineChildBody(
@@ -5546,10 +5531,8 @@
       // loop through all children
       for (let k = 0; k < taskData.length; k++) {
         const taskParents = `${j}${k}`;
-        const isTaskExist = this.getTask(taskData[k].id, this.searchedData);
-        if (this.searchedData && !isTaskExist) {
-          continue;
-        }
+
+        if (!this.isTaskNotInSearchedData(taskData[k].id)) {
 
         let start_date = taskData[k].start_date;
         let end_date = taskData[k].end_date || taskData[k].start_date;
@@ -5566,12 +5549,12 @@
         if (cellBefore.length === 0) {
           cellBefore = this.getDates(start_date, cellStartDate);
           cellBefore = -(cellBefore.length - 1);
-        }else{
+        } else {
           cellBefore = cellBefore.length - 1;
         }
 
         const ztGanttBarTask = document.createElement("div");
-        
+
         if (taskData[k].type === "milestone") {
           ztGanttBarTask.classList.add(
             "zt-gantt-bar-task",
@@ -5770,7 +5753,7 @@
 
         let taskProgress;
         if (
-          this.options.taskProgress === true &&
+          this.options.taskProgress(taskData[k]) &&
           taskData[k].type !== "milestone"
         ) {
           let progressPer = taskData[k].progress || 0;
@@ -5778,9 +5761,8 @@
           taskProgressContainer.classList.add("zt-gantt-task-progress-wrapper");
           taskProgress = document.createElement("div");
           taskProgress.classList.add("zt-gantt-task-progress");
-          taskProgress.style.width = `${
-            progressPer > 100 ? 100 : progressPer
-          }%`;
+          taskProgress.style.width = `${progressPer > 100 ? 100 : progressPer
+            }%`;
 
           if (taskData[k].taskColor) {
             taskProgress.style.setProperty(
@@ -5794,9 +5776,8 @@
 
           const taskProgressDrag = document.createElement("div");
           taskProgressDrag.classList.add("zt-gantt-task-progress-drag");
-          taskProgressDrag.style.left = `${
-            progressPer > 100 ? 100 : progressPer
-          }%`;
+          taskProgressDrag.style.left = `${progressPer > 100 ? 100 : progressPer
+            }%`;
 
           // update the task progress onAfterTaskUpdate
           this.attachEvent("onAfterTaskUpdate", () => {
@@ -5827,17 +5808,17 @@
 
           setTimeout(() => {
             let backgroundColor = taskData[k]?.taskColor
-            if(!taskData[k]?.taskColor){
-            // Get the computed style of the element
-            const backgroundElement =
-              taskData[k].type === "milestone"
-                ? ztGanttBarTaskContent
-                : ztGanttBarTask;
-            const ztGanttBarTaskStyle =
-              window.getComputedStyle(backgroundElement);
-            // Get the background-color property value
-            backgroundColor =
-              ztGanttBarTaskStyle.getPropertyValue("background-color");
+            if (!taskData[k]?.taskColor) {
+              // Get the computed style of the element
+              const backgroundElement =
+                taskData[k].type === "milestone"
+                  ? ztGanttBarTaskContent
+                  : ztGanttBarTask;
+              const ztGanttBarTaskStyle =
+                window.getComputedStyle(backgroundElement);
+              // Get the background-color property value
+              backgroundColor =
+                ztGanttBarTaskStyle.getPropertyValue("background-color");
             }
             colorInput.value = taskData[k]?.taskColor || this.rgbaToHex(backgroundColor);
           }, 0);
@@ -5908,7 +5889,7 @@
         ztGanttBarsArea.append(ztGanttBarTask);
 
         rowCount += 1;
-
+      }
         if (
           taskData[k].children &&
           this.options.openedTasks.includes(taskData[k].id)
@@ -6070,11 +6051,8 @@
       }, 0);
       // loop through all the data
       for (let j = 0; j < options.data.length; j++) {
-        let isTaskExist = this.getTask(options.data[j].id, this.searchedData);
-        
-        if(this.searchedData && !isTaskExist){
-          continue;
-        }
+
+        if (this.isTaskNotInSearchedData(options.data[j].id)) continue;
 
         const dataItem = document.createElement("div");
         dataItem.classList.add("zt-gantt-row-item", "zt-gantt-d-flex");
@@ -6590,76 +6568,61 @@
      * @param {boolean} findRecursive - Indicates whether to find recursive parent-child tasks.
      */
     filterTask(condition, isFilter, findRecursive = false) {
-      const debouncedFilterTask = this.debounce(
-        (condition, isFilter, findRecursive = false) => {
-          if (!this.searchedData) {
+      let parents = new Set();
+      const that = this;
+      const debouncedFilterTask = this.debounce("filterTaskTimer",
+        (condition, isFilter) => {
+          if (!this.#searchedData) {
             this.oldOpenedTasks = [...this.options.openedTasks];
           }
 
           this.selectedRow = undefined;
-          const allData = [...this.options.data];
-          const that = this;
-          let parents = [];
+          const allData = this.options.data; // Avoid unnecessary cloning
 
           if (!isFilter) {
-            this.searchedData = undefined;
+            this.#searchedData = undefined;
             this.options.openedTasks = [];
             this.render();
             return;
           }
 
-          const filteredData = filterAndFlatten(allData, condition);
+          this.#searchedData = findTask(allData, condition);
 
-          this.searchedData = filteredData;
           this.render();
+        }, 300);
 
-          function filterAndFlatten(data, condition) {
-            return data.reduce((result, item) => {
-              if (condition(item)) {
-                if (!that.options.splitTask && !findRecursive) {
-                  const { ...flatItem } = item;
-                  result.push(flatItem);
-                } else {
-                  // find recursive parent child tasks
-                  result.push(item);
-                  let then = that;
-                  pushParent(item);
+      debouncedFilterTask(condition, isFilter);
 
-                  function pushParent(item) {
-                    if (
-                      item.parent &&
-                      item.parent != 0 &&
-                      !parents.includes(item.parent)
-                    ) {
-                      parents.push(item.parent);
-                      let parentItem = then.getTask(item.parent);
-                      if (parentItem) {
-                        parentItem.children = parentItem.children.filter(
-                          (child) => child.id == item.id
-                        );
-                        result.push(parentItem);
-                        pushParent(parentItem);
-                      }
-                    }
-                  }
-                }
-              }
-              if (Array.isArray(item.children)) {
-                // Recursively filter and flatten nested arrays
-                const filteredItems = filterAndFlatten(
-                  item.children,
-                  condition
-                );
-                result.push(...filteredItems);
-              }
-              return result;
-            }, []);
+      function findTask(data, condition) {
+        let result = new Set();
+        data.forEach(item => {
+          if (condition(item)) {
+            result.add(item.id);
+            if (that.options.splitTask || findRecursive) {
+              findParents(item, result);
+            }
           }
-        },
-        300
-      );
+          if (Array.isArray(item.children)) {
+            const filteredChildrenIds = findTask(item.children, condition);
+            filteredChildrenIds.forEach(id => result.add(id));
+          }
+        });
 
-      debouncedFilterTask(condition, isFilter, findRecursive);
+        return Array.from(result);
+      }
+
+      function findParents(item, result) {
+        while (item.parent && item.parent != 0 && !parents.has(item.parent)) {
+          parents.add(item.parent);
+          result.add(item.parent);
+          let parentItem = that.getTask(item.parent);
+          if (parentItem) {
+            item = parentItem;
+          } else {
+            break;
+          }
+        }
+      }
     }
 
     /**
@@ -6931,7 +6894,7 @@
         extraHeight =
           (this.options.row_height -
             Math.floor((this.options.row_height * 80) / 100)) /
-            2 -
+          2 -
           1;
 
       const taskLink = document.createElement("div");
@@ -7103,9 +7066,8 @@
         startLine.style.left = `${sourceLeft + sourceWidth}px`;
         startLine.style.top = `${sourceTop + rowHeight / 2}px`;
         if (sourceLeft + sourceWidth < targetLeft + targetWidth) {
-          startLine.style.width = `${
-            Math.abs(sourceLeft + sourceWidth - (targetLeft + targetWidth)) + 15
-          }px`;
+          startLine.style.width = `${Math.abs(sourceLeft + sourceWidth - (targetLeft + targetWidth)) + 15
+            }px`;
         } else {
           startLine.style.width = `${15}px`;
         }
@@ -7113,12 +7075,10 @@
         startLine.append(innerHorLine);
         taskLink.append(startLine);
 
-        middleLine.style.left = `${
-          startLine.offsetLeft + startLine.offsetWidth
-        }px`;
-        middleLine.style.top = `${
-          Math.min(sourceTop, targetTop) + rowHeight / 2
-        }px`;
+        middleLine.style.left = `${startLine.offsetLeft + startLine.offsetWidth
+          }px`;
+        middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2
+          }px`;
         middleLine.style.height = `${Math.abs(sourceTop - targetTop) + 2}px`;
         let innerLine = linkVerInnerLine.cloneNode(true);
         middleLine.append(innerLine);
@@ -7126,9 +7086,8 @@
 
         endLine.style.left = `${targetLeft + targetWidth}px`;
         endLine.style.top = `${targetTop + rowHeight / 2}px`;
-        endLine.style.width = `${
-          Math.abs(targetLeft + targetWidth - middleLine.offsetLeft) + 2
-        }px`;
+        endLine.style.width = `${Math.abs(targetLeft + targetWidth - middleLine.offsetLeft) + 2
+          }px`;
         let innerEndHorLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndHorLine);
         taskLink.append(endLine);
@@ -7136,9 +7095,8 @@
         // 3 is  start_to_finish
         if (sourceLeft > targetLeft + targetWidth) {
           startLine.style.left = `${targetLeft + targetWidth + 15}px`;
-          startLine.style.width = `${
-            sourceLeft - (targetLeft + targetWidth) - 15
-          }px`;
+          startLine.style.width = `${sourceLeft - (targetLeft + targetWidth) - 15
+            }px`;
         } else {
           startLine.style.left = `${sourceLeft - 15}px`;
           startLine.style.width = `${15}px`;
@@ -7156,19 +7114,15 @@
           );
           middleLine.style.left = `${startLine.offsetLeft}px`;
           if (sourceTop < targetTop) {
-            middleLine.style.top = `${
-              Math.min(sourceTop, targetTop) + rowHeight / 2
-            }px`;
-            middleLine.style.height = `${
-              source.offsetHeight / 2 + (extraHeight + 2)
-            }px`;
+            middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2
+              }px`;
+            middleLine.style.height = `${source.offsetHeight / 2 + (extraHeight + 2)
+              }px`;
           } else {
-            middleLine.style.top = `${
-              Math.min(sourceTop, targetTop) + rowHeight + (extraHeight + 2)
-            }px`;
-            middleLine.style.height = `${
-              Math.abs(sourceTop - targetTop) - rowHeight / 2 - extraHeight
-            }px`;
+            middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight + (extraHeight + 2)
+              }px`;
+            middleLine.style.height = `${Math.abs(sourceTop - targetTop) - rowHeight / 2 - extraHeight
+              }px`;
           }
           let innerLine = linkVerInnerLine.cloneNode(true);
           middleLine.append(innerLine);
@@ -7177,12 +7131,10 @@
           let horLine = document.createElement("div");
           horLine.classList.add("zt-gantt-hor-link-line", "zt-gantt-link-line");
           horLine.style.left = `${startLine.offsetLeft}px`;
-          horLine.style.top = `${
-            Math.min(sourceTop, targetTop) + source.offsetHeight + extraHeight
-          }px`;
-          horLine.style.width = `${
-            Math.abs(targetLeft + targetWidth - startLine.offsetLeft) + 15
-          }px`;
+          horLine.style.top = `${Math.min(sourceTop, targetTop) + source.offsetHeight + extraHeight
+            }px`;
+          horLine.style.width = `${Math.abs(targetLeft + targetWidth - startLine.offsetLeft) + 15
+            }px`;
           let innerHorLine = linkHorInnerLine.cloneNode(true);
           horLine.append(innerHorLine);
           taskLink.append(horLine);
@@ -7191,30 +7143,24 @@
         middleLine.style.left = `${targetLeft + targetWidth + 15}px`;
         if (sourceTop < targetTop) {
           if (sourceLeft > targetLeft + targetWidth) {
-            middleLine.style.top = `${
-              Math.min(sourceTop, targetTop) + rowHeight / 2
-            }px`;
-            middleLine.style.height = `${
-              Math.abs(sourceTop - targetTop) + 2
-            }px`;
+            middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2
+              }px`;
+            middleLine.style.height = `${Math.abs(sourceTop - targetTop) + 2
+              }px`;
           } else {
-            middleLine.style.top = `${
-              Math.min(sourceTop, targetTop) + rowHeight + extraHeight
-            }px`;
-            middleLine.style.height = `${
-              Math.abs(sourceTop - targetTop) - rowHeight / 2 - extraHeight + 2
-            }px`;
+            middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight + extraHeight
+              }px`;
+            middleLine.style.height = `${Math.abs(sourceTop - targetTop) - rowHeight / 2 - extraHeight + 2
+              }px`;
           }
         } else {
-          middleLine.style.top = `${
-            Math.min(sourceTop, targetTop) + rowHeight / 2
-          }px`;
+          middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2
+            }px`;
           if (sourceLeft > targetLeft + targetWidth) {
             middleLine.style.height = `${Math.abs(sourceTop - targetTop)}px`;
           } else {
-            middleLine.style.height = `${
-              source.offsetHeight / 2 + (extraHeight + 2)
-            }px`;
+            middleLine.style.height = `${source.offsetHeight / 2 + (extraHeight + 2)
+              }px`;
           }
         }
         let innerLine = linkVerInnerLine.cloneNode(true);
@@ -7265,7 +7211,7 @@
         extraHeight =
           (this.options.row_height -
             Math.floor((this.options.row_height * 80) / 100)) /
-            2 -
+          2 -
           1;
 
       const taskLink = document.createElement("div");
@@ -7435,9 +7381,8 @@
 
         endLine.style.left = `${Math.min(targetLeft, sourceLeft) - 15}px`;
         endLine.style.top = `${targetTop + rowHeight / 2}px`;
-        endLine.style.width = `${
-          targetLeft - (Math.min(targetLeft, sourceLeft) - 15)
-        }px`;
+        endLine.style.width = `${targetLeft - (Math.min(targetLeft, sourceLeft) - 15)
+          }px`;
         let innerEndLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndLine);
         taskLink.append(endLine);
@@ -7446,9 +7391,8 @@
         startLine.style.left = `${sourceLeft + sourceWidth}px`;
         startLine.style.top = `${sourceTop + rowHeight / 2}px`;
         if (sourceLeft + sourceWidth < targetLeft + targetWidth) {
-          startLine.style.width = `${
-            Math.abs(sourceLeft + sourceWidth - (targetLeft + targetWidth)) + 15
-          }px`;
+          startLine.style.width = `${Math.abs(sourceLeft + sourceWidth - (targetLeft + targetWidth)) + 15
+            }px`;
         } else {
           startLine.style.width = `${15}px`;
         }
@@ -7456,12 +7400,10 @@
         startLine.append(innerHorLine);
         taskLink.append(startLine);
 
-        middleLine.style.left = `${
-          Math.max(targetLeft + targetWidth, sourceLeft + sourceWidth) + 15
-        }px`;
-        middleLine.style.top = `${
-          Math.min(sourceTop, targetTop) + rowHeight / 2
-        }px`;
+        middleLine.style.left = `${Math.max(targetLeft + targetWidth, sourceLeft + sourceWidth) + 15
+          }px`;
+        middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2
+          }px`;
         middleLine.style.height = `${Math.abs(sourceTop - targetTop) + 2}px`;
         let innerLine = linkVerInnerLine.cloneNode(true);
         middleLine.append(innerLine);
@@ -7472,9 +7414,8 @@
         if (sourceLeft + sourceWidth < targetLeft + targetWidth) {
           endLine.style.width = `${15}px`;
         } else {
-          endLine.style.width = `${
-            Math.abs(targetLeft + targetWidth - (sourceLeft + sourceWidth)) + 15
-          }px`;
+          endLine.style.width = `${Math.abs(targetLeft + targetWidth - (sourceLeft + sourceWidth)) + 15
+            }px`;
         }
         let innerEndLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndLine);
@@ -7484,9 +7425,8 @@
         startLine.style.top = `${sourceTop + rowHeight / 2}px`;
         if (sourceLeft > targetLeft + targetWidth + 30) {
           startLine.style.left = `${targetLeft + targetWidth + 15}px`;
-          startLine.style.width = `${
-            sourceLeft - (targetLeft + targetWidth) - 15
-          }px`;
+          startLine.style.width = `${sourceLeft - (targetLeft + targetWidth) - 15
+            }px`;
         } else {
           startLine.style.left = `${sourceLeft - 15}px`;
           startLine.style.width = `${15}px`;
@@ -7503,12 +7443,10 @@
           );
           middleLine.style.left = `${sourceLeft - 15}px`;
           if (sourceTop < targetTop) {
-            middleLine.style.top = `${
-              Math.min(sourceTop, targetTop) + rowHeight / 2
-            }px`;
-            middleLine.style.height = `${
-              source.offsetHeight / 2 + (extraHeight + 2)
-            }px`;
+            middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2
+              }px`;
+            middleLine.style.height = `${source.offsetHeight / 2 + (extraHeight + 2)
+              }px`;
           } else {
             if (Math.abs(sourceTop - targetTop) <= rowHeight / 2) {
               middleLine.style.top =
@@ -7521,12 +7459,10 @@
                   sourceTop - targetTop - rowHeight / 2 - (extraHeight + 2)
                 ) + "px";
             } else {
-              middleLine.style.top = `${
-                Math.min(sourceTop, targetTop) + rowHeight + (extraHeight + 2)
-              }px`;
-              middleLine.style.height = `${
-                Math.abs(sourceTop - targetTop) - rowHeight / 2 - extraHeight
-              }px`;
+              middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight + (extraHeight + 2)
+                }px`;
+              middleLine.style.height = `${Math.abs(sourceTop - targetTop) - rowHeight / 2 - extraHeight
+                }px`;
             }
           }
           let innerLine = linkVerInnerLine.cloneNode(true);
@@ -7536,17 +7472,15 @@
           let horLine = document.createElement("div");
           horLine.classList.add("zt-gantt-hor-link-line", "zt-gantt-link-line");
           horLine.style.left = `${sourceLeft - 15}px`;
-          horLine.style.top = `${
-            Math.min(sourceTop, targetTop) + source.offsetHeight + extraHeight
-          }px`;
+          horLine.style.top = `${Math.min(sourceTop, targetTop) + source.offsetHeight + extraHeight
+            }px`;
           if (sourceLeft > targetLeft + targetWidth) {
             horLine.style.width = `${Math.abs(
               targetLeft + targetWidth + 15 - (sourceLeft - 15)
             )}px`;
           } else {
-            horLine.style.width = `${
-              Math.abs(targetLeft + targetWidth - sourceLeft) + 30
-            }px`;
+            horLine.style.width = `${Math.abs(targetLeft + targetWidth - sourceLeft) + 30
+              }px`;
           }
           let innerHorLine = linkHorInnerLine.cloneNode(true);
           horLine.append(innerHorLine);
@@ -7556,9 +7490,8 @@
         middleLine.style.left = `${targetLeft + targetWidth + 15}px`;
         if (sourceTop < targetTop) {
           if (sourceLeft - 15 >= targetLeft + targetWidth + 15) {
-            middleLine.style.top = `${
-              Math.min(sourceTop, targetTop) + rowHeight / 2 + 2
-            }px`;
+            middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2 + 2
+              }px`;
             middleLine.style.height = `${Math.abs(sourceTop - targetTop)}px`;
           } else {
             if (Math.abs(sourceTop - targetTop) <= rowHeight / 2) {
@@ -7572,27 +7505,23 @@
                   sourceTop - targetTop + rowHeight / 2 + extraHeight + 2
                 ) + "px";
             } else {
-              middleLine.style.top = `${
-                Math.min(sourceTop, targetTop) + rowHeight + extraHeight
-              }px`;
-              middleLine.style.height = `${
-                Math.abs(sourceTop - targetTop) -
+              middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight + extraHeight
+                }px`;
+              middleLine.style.height = `${Math.abs(sourceTop - targetTop) -
                 rowHeight / 2 -
                 extraHeight +
                 2
-              }px`;
+                }px`;
             }
           }
         } else {
-          middleLine.style.top = `${
-            Math.min(sourceTop, targetTop) + rowHeight / 2
-          }px`;
+          middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2
+            }px`;
           if (sourceLeft - 15 >= targetLeft + targetWidth + 15) {
             middleLine.style.height = `${Math.abs(sourceTop - targetTop)}px`;
           } else {
-            middleLine.style.height = `${
-              source.offsetHeight / 2 + (extraHeight + 2)
-            }px`;
+            middleLine.style.height = `${source.offsetHeight / 2 + (extraHeight + 2)
+              }px`;
           }
         }
         let innerLine = linkVerInnerLine.cloneNode(true);
@@ -7679,10 +7608,10 @@
             type === "left" && targetType === "left"
               ? 1
               : type === "right" && targetType === "right"
-              ? 2
-              : type === "left" && targetType === "right"
-              ? 3
-              : 0;
+                ? 2
+                : type === "left" && targetType === "right"
+                  ? 3
+                  : 0;
           let isLinkExist = that.options.links.some(
             (obj) =>
               obj.source == sourceId &&
@@ -7755,15 +7684,15 @@
           source.offsetTop + source.offsetHeight / 2 + "px";
         let base = Math.abs(
           e.clientX -
-            (startX -
-              (type === "left" && e.clientX - startX > 0
-                ? -20
-                : type === "left" && e.clientX - startX < 0
+          (startX -
+            (type === "left" && e.clientX - startX > 0
+              ? -20
+              : type === "left" && e.clientX - startX < 0
                 ? 0
                 : e.clientX - startX > 0
-                ? 0
-                : 20) -
-              rightPanelScroll.scrollLeft)
+                  ? 0
+                  : 20) -
+            rightPanelScroll.scrollLeft)
         );
         let perp = Math.abs(e.clientY - (startY - rightPanelScroll.scrollTop));
         let hypo = Math.sqrt(base * base + perp * perp);
@@ -8038,9 +7967,8 @@
         taskArea.id = "task-area";
         taskArea.classList.add("task-area");
         taskArea.style.top = `${taskAreaRow.offsetTop}px`;
-        taskArea.style.left = `${
-          e.clientX - timeLine.offsetLeft + timeLineContainer.scrollLeft
-        }px`;
+        taskArea.style.left = `${e.clientX - timeLine.offsetLeft + timeLineContainer.scrollLeft
+          }px`;
         taskArea.style.height = `${taskAreaRow.offsetHeight}px`;
 
         let allTaskBars = taskBarArea.querySelectorAll(".zt-gantt-bar-task");
@@ -8069,10 +7997,10 @@
         if (hasMoved === true) {
           taskStartDate =
             that.dates[
-              Math.floor(
-                (taskArea.offsetLeft < 0 ? 0 : taskArea.offsetLeft) /
-                  that.calculateGridWidth(end_date, "day")
-              )
+            Math.floor(
+              (taskArea.offsetLeft < 0 ? 0 : taskArea.offsetLeft) /
+              that.calculateGridWidth(end_date, "day")
+            )
             ];
 
           let isAtLastCol =
@@ -8082,7 +8010,7 @@
           if (!isAtLastCol) {
             dateIndex = Math.floor(
               (taskArea.offsetLeft + taskArea.offsetWidth) /
-                that.calculateGridWidth(end_date, "day")
+              that.calculateGridWidth(end_date, "day")
             );
           } else {
             dateIndex = that.dates.length - 1;
@@ -8109,25 +8037,22 @@
           e.clientX + timeLineContainer.scrollLeft - that.element.offsetLeft <
           startX
         ) {
-          taskArea.style.left = `${
-            e.clientX -
+          taskArea.style.left = `${e.clientX -
             timeLine.offsetLeft +
             timeLineContainer.scrollLeft -
             that.element.offsetLeft
-          }px`;
-          taskArea.style.width = `${
-            startX -
+            }px`;
+          taskArea.style.width = `${startX -
             (e.clientX - that.element.offsetLeft) -
             timeLineContainer.scrollLeft
-          }px`;
+            }px`;
         } else {
           taskArea.style.left = `${startX - timeLine.offsetLeft}px`;
-          taskArea.style.width = `${
-            e.clientX -
+          taskArea.style.width = `${e.clientX -
             startX +
             timeLineContainer.scrollLeft -
             that.element.offsetLeft
-          }px`;
+            }px`;
         }
         let isTaskAreaExist = document.querySelector("#task-area");
         if (!isTaskAreaExist) {
@@ -8247,8 +8172,8 @@
           progressWidth > taskBar.offsetWidth
             ? taskBar.offsetWidth
             : progressWidth < 0
-            ? 0
-            : progressWidth;
+              ? 0
+              : progressWidth;
 
         progress.style.width = `${progressWidth}px`;
         resizer.style.left = `${progressWidth}px`;
@@ -8401,10 +8326,10 @@
     calculateTaskEndDate(target, task) {
       let taskEndDate =
         this.dates[
-          Math.round(
-            (target.offsetLeft + target.offsetWidth) /
-              this.calculateGridWidth(task.start_date, "day")
-          ) - 1
+        Math.round(
+          (target.offsetLeft + target.offsetWidth) /
+          this.calculateGridWidth(task.start_date, "day")
+        ) - 1
         ];
 
       // if taskEndDate is greater than the gantt range
@@ -8412,7 +8337,7 @@
         let dateDiff =
           Math.round(
             (target.offsetLeft + target.offsetWidth) /
-              this.calculateGridWidth(task.start_date, "day")
+            this.calculateGridWidth(task.start_date, "day")
           ) - this.dates.length;
         taskEndDate = this.add(
           new Date(this.dates[this.dates.length - 1]),
@@ -8630,7 +8555,7 @@
       const year =
         dateComponents.year.length === 2
           ? (parseInt(dateComponents.year, 10) < 50 ? "20" : "19") +
-            dateComponents.year
+          dateComponents.year
           : parseInt(dateComponents.year, 10);
       const hour = parseInt(dateComponents.hour, 10);
       const minute = parseInt(dateComponents.minute, 10);
@@ -8663,129 +8588,88 @@
      * @param {HTMLElement} taskbarContent - The taskbar content element to change the color of.
      * @param {Object} task - The task object associated with the taskbar.
      */
-    changeTaskbarColor(
-      taskbar,
-      colorInput,
-      taskProgress,
-      taskbarContent,
-      task
-    ) {
-      let that = this;
-      colorInput.addEventListener("change", (e) => {
+    changeTaskbarColor(taskbar, colorInput, taskProgress, taskbarContent, task) {
+      const applyColors = (color) => {
         if (task.type === "milestone") {
-          taskbarContent.style.setProperty(
-            "background-color",
-            e.target.value,
-            "important"
-          );
-
-          taskbarContent.style.setProperty(
-            "border-color",
-            e.target.value,
-            "important"
-          );
+          taskbarContent.style.setProperty("background-color", color, "important");
+          taskbarContent.style.setProperty("border-color", color, "important");
         } else {
-          taskbar.style.setProperty(
-            "background-color",
-            that.changeOpacity(e.target.value, that.options.taskOpacity),
-            "important"
-          );
-
-          taskbar.style.setProperty(
-            "border-color",
-            e.target.value,
-            "important"
-          );
+          console.log(color, "colorcolor");
+          const taskColor = this.options.taskProgress(task) ? this.changeOpacity(color, this.options.taskOpacity) : color;
+          taskbar.style.setProperty("background-color", taskColor, "important");
+          taskbar.style.setProperty("border-color", color, "important");
         }
         if (taskProgress) {
-          taskProgress.style.setProperty(
-            "background-color",
-            e.target.value,
-            "important"
-          );
+          taskProgress.style.setProperty("background-color", color, "important");
         }
+      };
 
-        setColorToOriginalData(e.target.value);
-
-        // handle custom event
-        that.dispatchEvent("onColorChange", {
-          taskColor: e.target.value,
-          task,
-        });
-      });
-
-      colorInput.addEventListener("input", function (e) {
-        if (task.type === "milestone") {
-          taskbarContent.style.setProperty(
-            "background-color",
-            e.target.value,
-            "important"
-          );
-
-          taskbarContent.style.setProperty(
-            "border-color",
-            e.target.value,
-            "important"
-          );
-        } else {
-          taskbar.style.setProperty(
-            "background-color",
-            that.changeOpacity(e.target.value, that.options.taskOpacity),
-            "important"
-          );
-
-          taskbar.style.setProperty(
-            "border-color",
-            e.target.value,
-            "important"
-          );
-        }
-
-        if (taskProgress) {
-          taskProgress.style.setProperty(
-            "background-color",
-            e.target.value,
-            "important"
-          );
-        }
-      });
-
-      function setColorToOriginalData(color) {
+      const setColorToOriginalData = (color) => {
         task.taskColor = color;
-        that.originalData.findIndex((item) => {
-          if (item.id == task.id) {
-            item.taskColor = color;
-          }
-        });
-      }
+        const taskIndex = this.originalData.findIndex((item) => item.id == task.id);
+        if (taskIndex !== -1) {
+          this.originalData[taskIndex].taskColor = color;
+        }
+      };
+
+      const debouncedHandleColorChange = this.debounce("changeColorTimer", (e) => {
+        const color = e.target.value;
+        applyColors(color);
+        setColorToOriginalData(color);
+        this.dispatchEvent("onColorChange", { taskColor: color, task });
+      }, 20);
+
+      colorInput.addEventListener("change", debouncedHandleColorChange);
+      colorInput.addEventListener("input", debouncedHandleColorChange);
     }
 
     changeOpacity(color, opacity) {
-      const tempElement = document.createElement("div");
-      tempElement.style.color = color;
-      document.body.appendChild(tempElement);
-      let computedColor = window.getComputedStyle(tempElement).color;
-      document.body.removeChild(tempElement);
+      const hexToRgb = (hex) => {
+        let r = 0, g = 0, b = 0;
+        if (hex.length === 4) {
+          r = parseInt(hex[1] + hex[1], 16);
+          g = parseInt(hex[2] + hex[2], 16);
+          b = parseInt(hex[3] + hex[3], 16);
+        } else if (hex.length === 7) {
+          r = parseInt(hex[1] + hex[2], 16);
+          g = parseInt(hex[3] + hex[4], 16);
+          b = parseInt(hex[5] + hex[6], 16);
+        }
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+      };
 
-      let rgbaColor = computedColor
-        .replace("rgb", "rgba")
-        .replace(")", "," + opacity + ")");
-      return rgbaColor;
+      const rgbToRgba = (rgb) => {
+        const rgbValues = rgb.match(/\d+/g);
+        return `rgba(${rgbValues[0]}, ${rgbValues[1]}, ${rgbValues[2]}, ${opacity})`;
+      };
+
+      if (color.startsWith('#')) {
+        return hexToRgb(color);
+      } else if (color.startsWith('rgb')) {
+        return rgbToRgba(color);
+      } else {
+        // Handle named colors
+        const tempElement = document.createElement("div");
+        tempElement.style.color = color;
+        document.body.appendChild(tempElement);
+        const computedColor = window.getComputedStyle(tempElement).color;
+        document.body.removeChild(tempElement);
+        return rgbToRgba(computedColor);
+      }
     }
 
     // Function to convert RGBA to HEX
     rgbaToHex(rgbaColor) {
-      if (rgbaColor) {
-        const rgbaArray = rgbaColor.match(/\d+/g);
-        const hexValue =
-          "#" +
-          ("0" + parseInt(rgbaArray[0], 10).toString(16)).slice(-2) +
-          ("0" + parseInt(rgbaArray[1], 10).toString(16)).slice(-2) +
-          ("0" + parseInt(rgbaArray[2], 10).toString(16)).slice(-2);
-        return hexValue;
-      }
-      return false;
+      if (!rgbaColor) return false;
+
+      const rgbaArray = rgbaColor.match(/\d+/g).map(Number);
+      const hexValue = rgbaArray.slice(0, 3)
+        .map(num => num.toString(16).padStart(2, '0'))
+        .join('');
+
+      return `#${hexValue}`;
     }
+
 
     /**
      * Method to set the local language to the gantt.
@@ -8880,9 +8764,9 @@
             for (let j = 0; j < tasksArray.length; j++) {
               if (
                 new Date(tasksArray[j].start_date).getTime() ===
-                  new Date(task.start_date).getTime() &&
+                new Date(task.start_date).getTime() &&
                 new Date(tasksArray[j].end_date).getTime() ===
-                  new Date(task.end_date).getTime()
+                new Date(task.end_date).getTime()
               ) {
                 flag = true;
                 tasksArray[j] = task;
@@ -8911,10 +8795,9 @@
         for (let k = 0; k < tasksData[j].length; k++) {
           const task = tasksData[j][k];
 
-          let isTaskExist = this.getTask(task.id, this.searchedData);
-          if (!this.searchedData || isTaskExist) {
-            rowCount = j;
-          }
+          if (this.isTaskNotInSearchedData(task.id)) continue;
+
+          rowCount = j;
 
           let start_date = task.start_date;
           let end_date = task.end_date || task.start_date;
@@ -9117,7 +9000,7 @@
           let taskDates = this.getDates(start_date, end_date);
 
           let taskProgress;
-          if (this.options.taskProgress === true && task.type !== "milestone") {
+          if (this.options.taskProgress(task) && task.type !== "milestone") {
             let progressPer = task.progress || 0;
             let taskProgressContainer = document.createElement("div");
             taskProgressContainer.classList.add(
@@ -9125,9 +9008,8 @@
             );
             taskProgress = document.createElement("div");
             taskProgress.classList.add("zt-gantt-task-progress");
-            taskProgress.style.width = `${
-              progressPer > 100 ? 100 : progressPer
-            }%`;
+            taskProgress.style.width = `${progressPer > 100 ? 100 : progressPer
+              }%`;
 
             if (task.taskColor) {
               taskProgress.style.setProperty(
@@ -9141,9 +9023,8 @@
 
             let taskProgressDrag = document.createElement("div");
             taskProgressDrag.classList.add("zt-gantt-task-progress-drag");
-            taskProgressDrag.style.left = `${
-              progressPer > 100 ? 100 : progressPer
-            }%`;
+            taskProgressDrag.style.left = `${progressPer > 100 ? 100 : progressPer
+              }%`;
 
             // update the task progress onAfterTaskUpdate
             this.attachEvent("onAfterTaskUpdate", () => {
@@ -9291,9 +9172,7 @@
             }
           });
 
-          if (!this.searchedData || isTaskExist) {
-            ztGanttBarsArea.append(ztGanttBarTask);
-          }
+          ztGanttBarsArea.append(ztGanttBarTask);
         }
 
         const barsArea = document.getElementById("zt-gantt-bars-area");
@@ -9559,14 +9438,17 @@
      * @param {number} wait - The time in milliseconds to wait before executing the debounced function.
      * @returns {Function} - Returns the debounced function.
      */
-    debounce(func, wait) {
+    debounce(key, func, wait) {
       return (...args) => {
         const context = this;
-        clearTimeout(this.debounceTimeout);
-        this.debounceTimeout = setTimeout(
+        if (this.#debounceTimers.has(key)) {
+          clearTimeout(this.#debounceTimers.get(key));
+        }
+        const timeoutId = setTimeout(
           () => func.apply(context, args),
           wait
         );
+        this.#debounceTimers.set(key, timeoutId);
       };
     }
 
@@ -9810,6 +9692,15 @@
       }
 
       return this.templates[template];
+    }
+
+    /**
+     * Method to check if a task is not present in the searched data.
+     * @param {string | number} taskId - The ID of the task to check.
+     * @returns {boolean} - True if the task is not in the searched data, false otherwise.
+     */
+    isTaskNotInSearchedData(taskId) {
+      return !!(this.#searchedData && !this.#searchedData.includes(taskId));
     }
   }
 
