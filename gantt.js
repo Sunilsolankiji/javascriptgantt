@@ -4442,10 +4442,11 @@
           const currentParent = document.querySelector(
             `[task-parent="${currentParentSelector}"]`
           );
-
+          
           currentParentSelector = `${currentParentSelector}${allParents[i + 1]
-            }`;
-
+          }`;
+          
+          if(!currentParent) continue;
           if (currentLevel) {
             let { start_date, end_date } =
               that.getLargeAndSmallDate(currentTask);
