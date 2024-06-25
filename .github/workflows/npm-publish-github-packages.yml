@@ -14,11 +14,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
 
       - name: Install dependencies
         run: npm install
-        # Use npm install instead of npm ci to generate package-lock.json
 
   publish-gpr:
     needs: build
@@ -30,14 +29,15 @@ jobs:
       - name: Setup Node.js for publishing
         uses: actions/setup-node@v3
         with:
-          node-version: 16
-          registry-url: https://npm.pkg.github.com/
+          node-version: 18
 
-      - name: Install dependencies
+      - name: Configure npm registry
+        run: echo "//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}" >> .npmrc
+
+      - name: Install dependencies for publishing
         run: npm install
-        # Use npm ci for clean install with package-lock.json
 
       - name: Publish to GitHub Packages
         run: npm publish
         env:
-          NODE_AUTH_TOKEN: ${{secrets.AUTH_GITHUB_TOKEN}}
+          NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
