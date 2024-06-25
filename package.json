@@ -1,0 +1,23 @@
+{
+    "name": "jsgantt",
+    "version": "2.3.0",
+    "description": "An open source JavaScript Gantt. This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management.",
+    "main": "src/gantt.js",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/Sunilsolankiji/jsgantt"
+    },
+    "keywords": [
+      "gantt",
+      "chart",
+      "gantt chart",
+      "scheduler",
+      "timeline"
+    ],
+    "author": "Sunil Solanki",
+    "license": "MIT",
+    "bugs": {
+      "url": "https://github.com/Sunilsolankiji/jsgantt/issues"
+    },
+    "homepage": "https://github.com/Sunilsolankiji/jsgantt#readme"
+}
