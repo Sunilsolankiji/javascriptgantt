@@ -1,8 +1,8 @@
-# ztGantt Chart Library Documentation  
+# jsGantt Chart Library Documentation  
   
 
 ## Introduction  
-Welcome to the documentation for [ztGantt](https://zehntech.github.io/zt-gantt/) Chart Library. This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management. This documentation will guide you through the installation process, usage instructions, and available features of the library.   
+Welcome to the documentation for [jsGantt](https://zehntech.github.io/zt-gantt/) Chart Library. This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management. This documentation will guide you through the installation process, usage instructions, and available features of the library.   
   
 
 ## Table of Contents 
@@ -20,7 +20,7 @@ To integrate the Gantt Chart Library, adhere to the steps below:
   1. Download the library files from our website or repository.  
   2. Integrate the library files (`gantt.js` and `gantt.css`) into your project.  
   3. Link the library files in your HTML file.  
-  4. You're now ready to start using the ztGantt Chart Library!    
+  4. You're now ready to start using the jsGantt Chart Library!    
 
 <a href="https://zehntech.github.io/zt-gantt/">
   <img src="./src/assets/images/zt-gantt-screenshot.png">
@@ -47,7 +47,7 @@ To create a basic Gantt Chart, follow these steps:
 
 ~~~js
 let element = document.getElementById("gantt_here"); 
-let gantt = new ztGantt(element);  
+let gantt = new jsGantt(element);  
 gantt.options.columns = [
   {
     name: "text",
@@ -106,7 +106,7 @@ gantt.render();
 
 [Live demo](https://zehntech.github.io/zt-gantt/)      
 
-**Complete Documentation:** [ztGantt Documentation](./docs/Gantt-Chart-Documentation.pdf)  
+**Complete Documentation:** [jsGantt Documentation](./docs/Gantt-Chart-Documentation.pdf)  
   
   ---  
   
