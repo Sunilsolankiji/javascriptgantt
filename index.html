@@ -16,7 +16,7 @@
     <script src="./src/gantt.js"></script>
   </head>
   <body>
-    <div class="zt-gantt-d-flex action-container"> 
+    <div class="js-gantt-d-flex action-container"> 
       <div class="collapse-container">
         <span>Collapse</span>
         <input
@@ -145,7 +145,7 @@
         oninput="searchTask(event)"
       />
     </div>
-    <div id="ZT-Gantt"></div>
+    <div id="js-gantt"></div>
   </div>
   <script src="./src/assets/zt-tour/zt-tour.js"></script>
     <script>
@@ -321,7 +321,7 @@
       //   }
       // }
 
-      let element = document.getElementById("ZT-Gantt");
+      let element = document.getElementById("js-gantt");
       let ZT_Gantt = new ztGantt(element);
       window.ztGantt = ZT_Gantt;
 
@@ -421,7 +421,7 @@
         return true;
       };
 
-      ZT_Gantt.options.exportApi = "https://zt-gantt.zehntech.net/";
+      ZT_Gantt.options.exportApi = "https://js-gantt.zehntech.net/";
       // ZT_Gantt.options.exportApi = "http://192.168.0.155:8300/";
       ZT_Gantt.options.taskColor = true;
       ZT_Gantt.options.taskOpacity = 0.7;
@@ -852,8 +852,8 @@
 
       function exportChange(e) {
         let stylesheet = [
-          "https://zehntech.github.io/zt-gantt/gantt.css",
-          "https://zehntech.github.io/zt-gantt/style.css",
+          "https://zehntech.github.io/js-gantt/gantt.css",
+          "https://zehntech.github.io/js-gantt/style.css",
         ];
         if (e.target.value === "png") {
           ZT_Gantt.exportToPNG("ztGanttChart", stylesheet);
@@ -1087,7 +1087,7 @@
               },
             },
             {
-              element: "#ZT-Gantt",
+              element: "#js-gantt",
               popup: {
                 title: "Gantt Chart",
                 description: "The Gantt Chart view provides a visual representation of project tasks and their timelines, allowing you to efficiently manage project schedules, dependencies, and progress. Easily track and plan tasks, making project management a seamless experience.",
