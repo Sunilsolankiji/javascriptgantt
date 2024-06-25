@@ -34,7 +34,7 @@ jobs:
           registry-url: https://npm.pkg.github.com/
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
         # Use npm ci for clean install with package-lock.json
 
       - name: Publish to GitHub Packages
