@@ -2033,6 +2033,7 @@
 
       // head loop of left side
       for (let i = 0; i < options.columns.length; i++) {
+        const column = options.columns[i]
         let headCell = document.createElement("div");
         headCell.classList.add("head-cell");
 
@@ -2040,19 +2041,19 @@
         this.addClassesFromFunction(
           this.templates.grid_header_class,
           headCell,
-          options.columns[i],
+          column,
           i
         );
 
         headCell.setAttribute("data-column-index", i);
-        headCell.style.width = (options.columns[i].width || 80) + "px";
-        headCell.innerHTML = options.columns[i].label;
+        headCell.style.width = (column.width || 80) + "px";
+        headCell.innerHTML = column.label;
         headCellContainer.append(headCell);
 
         if (this.options.sort) {
           headCell.addEventListener("click", () => {
             let isAsc = !this.options?.sortOption?.isAsc;
-            const sortBy = options.columns[i]?.name;
+            const sortBy = column?.name;
 
             if (sortBy !== this.options?.sortOption?.sortBy) {
               isAsc = true; // Set isAsc to true by default if sortBy is different
@@ -2064,7 +2065,7 @@
           // add sort icon to the current sorting column
           if (
             this.options?.sortOption &&
-            this.options?.sortOption?.sortBy == options.columns[i]?.name
+            this.options?.sortOption?.sortBy == column?.name
           ) {
             const sortIcon = document.createElement("div");
             let isAsc = !this.options?.sortOption?.isAsc;
@@ -2087,11 +2088,11 @@
             0
           );
 
-          if (options.columns[i].resize === true) {
+          if (column.resize === true) {
             const resizer = document.createElement("div");
             resizer.classList.add("js-gantt-col-resizer");
             resizerWrap.append(resizer);
-            resizerLeft += options.columns[i].width || 80;
+            resizerLeft += column.width || 80;
             resizerWrap.style.left = resizerLeft + "px";
             headCellContainer.append(resizerWrap);
             this.resizeColumns(
@@ -2099,8 +2100,8 @@
               `data-column-index="${i}"`,
               headCell,
               headCellContainer,
-              options.columns[i].min_width,
-              options.columns[i].max_width,
+              column.min_width,
+              column.max_width,
               i,
               sidebar,
               false
@@ -2116,23 +2117,22 @@
 
       // loop through all the data
       for (let j = 0; j < options.data.length; j++) {
-        if (!this.isTaskNotInSearchedData(options.data[j].id)) {
+        const task = this.options.data[j];
+        if (!this.isTaskNotInSearchedData(task.id)) {
           if (this.#searchedData) {
-            this.options.openedTasks.push(options.data[j].id);
+            this.options.openedTasks.push(task.id);
           }
 
           const dataItem = document.createElement("div");
           dataItem.classList.add(
             "js-gantt-row-item",
             "js-gantt-d-flex",
-            this.options.selectedRow === `${options.data[j].id}`
+            this.options.selectedRow === `${task.id}`
               ? "js-gantt-selected"
               : "js-gantt-row-item"
           );
 
-          const { start_date, end_date } = this.getLargeAndSmallDate(
-            this.options.data[j]
-          );
+          const { start_date, end_date } = this.getLargeAndSmallDate(task);
 
           //add custom classes from user
           this.addClassesFromFunction(
@@ -2140,11 +2140,11 @@
             dataItem,
             start_date,
             end_date,
-            this.options.data[j]
+            task
           );
 
           dataItem.setAttribute("js-gantt-data-task-id", j);
-          dataItem.setAttribute("js-gantt-task-id", options.data[j].id);
+          dataItem.setAttribute("js-gantt-task-id", task.id);
           dataItem.style.height = options.row_height + "px";
           dataItem.style.lineHeight = options.row_height + "px";
 
@@ -2159,7 +2159,7 @@
             }
             // custom event handler
             that.dispatchEvent("onBeforeTaskDblClick", {
-              task: that.options.data[j],
+              task,
             });
 
             // if onBeforeTaskDblClick return false then do not drag the task
@@ -2169,15 +2169,15 @@
             }
 
             that.dispatchEvent("onTaskDblClick", {
-              task: that.options.data[j],
+              task,
             });
 
-            that.showLightBox(that.options.data[j]);
+            that.showLightBox(task);
           }
 
           // Handle mouseover event
           dataItem.addEventListener("mouseover", () => {
-            this.updateTooltipBody(that.options.data[j]);
+            this.updateTooltipBody(task);
           });
 
           // Handle mouseleave event
@@ -2189,11 +2189,12 @@
             }
 
             // select task
-            that.selectTask(options.data[j]);
+            that.selectTask(task);
           });
 
           // loop through all the columns
-          for (let k = 0; k < options.columns.length; k++) {
+          for (let k = 0; k < this.options.columns.length; k++) {
+            const column = this.options.columns[k];
             const cell = document.createElement("div");
             cell.classList.add("js-gantt-cell");
 
@@ -2201,19 +2202,15 @@
             this.addClassesFromFunction(
               this.templates.grid_cell_class,
               cell,
-              this.options.columns[k],
-              this.options.data[j]
+              column,
+              task
             );
 
-            cell.style.width = (options.columns[k].width || 80) + "px";
+            cell.style.width = (column.width || 80) + "px";
 
-            options.columns[k].align
-              ? (cell.style.textAlign = options.columns[k].align)
-              : "";
+            column.align ? (cell.style.textAlign = column.align) : "";
 
-            options.columns[k].align
-              ? (cell.style.justifyContent = options.columns[k].align)
-              : "";
+            column.align ? (cell.style.justifyContent = column.align) : "";
 
             const content = document.createElement("div");
             content.classList.add(
@@ -2225,18 +2222,11 @@
             let jsGanttBlank = document.createElement("div");
             jsGanttBlank.classList.add("js-gantt-blank");
 
-            jsGanttBlank.innerHTML = this.callTemplate(
-              "grid_blank",
-              options.data[j]
-            );
+            jsGanttBlank.innerHTML = this.callTemplate("grid_blank", task);
 
             // function to get content HTML
             const getContentHTML = () => {
-              return (
-                this.options.columns[k].template(this.options.data[j]) ||
-                this.options.data[j][this.options.columns[k].name] ||
-                " "
-              );
+              return column.template(task) || task[column.name] || " ";
             };
 
             // content of the column
@@ -2259,27 +2249,24 @@
               content.innerHTML = getContentHTML();
             });
 
-            if (options.columns[k].tree) {
+            if (column.tree) {
               cell.classList.add("js-gantt-d-flex");
 
               // folder icon
               const folderIcon = document.createElement("div");
               folderIcon.classList.add("js-gantt-folder-icon");
-              folderIcon.innerHTML = this.callTemplate(
-                "grid_folder",
-                options.data[j]
-              );
+              folderIcon.innerHTML = this.callTemplate("grid_folder", task);
 
               if (
-                options.data[j].children &&
-                options.data[j]?.children?.length &&
+                task.children &&
+                task?.children?.length &&
                 !this.options.splitTask
               ) {
                 // tree icon
                 const treeIcon = document.createElement("div");
                 treeIcon.classList.add(
                   "js-gantt-tree-icon",
-                  !this.options.openedTasks.includes(options.data[j].id)
+                  !this.options.openedTasks.includes(task.id)
                     ? "js-gantt-tree-close"
                     : "js-gantt-tree-open"
                 );
@@ -2293,10 +2280,10 @@
                   );
 
                   if (isTaskOpened) {
-                    this.options.openedTasks.push(options.data[j].id);
+                    this.options.openedTasks.push(task.id);
                   } else {
                     const openedTasks = this.options.openedTasks.indexOf(
-                      options.data[j].id
+                      task.id
                     );
                     if (openedTasks > -1) {
                       this.options.openedTasks.splice(openedTasks, 1);
@@ -2304,8 +2291,8 @@
                   }
 
                   this.setCollapseAll(
-                    this.options.data[j].children,
-                    this.options.data[j].id,
+                    task.children,
+                    task.id,
                     isTaskOpened ? "open" : "collapse"
                   );
 
@@ -2318,7 +2305,7 @@
 
                   // custom event of toggle tree
                   this.dispatchEvent("onTaskToggle", {
-                    task: this.options.data[j],
+                    task,
                     isTaskOpened,
                   });
                 });
@@ -2330,12 +2317,12 @@
             cell.append(content);
             dataItem.append(cell);
 
-            if (this.options.columns[k]?.editor) {
+            if (column?.editor) {
               cell.addEventListener("click", (e) => {
                 if (e.target.classList.contains("js-gantt-tree-icon")) return;
                 this.addInlineEditor(
-                  this.options.data[j],
-                  this.options.columns[k].editor,
+                  task,
+                  column.editor,
                   cell,
                   leftDataContainer
                 );
@@ -2346,15 +2333,15 @@
           leftDataContainer.append(dataItem);
         }
 
-        if (!this.options.splitTask && options.data[j]?.children?.length) {
+        if (!this.options.splitTask && task?.children?.length) {
           this.createSidebarChild(
-            options.data[j].children,
+            task.children,
             options,
             leftDataContainer,
             1,
             j,
             false,
-            this.options.openedTasks.includes(options.data[j].id)
+            this.options.openedTasks.includes(task.id)
           );
         }
       }
@@ -2400,6 +2387,7 @@
       );
 
       for (let i = 0; i < options.scales.length; i++) {
+        const scale = options.scales[i]
         const timelineScaleRow = document.createElement("div");
         timelineScaleRow.classList.add(`js-gantt-scale-row`);
         timelineScaleRow.style.height = this.calculateScaleHeight(
@@ -2418,23 +2406,24 @@
         let endDate = new Date(0).getTime();
 
         for (let j = 0; j < dates.length; j++) {
+          const date = dates[j];
           if (
             new Date(endDate).getTime() >=
-            new Date(dates[j]).setHours(0, 0, 0, 0)
+            new Date(date).setHours(0, 0, 0, 0)
           ) {
             continue;
           }
-          let dateFormat = this.isFunction(options.scales[i].format)
-            ? options.scales[i].format(new Date(dates[j]))
-            : this.formatDateToString(options.scales[i].format, dates[j]);
+          let dateFormat = this.isFunction(scale.format)
+            ? scale.format(new Date(date))
+            : this.formatDateToString(scale.format, date);
           let colDates;
 
           // if date scale unit is week || month || year || (day && step > 1)
-          if (isMultiUnitScale(options.scales[i])) {
+          if (isMultiUnitScale(scale)) {
             colDates = this.initColSizes(
-              options.scales[i].unit,
-              options.scales[i].step,
-              dates[j]
+              scale.unit,
+              scale.step,
+              date
             );
           }
 
@@ -2452,45 +2441,45 @@
           this.addClassesFromFunction(
             this.templates.scale_cell_class,
             dateCell,
-            dates[j],
-            this.options.scales[i],
+            date,
+            scale,
             i
           );
 
           dateCell.innerHTML = `<span class="date-scale">${dateFormat}</span>`;
 
-          if (isMultiUnitScale(options.scales[i])) {
+          if (isMultiUnitScale(scale)) {
             dateCell.style.width =
-              colDates.dateCount.length * this.calculateGridWidth(dates[j]) +
+              colDates.dateCount.length * this.calculateGridWidth(date) +
               "px";
             dateCell.style.left = rangeCount + "px";
           } else {
             dateCell.style.left =
-              j * this.calculateGridWidth(dates[j], "day") + "px";
+              j * this.calculateGridWidth(date, "day") + "px";
             dateCell.style.width =
-              this.calculateGridWidth(dates[j], "day") + "px";
+              this.calculateGridWidth(date, "day") + "px";
           }
-          let currentDate = new Date(dates[j]).setHours(0, 0, 0, 0);
+          let currentDate = new Date(date).setHours(0, 0, 0, 0);
           if (
-            isMultiUnitScale(options.scales[i]) &&
+            isMultiUnitScale(scale) &&
             new Date(endDate).getTime() < currentDate
           ) {
             timelineScaleRow.append(dateCell);
             rangeCount +=
-              colDates.dateCount.length * this.calculateGridWidth(dates[j]);
+              colDates.dateCount.length * this.calculateGridWidth(date);
             endDate = new Date(colDates.endDate);
-          } else if (options.scales[i].unit == "hour") {
-            let dateStartHour = new Date(dates[j]).getHours();
-            let cellDate = new Date(dates[j]);
-            let cellWidth = this.calculateGridWidth(dates[j]);
+          } else if (scale.unit == "hour") {
+            let dateStartHour = new Date(date).getHours();
+            let cellDate = new Date(date);
+            let cellWidth = this.calculateGridWidth(date);
 
             const fragment = document.createDocumentFragment();
             for (let k = dateStartHour; k < 24; k++) {
               let hourCell = dateCell.cloneNode(true);
 
-              let dateFormat = this.isFunction(options.scales[i].format)
-                ? options.scales[i].format(cellDate)
-                : this.formatDateToString(options.scales[i].format, cellDate);
+              let dateFormat = this.isFunction(scale.format)
+                ? scale.format(cellDate)
+                : this.formatDateToString(scale.format, cellDate);
 
               hourCell.innerHTML = dateFormat;
               cellDate.setHours(k + 1);
@@ -2502,8 +2491,8 @@
             }
             timelineScaleRow.append(fragment);
           } else if (
-            options.scales[i].unit == "day" &&
-            options.scales[i].step == 1
+            scale.unit == "day" &&
+            scale.step == 1
           ) {
             timelineScaleRow.append(dateCell);
           }
@@ -2540,33 +2529,32 @@
       const timelineRowTemplate = this.createRowTemplate();
       // grid data loop
       for (let j = 0; j < options.data.length; j++) {
-        if (!this.isTaskNotInSearchedData(options.data[j].id)) {
+        const task = this.options.data[j];
+        if (!this.isTaskNotInSearchedData(task.id)) {
           const timelineRow = timelineRowTemplate.cloneNode(true);
-          const isSelected = options.selectedRow === `${options.data[j].id}`;
+          const isSelected = options.selectedRow === `${task.id}`;
 
           if (isSelected) timelineRow.classList.add("js-gantt-selected");
 
           timelineRow.setAttribute("js-gantt-data-task-id", j);
-          timelineRow.setAttribute("js-gantt-task-id", options.data[j].id);
+          timelineRow.setAttribute("js-gantt-task-id", task.id);
 
           //add custom classes from user
-          const { start_date, end_date } = this.getLargeAndSmallDate(
-            options.data[j]
-          );
+          const { start_date, end_date } = this.getLargeAndSmallDate(task);
 
           this.addClassesFromFunction(
             this.templates.task_row_class,
             timelineRow,
             start_date,
             end_date,
-            this.options.data[j]
+            task
           );
 
           // handle cell click event
           this.addClickListener(timelineRow, (e) => {
             if (e.target.classList.contains("js-gantt-task-cell")) {
               this.dispatchEvent("onCellClick", {
-                task: this.options.data[j],
+                task,
                 cellDate: e.target.getAttribute("js-gantt-cell-date"),
               });
             }
@@ -2576,16 +2564,16 @@
         }
 
         // if children exist
-        if (this.options.data[j]?.children?.length && !this.options.splitTask) {
+        if (task?.children?.length && !this.options.splitTask) {
           this.createTimelineChildBody(
-            this.options.data[j].children,
+            task.children,
             options,
             j,
             dates,
             weekday,
             jsGanttTaskData,
             j,
-            this.options.openedTasks.includes(this.options.data[j].id),
+            this.options.openedTasks.includes(task.id),
             timelineRowTemplate
           );
         }
@@ -2765,24 +2753,21 @@
       jsGanttBarsArea.id = "js-gantt-bars-area";
 
       for (let j = 0; j < this.options.data.length; j++) {
+        const task = this.options.data[j];
         let cellStartDate = this.options.startDate;
 
-        if (!this.isTaskNotInSearchedData(this.options.data[j].id)) {
-          let start_date = new Date(this.options.data[j].start_date);
-          let end_date = new Date(this.options.data[j].end_date);
+        if (!this.isTaskNotInSearchedData(task.id)) {
+          let start_date = new Date(task.start_date);
+          let end_date = new Date(task.end_date);
 
-          if (this.options.data[j].children?.length) {
-            ({ start_date, end_date } = this.getLargeAndSmallDate(
-              this.options.data[j]
-            ));
+          if (task.children?.length) {
+            ({ start_date, end_date } = this.getLargeAndSmallDate(task));
           }
 
           let isCellGreater = true;
           let cellBefore = this.getDates(
             cellStartDate,
-            this.options.data[j].type === "milestone"
-              ? this.options.data[j].start_date
-              : start_date
+            task.type === "milestone" ? task.start_date : start_date
           );
 
           if (cellBefore.length === 0) {
@@ -2797,30 +2782,24 @@
           }
           let jsGanttBarTask = document.createElement("div");
 
-          if (
-            this.options.data[j].taskColor &&
-            this.options.data[j].type !== "milestone"
-          ) {
+          if (task.taskColor && task.type !== "milestone") {
             jsGanttBarTask.style.setProperty(
               "background-color",
-              this.changeOpacity(
-                this.options.data[j].taskColor,
-                this.options.taskOpacity
-              ),
+              this.changeOpacity(task.taskColor, this.options.taskOpacity),
               "important"
             );
             jsGanttBarTask.style.setProperty(
               "border-color",
-              this.options.data[j].taskColor,
+              task.taskColor,
               "important"
             );
           }
 
-          if (this.options.data[j].type === "milestone") {
+          if (task.type === "milestone") {
             jsGanttBarTask.classList.add(
               "js-gantt-bar-task",
               "js-gantt-bar-milestone",
-              this.options.selectedTask === `${this.options.data[j].id}`
+              this.options.selectedTask === `${task.id}`
                 ? "js-gantt-selected-task-bar"
                 : "js-gantt-bar-milestone"
             );
@@ -2828,7 +2807,7 @@
             jsGanttBarTask.classList.add(
               "js-gantt-bar-task",
               "js-gantt-bar-parent-task",
-              this.options.selectedTask === `${this.options.data[j].id}`
+              this.options.selectedTask === `${task.id}`
                 ? "js-gantt-selected-task-bar"
                 : "js-gantt-bar-task"
             );
@@ -2840,15 +2819,12 @@
             jsGanttBarTask,
             start_date,
             end_date,
-            this.options.data[j]
+            task
           );
 
           jsGanttBarTask.setAttribute("task-parent", j);
           jsGanttBarTask.setAttribute("data-task-pos", 0);
-          jsGanttBarTask.setAttribute(
-            "js-gantt-taskbar-id",
-            this.options.data[j].id
-          );
+          jsGanttBarTask.setAttribute("js-gantt-taskbar-id", task.id);
 
           let taskLeft =
             cellBefore * this.calculateGridWidth(start_date, "day");
@@ -2866,7 +2842,7 @@
           let barTaskHeight = Math.floor((this.options.row_height * 80) / 100);
           jsGanttBarTask.style.height = `${barTaskHeight}px`;
           jsGanttBarTask.style.lineHeight = `${barTaskHeight}px`;
-          if (this.options.data[j].type === "milestone") {
+          if (task.type === "milestone") {
             jsGanttBarTask.style.width = `${barTaskHeight}px`;
             jsGanttBarTask.style.left =
               (cellBefore + 1) * this.calculateGridWidth(start_date, "day") +
@@ -2879,19 +2855,16 @@
             "parent-task-bar-content"
           );
 
-          if (
-            this.options.data[j].type === "milestone" &&
-            this.options.data[j].taskColor
-          ) {
+          if (task.type === "milestone" && task.taskColor) {
             jsGanttBarTaskContent.style.setProperty(
               "background-color",
-              this.options.data[j].taskColor,
+              task.taskColor,
               "important"
             );
 
             jsGanttBarTaskContent.style.setProperty(
               "border-color",
-              this.options.data[j].taskColor,
+              task.taskColor,
               "important"
             );
           }
@@ -2904,7 +2877,7 @@
           function handleDblClick() {
             // custom event handler
             that.dispatchEvent("onBeforeTaskDblClick", {
-              task: that.options.data[j],
+              task,
             });
 
             // if onBeforeTaskDblClick return false then do not drag the task
@@ -2914,10 +2887,10 @@
             }
 
             that.dispatchEvent("onTaskDblClick", {
-              task: that.options.data[j],
+              task,
             });
 
-            that.showLightBox(that.options.data[j]);
+            that.showLightBox(task);
           }
 
           const userAgent = navigator.userAgent;
@@ -2930,7 +2903,7 @@
               jsGanttBarTask.classList.add("hovered");
             }
 
-            that.updateTooltipBody(that.options.data[j]);
+            that.updateTooltipBody(task);
           }
 
           // Handle mouseleave event
@@ -2945,8 +2918,8 @@
           }
 
           if (
-            this.callTemplate("task_drag", "resize", this.options.data[j]) &&
-            this.options.data[j].type !== "milestone"
+            this.callTemplate("task_drag", "resize", task) &&
+            task.type !== "milestone"
           ) {
             // left side resizer
             const jsGanttTaskDragLeft = document.createElement("div");
@@ -2961,14 +2934,14 @@
               jsGanttTaskDragLeft,
               jsGanttBarTask,
               "left",
-              this.options.data[j]
+              task
             );
 
             this.resizeTaskBars(
               jsGanttTaskDragRight,
               jsGanttBarTask,
               "right",
-              this.options.data[j]
+              task
             );
           }
 
@@ -2976,13 +2949,10 @@
 
           let taskProgress;
           const isTaskProgress = this.isFunction(this.options.taskProgress)
-            ? this.options.taskProgress(this.options.data[j])
+            ? this.options.taskProgress(task)
             : this.options.taskProgress;
-          if (
-            isTaskProgress === true &&
-            this.options.data[j].type !== "milestone"
-          ) {
-            let progressPer = this.options.data[j].progress || 0;
+          if (isTaskProgress === true && task.type !== "milestone") {
+            let progressPer = task.progress || 0;
             progressPer = progressPer > 100 ? 100 : progressPer;
             const taskProgressContainer = document.createElement("div");
             taskProgressContainer.classList.add(
@@ -2992,10 +2962,10 @@
             taskProgress.classList.add("js-gantt-task-progress");
             taskProgress.style.width = `${progressPer}%`;
 
-            if (this.options.data[j].taskColor) {
+            if (task.taskColor) {
               taskProgress.style.setProperty(
                 "background-color",
-                this.options.data[j].taskColor,
+                task.taskColor,
                 "important"
               );
             }
@@ -3008,7 +2978,7 @@
 
             // update the task progress onAfterTaskUpdate
             this.attachEvent("onAfterTaskUpdate", () => {
-              let progress = this.options.data[j].progress || 0;
+              let progress = task.progress || 0;
               taskProgress.style.width = `${progress}%`;
               taskProgressDrag.style.left = `${progress}%`;
             });
@@ -3018,22 +2988,22 @@
               taskProgressDrag,
               taskProgress,
               jsGanttBarTask,
-              this.options.data[j]
+              task
             );
           }
 
-          if (this.callTemplate("task_drag", "move", this.options.data[j])) {
+          if (this.callTemplate("task_drag", "move", task)) {
             this.resizeTaskBars(
               jsGanttBarTaskContent,
               jsGanttBarTask,
               "move",
-              this.options.data[j]
+              task
             );
           }
 
           // link control pointers
           let isAddLinks = this.isFunction(this.options.addLinks)
-            ? this.options.addLinks(this.options.data[j])
+            ? this.options.addLinks(task)
             : this.options.addLinks;
 
           if (isAddLinks === true) {
@@ -3061,24 +3031,14 @@
             rightLinkPoint.append(rightPoint);
             jsGanttBarTask.append(leftLinkPoint, rightLinkPoint);
 
-            this.createNewLink(
-              rightPoint,
-              jsGanttBarTask,
-              this.options.data[j].id,
-              "right"
-            );
+            this.createNewLink(rightPoint, jsGanttBarTask, task.id, "right");
 
-            this.createNewLink(
-              leftPoint,
-              jsGanttBarTask,
-              this.options.data[j].id,
-              "left"
-            );
+            this.createNewLink(leftPoint, jsGanttBarTask, task.id, "left");
           }
 
           //add custom task color picker
           let isCustomColor = this.isFunction(this.options.taskColor)
-            ? this.options.taskColor(this.options.data[j])
+            ? this.options.taskColor(task)
             : this.options.taskColor;
 
           if (isCustomColor) {
@@ -3090,7 +3050,7 @@
 
             setTimeout(() => {
               const backgroundElement =
-                this.options.data[j].type === "milestone"
+                task.type === "milestone"
                   ? jsGanttBarTaskContent
                   : jsGanttBarTask;
 
@@ -3103,8 +3063,7 @@
                 jsGanttBarTaskStyle.getPropertyValue("background-color");
 
               colorInput.value =
-                this.options.data[j].taskColor ||
-                this.rgbaToHex(backgroundColor);
+                task.taskColor || this.rgbaToHex(backgroundColor);
             }, 0);
 
             colorPicker.append(colorInput);
@@ -3114,11 +3073,11 @@
               colorInput,
               taskProgress,
               jsGanttBarTaskContent,
-              this.options.data[j]
+              task
             );
           }
 
-          if (this.options.data[j].type !== "milestone") {
+          if (task.type !== "milestone") {
             let taskWidth =
               taskDates.length * this.calculateGridWidth(end_date, "day");
 
@@ -3134,14 +3093,14 @@
           }
 
           let sideContent;
-          if (this.options.data[j].type === "milestone") {
+          if (task.type === "milestone") {
             sideContent = document.createElement("div");
             sideContent.classList.add("js-gantt-side-content");
             sideContent.innerHTML = this.callTemplate(
               "taskbar_text",
               new Date(start_date),
               new Date(end_date),
-              this.options.data[j]
+              task
             );
             jsGanttBarTask.append(sideContent);
           } else {
@@ -3149,7 +3108,7 @@
               "taskbar_text",
               new Date(start_date.setHours(0)),
               new Date(end_date.setHours(0)),
-              this.options.data[j]
+              task
             );
           }
           jsGanttBarTask.append(jsGanttBarTaskContent);
@@ -3159,10 +3118,10 @@
               "taskbar_text",
               start_date.setHours(0),
               end_date.setHours(0),
-              this.options.data[j]
+              task
             );
 
-            if (this.options.data[j].type === "milestone") {
+            if (task.type === "milestone") {
               sideContent.innerHTML = innerHTML;
             } else {
               jsGanttBarTaskContent.innerHTML = innerHTML;
@@ -3176,12 +3135,12 @@
 
         // if children exist
         if (
-          this.options.data[j]?.children?.length &&
-          this.options.openedTasks.includes(this.options.data[j].id) &&
+          task?.children?.length &&
+          this.options.openedTasks.includes(task.id) &&
           !this.options.splitTask
         ) {
           rowCount = this.createChildTaskBars(
-            this.options.data[j].children,
+            task.children,
             rowCount,
             cellStartDate,
             jsGanttBarsArea,
@@ -5022,9 +4981,9 @@
      * @param { number | string } id - id of the task to delete
      */
     deleteTask(id) {
-      const task = this.getTask(id);
       for (let i = 0; i < this.originalData.length; i++) {
         if (this.originalData[i].id == id) {
+          const task = this.getTask(id);
           this.originalData.splice(i, 1);
           this.render();
           this.hideLightbox();
@@ -5217,38 +5176,39 @@
       if (taskData && taskData?.length > 0) {
         // loop through all the children
         for (let l = 0; l < taskData.length; l++) {
+          const task = taskData[l];
           let taskParents = `${parentIdString}${l}`;
 
-          if (!this.isTaskNotInSearchedData(taskData[l].id)) {
+          if (!this.isTaskNotInSearchedData(task.id)) {
             if (this.#searchedData) {
-              this.options.openedTasks.push(taskData[l].id);
+              this.options.openedTasks.push(task.id);
             }
 
             let dataItem = document.createElement("div");
             dataItem.classList.add(
               "js-gantt-row-item",
               "js-gantt-child-row",
-              `js-gantt-child-${taskData[l].parent}`,
+              `js-gantt-child-${task.parent}`,
               !isOpened ? "js-gantt-d-none" : "js-gantt-d-flex",
-              this.options.selectedRow === `${taskData[l].id}`
+              this.options.selectedRow === `${task.id}`
                 ? "js-gantt-selected"
                 : "js-gantt-row-item"
             );
 
             //add custom classes from user
             const { start_date, end_date } = this.getLargeAndSmallDate(
-              taskData[l]
+              task
             );
             this.addClassesFromFunction(
               this.templates.grid_row_class,
               dataItem,
               start_date,
               end_date,
-              taskData[l]
+              task
             );
 
             dataItem.setAttribute("js-gantt-data-task-id", `${taskParents}`);
-            dataItem.setAttribute("js-gantt-task-id", taskData[l].id);
+            dataItem.setAttribute("js-gantt-task-id", task.id);
             dataItem.style.height = options.row_height + "px";
             dataItem.style.lineHeight = options.row_height + "px";
 
@@ -5261,7 +5221,7 @@
               if (e.target.classList.contains("js-gantt-tree-icon")) return;
 
               // custom event handler
-              that.dispatchEvent("onBeforeTaskDblClick", { task: taskData[l] });
+              that.dispatchEvent("onBeforeTaskDblClick", { task });
 
               // if onBeforeTaskDblClick return false then do not drag the task
               if (that.eventValue === false) {
@@ -5269,14 +5229,14 @@
                 return;
               }
 
-              that.dispatchEvent("onTaskDblClick", { task: taskData[l] });
+              that.dispatchEvent("onTaskDblClick", { task });
 
-              that.showLightBox(taskData[l]);
+              that.showLightBox(task);
             }
 
             // Handle mouseover event
             dataItem.addEventListener("mouseover", () =>
-              this.updateTooltipBody(taskData[l])
+              this.updateTooltipBody(task)
             );
 
             // Handle mouseleave event
@@ -5289,11 +5249,12 @@
               if (e.target.classList.contains("js-gantt-tree-icon")) {
                 return;
               }
-              that.selectTask(taskData[l]);
+              that.selectTask(task);
             });
 
             // loop through all the columns
             for (let k = 0; k < options.columns.length; k++) {
+              const column = this.options.columns[k];
               let cell = document.createElement("div");
               cell.classList.add("js-gantt-cell");
 
@@ -5301,24 +5262,20 @@
               this.addClassesFromFunction(
                 this.templates.grid_cell_class,
                 cell,
-                this.options.columns[k],
-                taskData[l]
+                column,
+                task
               );
 
-              cell.style.width = (options.columns[k].width || 80) + "px";
-              options.columns[k].align
-                ? (cell.style.textAlign = options.columns[k].align)
-                : "";
-              options.columns[k].align
-                ? (cell.style.justifyContent = options.columns[k].align)
-                : "";
+              cell.style.width = (column.width || 80) + "px";
+              column.align ? (cell.style.textAlign = column.align) : "";
+              column.align ? (cell.style.justifyContent = column.align) : "";
 
               let jsGanttBlank = document.createElement("div");
               jsGanttBlank.classList.add("js-gantt-blank");
 
               jsGanttBlank.innerHTML = this.callTemplate(
                 "grid_blank",
-                taskData[l]
+                task
               );
 
               // content
@@ -5334,62 +5291,59 @@
                 cell.setAttribute("data-column-index", k);
               }
               content.innerHTML =
-                options.columns[k].template(taskData[l]) ||
-                taskData[l][options.columns[k].name] ||
-                " ";
+                column.template(task) || task[column.name] || " ";
 
               // update content innerHTML on after task update
               this.attachEvent("onAfterTaskUpdate", () => {
                 content.innerHTML =
-                  options.columns[k].template(taskData[l]) ||
-                  taskData[l][options.columns[k].name] ||
+                  column.template(task) ||
+                  task[column.name] ||
                   " ";
               });
 
               // update content innerHTML on after progress drag
               this.attachEvent("onAfterProgressDrag", () => {
                 content.innerHTML =
-                  options.columns[k].template(taskData[l]) ||
-                  taskData[l][options.columns[k].name] ||
+                  column.template(task) ||
+                  task[column.name] ||
                   " ";
               });
 
               // update content innerHTML on task drag
               this.attachEvent("onTaskDrag", () => {
                 content.innerHTML =
-                  options.columns[k].template(taskData[l]) ||
-                  taskData[l][options.columns[k].name] ||
+                  column.template(task) ||
+                  task[column.name] ||
                   " ";
               });
 
               // update content innerHTML on after task drag
               this.attachEvent("onAfterTaskDrag", () => {
                 content.innerHTML =
-                  options.columns[k].template(taskData[l]) ||
-                  taskData[l][options.columns[k].name] ||
+                  column.template(task) ||
+                  task[column.name] ||
                   " ";
               });
 
-              if (options.columns[k].tree) {
+              if (column.tree) {
                 // file icon
                 let file = document.createElement("div");
                 file.classList.add("js-gantt-file-icon");
-                file.innerHTML = this.callTemplate("grid_file", taskData[l]);
+                file.innerHTML = this.callTemplate("grid_file", task);
 
                 //add child indentation
-                for (let n = 0; n < nestedLevel; n++) {
-                  let indent = document.createElement("div");
-                  indent.classList.add("js-gantt-indent");
-                  cell.append(indent);
-                }
+                const indent = document.createElement("div");
+                indent.classList.add("js-gantt-indent");
+                indent.style.width = `${20 * nestedLevel}px`;
+                cell.append(indent);
                 cell.classList.add("js-gantt-d-flex");
 
-                if (taskData[l].children && taskData[l].children.length > 0) {
+                if (task.children && task.children.length > 0) {
                   // tree icon
                   let treeIcon = document.createElement("div");
                   treeIcon.classList.add(
                     "js-gantt-tree-icon",
-                    !this.options.openedTasks.includes(taskData[l].id)
+                    !this.options.openedTasks.includes(task.id)
                       ? "js-gantt-tree-close"
                       : "js-gantt-tree-open"
                   );
@@ -5401,10 +5355,10 @@
                     );
 
                     if (isTaskOpened) {
-                      this.options.openedTasks.push(taskData[l].id);
+                      this.options.openedTasks.push(task.id);
                     } else {
                       const openedTask = this.options.openedTasks.indexOf(
-                        taskData[l].id
+                        task.id
                       );
                       if (openedTask > -1) {
                         this.options.openedTasks.splice(openedTask, 1);
@@ -5412,8 +5366,8 @@
                     }
 
                     this.setCollapseAll(
-                      taskData[l].children,
-                      taskData[l].id,
+                      task.children,
+                      task.id,
                       isTaskOpened ? "open" : "collapse"
                     );
 
@@ -5427,7 +5381,7 @@
 
                     // custom event of toggle tree
                     this.dispatchEvent("onTaskToggle", {
-                      task: taskData[l],
+                      task,
                       isTaskOpened,
                     });
                   });
@@ -5438,12 +5392,12 @@
               }
               cell.append(content);
               dataItem.append(cell);
-              if (this.options.columns[k]?.editor) {
+              if (column?.editor) {
                 cell.addEventListener("click", (e) => {
                   if (e.target.classList.contains("js-gantt-tree-icon")) return;
                   this.addInlineEditor(
-                    taskData[l],
-                    this.options.columns[k].editor,
+                    task,
+                    column.editor,
                     cell,
                     leftDataContainer
                   );
@@ -5455,14 +5409,14 @@
           }
 
           this.createSidebarChild(
-            taskData[l].children,
+            task.children,
             options,
             leftDataContainer,
             nestedLevel + 1,
             taskParents,
             isRight,
             isOpened
-              ? this.options.openedTasks.includes(taskData[l].id)
+              ? this.options.openedTasks.includes(task.id)
               : isOpened
           );
         }
@@ -5482,17 +5436,18 @@
     ) {
       // loop through all the children
       for (let l = 0; l < taskData.length; l++) {
+        const task = taskData[l];
         const taskParents = `${parentIdString}${l}`;
 
-        if (!this.isTaskNotInSearchedData(taskData[l].id)) {
+        if (!this.isTaskNotInSearchedData(task.id)) {
           const timelineRow = timelineRowTemplate.cloneNode(true);
-          const isRowSelected = options.selectedRow === `${taskData[l].id}`;
-          const isCollapsed = !options.openedTasks.includes(taskData[l].parent);
+          const isRowSelected = options.selectedRow === `${task.id}`;
+          const isCollapsed = !options.openedTasks.includes(task.parent);
 
           // Array to hold the classes
           const classes = [
             "js-gantt-child-row",
-            `js-gantt-child-${taskData[l].parent}`,
+            `js-gantt-child-${task.parent}`,
           ];
 
           // Conditionally add classes based on `isCollapsed` and `isOpened`
@@ -5509,24 +5464,24 @@
 
           //add custom classes from user
           const { start_date, end_date } = this.getLargeAndSmallDate(
-            taskData[l]
+            task
           );
           this.addClassesFromFunction(
             this.templates.task_row_class,
             timelineRow,
             start_date,
             end_date,
-            taskData[l]
+            task
           );
 
           timelineRow.setAttribute("js-gantt-data-task-id", taskParents);
-          timelineRow.setAttribute("js-gantt-task-id", taskData[l].id);
+          timelineRow.setAttribute("js-gantt-task-id", task.id);
 
           // handle cell click event
           this.addClickListener(timelineRow, (e) => {
             if (e.target.classList.contains("js-gantt-task-cell")) {
               this.dispatchEvent("onCellClick", {
-                task: taskData[l],
+                task: task,
                 cellDate: e.target.getAttribute("js-gantt-cell-date"),
               });
             }
@@ -5536,9 +5491,9 @@
         }
 
         // if children exist
-        if (taskData[l]?.children?.length) {
+        if (task?.children?.length) {
           this.createTimelineChildBody(
-            taskData[l].children,
+            task.children,
             options,
             j,
             dates,
@@ -5546,7 +5501,7 @@
             jsGanttTaskData,
             taskParents,
             isOpened
-              ? this.options.openedTasks.includes(taskData[l].id)
+              ? this.options.openedTasks.includes(task.id)
               : isOpened,
             timelineRowTemplate
           );
@@ -5558,21 +5513,20 @@
       const barTaskHeight = Math.floor((this.options.row_height * 80) / 100);
       // loop through all children
       for (let k = 0; k < taskData.length; k++) {
+        const task = taskData[k];
         const taskParents = `${j}${k}`;
 
-        if (!this.isTaskNotInSearchedData(taskData[k].id)) {
-          let start_date = taskData[k].start_date;
-          let end_date = taskData[k].end_date || taskData[k].start_date;
+        if (!this.isTaskNotInSearchedData(task.id)) {
+          let start_date = task.start_date;
+          let end_date = task.end_date || task.start_date;
 
-          if (taskData[k]?.children?.length) {
-            ({ start_date, end_date } = this.getLargeAndSmallDate(taskData[k]));
+          if (task?.children?.length) {
+            ({ start_date, end_date } = this.getLargeAndSmallDate(task));
           }
 
           let cellBefore = this.getDates(
             cellStartDate,
-            taskData[k].type === "milestone"
-              ? taskData[k].start_date
-              : start_date
+            task.type === "milestone" ? task.start_date : start_date
           );
 
           if (cellBefore.length === 0) {
@@ -5584,35 +5538,32 @@
 
           const jsGanttBarTask = document.createElement("div");
 
-          if (taskData[k].type === "milestone") {
+          if (task.type === "milestone") {
             jsGanttBarTask.classList.add(
               "js-gantt-bar-task",
               "js-gantt-bar-milestone",
-              this.options.selectedTask === `${taskData[k].id}`
+              this.options.selectedTask === `${task.id}`
                 ? "js-gantt-selected-task-bar"
                 : "js-gantt-bar-milestone"
             );
           } else {
             jsGanttBarTask.classList.add(
               "js-gantt-bar-task",
-              this.options.selectedTask === `${taskData[k].id}`
+              this.options.selectedTask === `${task.id}`
                 ? "js-gantt-selected-task-bar"
                 : "js-gantt-bar-task"
             );
           }
 
-          if (taskData[k].taskColor && taskData[k].type !== "milestone") {
+          if (task.taskColor && task.type !== "milestone") {
             jsGanttBarTask.style.setProperty(
               "background-color",
-              this.changeOpacity(
-                taskData[k].taskColor,
-                this.options.taskOpacity
-              ),
+              this.changeOpacity(task.taskColor, this.options.taskOpacity),
               "important"
             );
             jsGanttBarTask.style.setProperty(
               "border-color",
-              taskData[k].taskColor,
+              task.taskColor,
               "important"
             );
           }
@@ -5623,12 +5574,12 @@
             jsGanttBarTask,
             start_date,
             end_date,
-            taskData[k]
+            task
           );
 
           jsGanttBarTask.setAttribute("task-parent", taskParents);
           jsGanttBarTask.setAttribute("data-task-pos", k);
-          jsGanttBarTask.setAttribute("js-gantt-taskbar-id", taskData[k].id);
+          jsGanttBarTask.setAttribute("js-gantt-taskbar-id", task.id);
 
           let taskLeft =
             cellBefore * this.calculateGridWidth(start_date, "day");
@@ -5644,7 +5595,7 @@
             "px";
           jsGanttBarTask.style.height = `${barTaskHeight}px`;
           jsGanttBarTask.style.lineHeight = `${barTaskHeight}px`;
-          if (taskData[k].type === "milestone") {
+          if (task.type === "milestone") {
             jsGanttBarTask.style.width = `${barTaskHeight}px`;
             jsGanttBarTask.style.left =
               (cellBefore + 1) * this.calculateGridWidth(start_date, "day") +
@@ -5657,16 +5608,16 @@
             "child-task-bar-content"
           );
 
-          if (taskData[k].type === "milestone" && taskData[k].taskColor) {
+          if (task.type === "milestone" && task.taskColor) {
             jsGanttBarTaskContent.style.setProperty(
               "background-color",
-              taskData[k].taskColor,
+              task.taskColor,
               "important"
             );
 
             jsGanttBarTaskContent.style.setProperty(
               "border-color",
-              taskData[k].taskColor,
+              task.taskColor,
               "important"
             );
           }
@@ -5678,7 +5629,7 @@
 
           function handleDblClick() {
             // custom event handler
-            that.dispatchEvent("onBeforeTaskDblClick", { task: taskData[k] });
+            that.dispatchEvent("onBeforeTaskDblClick", { task: task });
 
             // if onBeforeTaskDblClick return false then end here
             if (that.eventValue === false) {
@@ -5686,9 +5637,9 @@
               return;
             }
 
-            that.dispatchEvent("onTaskDblClick", { task: taskData[k] });
+            that.dispatchEvent("onTaskDblClick", { task: task });
 
-            that.showLightBox(taskData[k]);
+            that.showLightBox(task);
           }
 
           const userAgent = navigator.userAgent;
@@ -5701,7 +5652,7 @@
               jsGanttBarTask.classList.add("hovered");
             }
 
-            that.updateTooltipBody(taskData[k]);
+            that.updateTooltipBody(task);
           }
 
           // Handle mouseleave event
@@ -5716,8 +5667,8 @@
           }
 
           if (
-            this.callTemplate("task_drag", "resize", taskData[k]) &&
-            taskData[k].type !== "milestone"
+            this.callTemplate("task_drag", "resize", task) &&
+            task.type !== "milestone"
           ) {
             let jsGanttTaskDragLeft = document.createElement("div");
             jsGanttTaskDragLeft.classList.add("js-gantt-task-drag-left");
@@ -5729,28 +5680,28 @@
               jsGanttTaskDragLeft,
               jsGanttBarTask,
               "left",
-              taskData[k]
+              task
             );
             this.resizeTaskBars(
               jsGanttTaskDragRight,
               jsGanttBarTask,
               "right",
-              taskData[k]
+              task
             );
           }
 
-          if (this.callTemplate("task_drag", "move", taskData[k])) {
+          if (this.callTemplate("task_drag", "move", task)) {
             this.resizeTaskBars(
               jsGanttBarTaskContent,
               jsGanttBarTask,
               "move",
-              taskData[k]
+              task
             );
           }
 
           // link control pointers
           const isAddLinks = this.isFunction(this.options.addLinks)
-            ? this.options.addLinks(taskData[k])
+            ? this.options.addLinks(task)
             : this.options.addLinks;
 
           if (isAddLinks === true) {
@@ -5778,23 +5729,23 @@
             this.createNewLink(
               rightPoint,
               jsGanttBarTask,
-              taskData[k].id,
+              task.id,
               "right"
             );
             this.createNewLink(
               leftPoint,
               jsGanttBarTask,
-              taskData[k].id,
+              task.id,
               "left"
             );
           }
 
           let taskProgress;
           const isTaskProgress = this.isFunction(this.options.taskProgress)
-            ? this.options.taskProgress(taskData[k])
+            ? this.options.taskProgress(task)
             : this.options.taskProgress;
-          if (isTaskProgress === true && taskData[k].type !== "milestone") {
-            let progressPer = taskData[k].progress || 0;
+          if (isTaskProgress === true && task.type !== "milestone") {
+            let progressPer = task.progress || 0;
             const taskProgressContainer = document.createElement("div");
             taskProgressContainer.classList.add(
               "js-gantt-task-progress-wrapper"
@@ -5805,10 +5756,10 @@
               progressPer > 100 ? 100 : progressPer
             }%`;
 
-            if (taskData[k].taskColor) {
+            if (task.taskColor) {
               taskProgress.style.setProperty(
                 "background-color",
-                taskData[k].taskColor,
+                task.taskColor,
                 "important"
               );
             }
@@ -5824,7 +5775,7 @@
             // update the task progress onAfterTaskUpdate
             this.attachEvent("onAfterTaskUpdate", () => {
               const progress =
-                progressPer > 100 ? 100 : taskData[k].progress || 0;
+                progressPer > 100 ? 100 : task.progress || 0;
               taskProgress.style.width = `${progress}%`;
               taskProgressDrag.style.left = `${progress}%`;
             });
@@ -5834,13 +5785,13 @@
               taskProgressDrag,
               taskProgress,
               jsGanttBarTask,
-              taskData[k]
+              task
             );
           }
 
           //add custom task color picker
           let isCustomColor = this.isFunction(this.options.taskColor)
-            ? this.options.taskColor(taskData[k])
+            ? this.options.taskColor(task)
             : this.options.taskColor;
 
           if (isCustomColor) {
@@ -5850,11 +5801,11 @@
             colorInput.type = "color";
 
             setTimeout(() => {
-              let backgroundColor = taskData[k]?.taskColor;
-              if (!taskData[k]?.taskColor) {
+              let backgroundColor = task?.taskColor;
+              if (!task?.taskColor) {
                 // Get the computed style of the element
                 const backgroundElement =
-                  taskData[k].type === "milestone"
+                  task.type === "milestone"
                     ? jsGanttBarTaskContent
                     : jsGanttBarTask;
                 const jsGanttBarTaskStyle =
@@ -5864,7 +5815,7 @@
                   jsGanttBarTaskStyle.getPropertyValue("background-color");
               }
               colorInput.value =
-                taskData[k]?.taskColor || this.rgbaToHex(backgroundColor);
+                task?.taskColor || this.rgbaToHex(backgroundColor);
             }, 0);
 
             colorPicker.append(colorInput);
@@ -5875,13 +5826,13 @@
               colorInput,
               taskProgress,
               jsGanttBarTaskContent,
-              taskData[k]
+              task
             );
           }
 
           let taskDates = this.getDates(start_date, end_date);
 
-          if (taskData[k].type !== "milestone") {
+          if (task.type !== "milestone") {
             let taskWidth =
               taskDates.length * this.calculateGridWidth(end_date, "day");
 
@@ -5903,9 +5854,9 @@
             "taskbar_text",
             new Date(start_date),
             new Date(end_date),
-            taskData[k]
+            task
           );
-          if (taskData[k].type === "milestone") {
+          if (task.type === "milestone") {
             sideContent = document.createElement("div");
             sideContent.classList.add("js-gantt-side-content");
             sideContent.innerHTML = innerHTML;
@@ -5919,9 +5870,9 @@
               "taskbar_text",
               new Date(start_date),
               new Date(end_date),
-              taskData[k]
+              task
             );
-            if (taskData[k].type === "milestone") {
+            if (task.type === "milestone") {
               sideContent.innerHTML = innerHTML;
             } else {
               jsGanttBarTaskContent.innerHTML = innerHTML;
@@ -5936,11 +5887,11 @@
         }
 
         if (
-          taskData[k].children &&
-          this.options.openedTasks.includes(taskData[k].id)
+          task.children &&
+          this.options.openedTasks.includes(task.id)
         ) {
           rowCount = this.createChildTaskBars(
-            taskData[k].children,
+            task.children,
             rowCount,
             cellStartDate,
             jsGanttBarsArea,
@@ -6039,6 +5990,7 @@
       let resizerLeft = 0;
       // head loop of left side
       for (let i = 0; i < options.columns.length; i++) {
+        const column = options.columns[i]; 
         let headCell = document.createElement("div");
         headCell.classList.add("right-head-cell");
 
@@ -6046,13 +5998,13 @@
         this.addClassesFromFunction(
           this.templates.grid_header_class,
           headCell,
-          this.options.columns[i],
+          column,
           i
         );
 
         headCell.setAttribute("data-column-index", `r-${i}`);
-        headCell.style.width = (options.columns[i].width || 80) + "px";
-        headCell.innerHTML = options.columns[i].label;
+        headCell.style.width = (column.width || 80) + "px";
+        headCell.innerHTML = column.label;
         headCellContainer.append(headCell);
         if (i < options.columns.length) {
           let resizerWrap = document.createElement("div");
@@ -6065,11 +6017,11 @@
             0
           );
 
-          if (options.columns[i].resize === true) {
+          if (column.resize === true) {
             let resizer = document.createElement("div");
             resizer.classList.add("js-gantt-col-resizer");
             resizerWrap.append(resizer);
-            resizerLeft += options.columns[i].width || 80;
+            resizerLeft += column.width || 80;
             resizerWrap.style.left = resizerLeft + "px";
             headCellContainer.append(resizerWrap);
             this.resizeColumns(
@@ -6077,8 +6029,8 @@
               `data-column-index="r-${i}"`,
               headCell,
               headCellContainer,
-              options.columns[i].min_width,
-              options.columns[i].max_width,
+              column.min_width,
+              column.max_width,
               i,
               sidebar,
               true
@@ -6096,30 +6048,29 @@
       }, 0);
       // loop through all the data
       for (let j = 0; j < options.data.length; j++) {
-        if (!this.isTaskNotInSearchedData(options.data[j].id)) {
+        const task = this.options.data[j];
+        if (!this.isTaskNotInSearchedData(task.id)) {
           const dataItem = document.createElement("div");
           dataItem.classList.add("js-gantt-row-item", "js-gantt-d-flex");
 
           //add custom classes from user
-          const { start_date, end_date } = this.getLargeAndSmallDate(
-            options.data[j]
-          );
+          const { start_date, end_date } = this.getLargeAndSmallDate(task);
           this.addClassesFromFunction(
             this.templates.grid_row_class,
             dataItem,
             start_date,
             end_date,
-            this.options.data[j]
+            task
           );
 
           dataItem.setAttribute("js-gantt-data-task-id", j);
-          dataItem.setAttribute("js-gantt-task-id", options.data[j].id);
+          dataItem.setAttribute("js-gantt-task-id", task.id);
           dataItem.style.height = options.row_height + "px";
           dataItem.style.lineHeight = options.row_height + "px";
           let that = this;
           // Handle mouseover event
           dataItem.addEventListener("mouseover", () =>
-            this.updateTooltipBody(this.options.data[j])
+            this.updateTooltipBody(task)
           );
 
           // Handle mouseleave event
@@ -6145,7 +6096,7 @@
 
             // select the selected task taskBar
             let currentTaskBar = document.querySelector(
-              `[js-gantt-taskbar-id="${options.data[j].id}"]`
+              `[js-gantt-taskbar-id="${task.id}"]`
             );
             currentTaskBar.classList.add("js-gantt-selected-task-bar");
 
@@ -6155,12 +6106,13 @@
             for (let item of taskRow) {
               item.classList.add("js-gantt-selected");
             }
-            that.options.selectedRow = `${options.data[j].id}`;
-            that.options.selectedTask = `${options.data[j].id}`;
+            that.options.selectedRow = `${task.id}`;
+            that.options.selectedTask = `${task.id}`;
           });
 
           // loop through all the columns
           for (let k = 0; k < options.columns.length; k++) {
+            const column = this.options.columns[k];
             let cell = document.createElement("div");
             cell.classList.add("js-gantt-cell");
 
@@ -6168,17 +6120,13 @@
             this.addClassesFromFunction(
               this.templates.grid_cell_class,
               cell,
-              this.options.columns[k],
-              this.options.data[j]
+              column,
+              task
             );
 
-            cell.style.width = (options.columns[k].width || 80) + "px";
-            options.columns[k].align
-              ? (cell.style.textAlign = options.columns[k].align)
-              : "";
-            options.columns[k].align
-              ? (cell.style.justifyContent = options.columns[k].align)
-              : "";
+            cell.style.width = (column.width || 80) + "px";
+            column.align ? (cell.style.textAlign = column.align) : "";
+            column.align ? (cell.style.justifyContent = column.align) : "";
 
             let content = document.createElement("div");
             content.classList.add(
@@ -6190,38 +6138,27 @@
             let jsGanttBlank = document.createElement("div");
             jsGanttBlank.classList.add("js-gantt-blank");
 
-            jsGanttBlank.innerHTML = this.callTemplate(
-              "grid_blank",
-              options.data[j]
-            );
+            jsGanttBlank.innerHTML = this.callTemplate("grid_blank", task);
 
             // content
             content.innerHTML =
-              options.columns[k].template(options.data[j]) ||
-              options.data[j][options.columns[k].name] ||
-              " ";
+              column.template(task) || task[column.name] || " ";
 
-            if (options.columns[k].tree) {
+            if (column.tree) {
               cell.classList.add("js-gantt-d-flex");
 
               // folder icon
               let folderIcon = document.createElement("div");
               folderIcon.classList.add("js-gantt-folder-icon");
 
-              folderIcon.innerHTML = this.callTemplate(
-                "grid_folder",
-                options.data[j]
-              );
+              folderIcon.innerHTML = this.callTemplate("grid_folder", task);
 
-              if (
-                options.data[j].children &&
-                options.data[j].children.length > 0
-              ) {
+              if (task.children && task.children.length > 0) {
                 // tree icon
                 let treeIcon = document.createElement("div");
                 treeIcon.classList.add(
                   "js-gantt-tree-icon",
-                  !this.options.openedTasks.includes(options.data[j].id)
+                  !this.options.openedTasks.includes(task.id)
                     ? "js-gantt-tree-close"
                     : "js-gantt-tree-open"
                 );
@@ -6234,19 +6171,17 @@
                   );
 
                   if (isTaskOpened) {
-                    this.options.openedTasks.push(options.data[j].id);
+                    this.options.openedTasks.push(task.id);
                   } else {
-                    const openedTasks = this.options.openedTasks.indexOf(
-                      options.data[j]
-                    );
+                    const openedTasks = this.options.openedTasks.indexOf(task);
                     if (openedTasks > -1) {
                       this.options.openedTasks.splice(openedTasks, 1);
                     }
                   }
 
                   this.setCollapseAll(
-                    this.options.data[j].children,
-                    this.options.data[j].id,
+                    task.children,
+                    task.id,
                     isTaskOpened ? "open" : "collapse"
                   );
 
@@ -6257,7 +6192,7 @@
 
                   // custom event of toggle tree
                   this.dispatchEvent("onTaskToggle", {
-                    task: this.options.data[j],
+                    task,
                     isTaskOpened,
                   });
                 });
@@ -6274,13 +6209,13 @@
         }
 
         this.createSidebarChild(
-          options.data[j].children,
+          task.children,
           options,
           leftDataContainer,
           1,
           j,
           true,
-          this.options.openedTasks.includes(options.data[j].id)
+          this.options.openedTasks.includes(task.id)
         );
       }
       sidebar.append(leftDataContainer);
