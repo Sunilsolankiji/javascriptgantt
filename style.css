@@ -1,0 +1,216 @@
+:root {
+    --bg-color: #fff;
+    --text-color: #000;
+    --text-secondary-color: #fff;
+    --index-primary-color: #4ca0fff2;
+    --index-primary-hover-color: #3585e0f2;
+  }
+  
+  * {
+    font-family: sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 13px;
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    background-color: var(--bg-color);
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    background-color: var(--index-primary-color);
+    color: var(--text-secondary-color);
+    font-weight: 500;
+    border-radius: 3px;
+    border: transparent;
+    margin: 5px 0;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  .btn:hover {
+    background-color: var(--index-primary-hover-color);
+  }
+  
+  .hint-icon path {
+    cursor: pointer;
+    fill: var(--index-primary-color);
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .hint-icon path:hover {
+    fill: var(--index-primary-hover-color);
+  }
+  
+  .scale-zoom,
+  .lang,
+  .export {
+    padding: 8px;
+    height: 35px;
+    border: 1px solid var(--index-primary-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    outline: transparent;
+    font-family: sans-serif;
+    color: #000;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  
+  .js-gantt-folder-icon > div {
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16px" height="10px" viewBox="0 0 48 48"><defs><style>.a{fill:none;stroke:%23000000;stroke-linecap:round;stroke-linejoin:round;}</style></defs><path class="a" d="M41.6783,13.0436H24.77c-1.9628-.1072-5.9311-4.2372-8.1881-4.2372H6.6806V8.8046A2.1762,2.1762,0,0,0,4.5,10.9763v7.3063h39V14.8652A1.8217,1.8217,0,0,0,41.6783,13.0436Z"/><path class="a" d="M43.5,18.2826H4.5V37.0165a2.1762,2.1762,0,0,0,2.1735,2.1789H41.3194A2.1762,2.1762,0,0,0,43.5,37.0237V18.2826Z"/></svg>');
+  }
+  
+  .js-gantt-folder-icon > div {
+    background-size: 24px;
+    height: 100%;
+    background-repeat: no-repeat;
+    width: 24px;
+    margin-top: 2px;
+    margin-right: 2px;
+  }
+  
+  .link-issue {
+    margin-right: 8px;
+  }
+  input[type="search"] {
+    height: 35px;
+    width: 280px;
+    color: var(--text-color);
+    border: 1px solid #cecece;
+    margin-bottom: 0px;
+    display: inline-block;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 0px 10px 0px 10px;
+    background: var(--bg-color);
+    border-radius: 6px;
+  }
+  input[type="search"]:focus {
+    outline: none;
+  }
+  #js-gantt {
+    width: 100vw;
+    height: calc(100vh - 100px);
+  }
+  
+  input[type="checkbox"] {
+    height: 0;
+    width: 0;
+    visibility: hidden;
+  }
+  
+  .action-container label {
+    cursor: pointer;
+    text-indent: -9999px;
+    width: 44px;
+    height: 24px;
+    background: #cccccc;
+    display: inline-block;
+    border-radius: 30px;
+    position: relative;
+  }
+  
+  .action-container label:after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: var(--bg-color);
+    border-radius: 20px;
+    transition: 0.3s;
+  }
+  
+  .action-container input:checked + label {
+    background: var(--index-primary-color);
+  }
+  
+  .action-container input:checked + label:after {
+    left: 22px;
+  }
+  
+  /* .my-scale-class-2{
+      background-color: #fafafa;
+  } */
+  
+  .collapse-container {
+    display: flex;
+    align-items: center;
+  }
+  
+  .action-container * {
+    font-weight: 500;
+    font-size: 13px;
+  }
+  .action-container {
+    margin: 0 10px;
+    height: 80px;
+    align-items: center;
+  }
+  
+  .action-container div {
+    margin-right: 15px;
+  }
+  
+  .collapse-container span {
+    margin-right: 5px;
+  }
+  
+  .gantt-search {
+    position: absolute;
+    right: 10px;
+    float: right;
+  }
+  
+  .coming-soon {
+    color: #fff;
+    font-size: 5px;
+    padding: 2px;
+    border-radius: 5px;
+    background-color: #21cfff;
+    position: absolute;
+    right: 7px;
+    top: 7px;
+  }
+  
+  .auto-scheduling {
+    position: relative;
+  }
+  
+  .toggle-theme {
+    margin-left: 2px;
+  }
+  
+  .export,
+  .scale-zoom,
+  .lang {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+  }
+  
+  .finish p:not(:first-child) {
+    opacity: 0.5;
+  }
+  
+  .dark-mode {
+    display: flex;
+    align-items: center;
+  }
+  
+  .zt-tour-hint {
+    background-color: var(--bg-color) !important;
+    box-shadow: rgba(100, 100, 111, 0.4) 0px 7px 29px 0px !important;
+  }
+  
+  .party .js-gantt-marker-content {
+    width: max-content;
+    font-size: 16px;
+    padding: 8px;
+  }
