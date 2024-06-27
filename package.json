@@ -1,25 +1,23 @@
 {
-    "name": "zt-gantt",
-    "version": "2.3.0",
+    "name": "jsgantt",
+    "version": "1.0.0",
     "description": "An open source JavaScript Gantt. This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management.",
-    "main": "public/gantt.js",
+    "main": "src/gantt.js",
     "repository": {
       "type": "git",
-      "url": "git+https://github.com/zehntech/zt-gantt"
+      "url": "git+https://github.com/Sunilsolankiji/jsgantt"
     },
     "keywords": [
       "gantt",
       "chart",
       "gantt chart",
       "scheduler",
-      "timeline",
-      "zehntech"
+      "timeline"
     ],
-    "author": "Zehntech",
+    "author": "Sunil Solanki",
     "license": "MIT",
     "bugs": {
-      "url": "https://github.com/zehntech/zt-gantt/issues"
+      "url": "https://github.com/Sunilsolankiji/jsgantt/issues"
     },
-    "homepage": "https://github.com/zehntech/zt-gantt#readme"
+    "homepage": "https://github.com/Sunilsolankiji/jsgantt#readme"
 }
-

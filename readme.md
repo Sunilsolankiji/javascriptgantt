@@ -1,8 +1,8 @@
-# ztGantt Chart Library Documentation  
+# jsGantt Chart Library Documentation  
   
 
 ## Introduction  
-Welcome to the documentation for [ztGantt](https://zehntech.github.io/zt-gantt/) Chart Library. This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management. This documentation will guide you through the installation process, usage instructions, and available features of the library.   
+Welcome to the documentation for [jsGantt](https://zehntech.github.io/zt-gantt/) Chart Library. This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management. This documentation will guide you through the installation process, usage instructions, and available features of the library.   
   
 
 ## Table of Contents 
@@ -20,10 +20,10 @@ To integrate the Gantt Chart Library, adhere to the steps below:
   1. Download the library files from our website or repository.  
   2. Integrate the library files (`gantt.js` and `gantt.css`) into your project.  
   3. Link the library files in your HTML file.  
-  4. You're now ready to start using the ztGantt Chart Library!    
+  4. You're now ready to start using the jsGantt Chart Library!    
 
 <a href="https://zehntech.github.io/zt-gantt/">
-  <img src="./public/images/zt-gantt-screenshot.png">
+  <img src="./src/assets/images/zt-gantt-screenshot.png">
 </a>    
   
 ---  
@@ -47,7 +47,7 @@ To create a basic Gantt Chart, follow these steps:
 
 ~~~js
 let element = document.getElementById("gantt_here"); 
-let gantt = new ztGantt(element);  
+let gantt = new jsGantt(element);  
 gantt.options.columns = [
   {
     name: "text",
@@ -106,7 +106,7 @@ gantt.render();
 
 [Live demo](https://zehntech.github.io/zt-gantt/)      
 
-**Complete Documentation:** [ztGantt Documentation](./public/Documentaion/Gantt-Chart-Documentation.pdf)  
+**Complete Documentation:** [jsGantt Documentation](./docs/Gantt-Chart-Documentation.pdf)  
   
   ---  
   
@@ -116,7 +116,7 @@ gantt.render();
   * **Task Linking:** Four types - finish-to-start, start-to-start, finish-to-finish, start-to-finish.      
 
   <a href="https://zehntech.github.io/zt-gantt/">
-    <img src="./public/images/links.gif">
+    <img src="./src/assets/images/links.gif">
   </a>  
 
   * **Drag and Drop:** Shift multiple tasks horizontally and vertically.    
@@ -126,7 +126,7 @@ gantt.render();
   * **Customization:** Modify the time scale, task edit form, and much more.    
     
   <a href="https://zehntech.github.io/zt-gantt/">
-    <img src="./public/images/popup.gif">
+    <img src="./src/assets/images/popup.gif">
   </a>   
 
   * **Task Progress:** Update task progress via dragging or manually set the percentage.    
@@ -140,17 +140,17 @@ gantt.render();
   * **Aesthetics:** Customize the task colors via a color picker.   
 
   <a href="https://zehntech.github.io/zt-gantt/">
-    <img src="./public/images/taskColor.gif">
+    <img src="./src/assets/images/taskColor.gif">
   </a>       
     
   * **Localization:** Multilingual support to cater to a global audience.   
   * **Themes:** Dark mode for those late-night work sessions.  
 
   <a href="https://zehntech.github.io/zt-gantt/">
-    <img src="./public/images/theme.gif">
+    <img src="./src/assets/images/theme.gif">
   </a>  
   
-  You can see the full list of features in the [documentation](./public/Documentaion/Gantt-Chart-Documentation.pdf)   
+  You can see the full list of features in the [documentation](./docs/Gantt-Chart-Documentation.pdf)   
     
         
   [Try it Yourself:](https://stackblitz.com/edit/js-bdaa47?file=index.js): Dive into hands-on examples and truly understand the potential of the library.    

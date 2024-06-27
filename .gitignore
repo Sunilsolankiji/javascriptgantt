@@ -2,6 +2,8 @@
 
 # IDEs and editors
 .idea/
+.idx
+.idx/
 
 # Visual Studio Code
 .vscode/
@@ -15,3 +17,14 @@
 # System files
 .DS_Store
 Thumbs.db
+.vscode/settings.json
+
+#node_modules
+node_modules
+
+#eslint
+eslint.config.mjs
+
+#package
+package.json
+package-lock.json
