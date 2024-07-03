@@ -246,7 +246,7 @@
 }
 
 .js-gantt-indent {
-  /* width: 20px; */
+  width: 20px;
   height: inherit;
   flex-grow: 0;
   flex-shrink: 0;

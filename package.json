@@ -3,21 +3,29 @@
     "version": "1.0.0",
     "description": "An open source JavaScript Gantt. This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management.",
     "main": "src/gantt.js",
+    "scripts": {
+        "lint": "eslint ."
+      },
     "repository": {
-      "type": "git",
-      "url": "git+https://github.com/Sunilsolankiji/jsgantt"
+        "type": "git",
+        "url": "git+https://github.com/Sunilsolankiji/jsgantt"
     },
     "keywords": [
-      "gantt",
-      "chart",
-      "gantt chart",
-      "scheduler",
-      "timeline"
+        "gantt",
+        "chart",
+        "gantt chart",
+        "scheduler",
+        "timeline"
     ],
     "author": "Sunil Solanki",
     "license": "MIT",
     "bugs": {
-      "url": "https://github.com/Sunilsolankiji/jsgantt/issues"
+        "url": "https://github.com/Sunilsolankiji/jsgantt/issues"
     },
-    "homepage": "https://github.com/Sunilsolankiji/jsgantt#readme"
+    "homepage": "https://github.com/Sunilsolankiji/jsgantt#readme",
+    "devDependencies": {
+        "@eslint/js": "^9.6.0",
+        "eslint": "^9.6.0",
+        "globals": "^15.8.0"
+    }
 }
