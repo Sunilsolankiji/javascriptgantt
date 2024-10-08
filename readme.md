@@ -23,7 +23,7 @@ To integrate the Gantt Chart Library, adhere to the steps below:
   4. You're now ready to start using the javascriptgantt Chart Library!    
 
 <a href="https://sunilsolankiji.github.io/jsgantt/">
-  <img src="./src/assets/images/zt-gantt-screenshot.png">
+  <img src="./src/assets/images/jsgantt-screenshot.png">
 </a>    
   
 ---  
