@@ -4582,10 +4582,10 @@
       // Determine the start and end dates based on the unit
       switch (unit) {
         case "hour":
-        // If unit is hour
-        startDate = new Date(date);
-        endDate = new Date(date);
-        break;
+          // If unit is hour
+          startDate = new Date(date);
+          endDate = new Date(date);
+          break;
         case "day":
           // If unit is day
           startDate = new Date(date);
@@ -4603,12 +4603,13 @@
           // If unit is quarter
           ({ startDate, endDate } = this.getQuarterStartEndDate(date));
           break;
-        case "year":
+        case "year": {
           // If unit is year
           const dateYear = new Date(date).getFullYear();
           startDate = new Date(dateYear, 0, 1);
           endDate = new Date(dateYear, 11, 31);
           break;
+        }
         default:
           // Handle invalid unit
           this.toastr("Error", `Invalid scale unit: ${unit}`, "error");
@@ -4790,29 +4791,36 @@
 
     calculateTimeLineWidth(type, levelType = this.options.zoomLevel) {
       let totalWidth = 0;
+
       if (type == "updated") {
-        if (this.options.zoomLevel !== "day" && levelType !== "day") {
-          let colDates;
-          let endDate = new Date(0);
-          for (let i = 0; i < this.dates.length; i++) {
-            colDates = this.initColSizes(
-              this.options.zoomLevel,
+        const isZoomLevelDay =
+          this.options.zoomLevel === "day" || levelType === "day";
+
+        if (!isZoomLevelDay) {
+          let cellEndDate = new Date(0);
+          const zoomLevel = this.options.zoomLevel;
+
+          for (const date of this.dates) {
+            if (cellEndDate.getTime() >= date) continue;
+            const { endDate, dateCount } = this.initColSizes(
+              zoomLevel,
               1,
-              this.dates[i]
+              date
             );
-            let cellWidth = this.calculateGridWidth(this.dates[i]);
-            if (endDate.getTime() < this.dates[i]) {
-              totalWidth += cellWidth * colDates.dateCount;
-              endDate = colDates.endDate;
-            }
+
+            const cellWidth = this.calculateGridWidth(date);
+            totalWidth += cellWidth * dateCount;
+            cellEndDate = endDate;
           }
         } else {
           totalWidth =
             this.calculateGridWidth(new Date(0), levelType) * this.dates.length;
         }
       } else {
-        let timeLineRow = this.element.querySelector(".js-gantt-task-row");
-        let timeLineCell = timeLineRow.querySelectorAll(".js-gantt-task-cell");
+        const timeLineRow = this.element.querySelector(".js-gantt-task-row");
+        const timeLineCell = timeLineRow.querySelectorAll(
+          ".js-gantt-task-cell"
+        );
         totalWidth = Array.from(timeLineCell).reduce(
           (totalWidth, cell) => totalWidth + cell.offsetWidth,
           0
@@ -4952,15 +4960,15 @@
      * @param { number | string } id - id of the task to delete
      */
     deleteTask(id) {
-      for (let i = 0; i < this.originalData.length; i++) {
-        if (this.originalData[i].id == id) {
-          const task = this.getTask(id);
-          this.originalData.splice(i, 1);
-          this.render();
-          this.hideLightbox();
-          this.dispatchEvent("onTaskDelete", { task });
-          break;
-        }
+      // Find the index of the task in originalData
+      const index = this.originalData.findIndex((task) => task.id == id);
+      // If task is found
+      if (index !== -1) {
+        const task = this.getTask(id);
+        this.originalData.splice(index, 1);
+        this.render();
+        this.hideLightbox();
+        this.dispatchEvent("onTaskDelete", { task });
       }
     }
 
@@ -4970,7 +4978,7 @@
      */
     updateTaskData(task) {
       const updatedTaskIndex = this.originalData.findIndex(
-        (item) => item.id === task.id
+        (item) => item.id == task.id
       );
 
       if (updatedTaskIndex !== -1) {
@@ -4987,6 +4995,7 @@
 
         this.updateTaskDuration();
         this.hideLightbox();
+
         this.dispatchEvent("onAfterTaskUpdate", { task });
       }
     }
@@ -5557,7 +5566,7 @@
             );
           }
 
-          let that = this;
+          const that = this;
 
           // handle double click event
           jsGanttBarTask.addEventListener("dblclick", handleDblClick);
@@ -6395,7 +6404,7 @@
             that.calculateTimeLineWidth("current")
           ) {
             const jsGanttLayout =
-            that.element.querySelector(".js-gantt-layout");
+              that.element.querySelector(".js-gantt-layout");
             that.createScrollbar(jsGanttLayout);
           } else {
             // rerender the calendar and scale
@@ -6474,6 +6483,7 @@
 
       function findTask(data, condition) {
         let result = new Set();
+
         data.forEach((item) => {
           if (condition(item)) {
             result.add(item.id);
@@ -9243,6 +9253,8 @@
     /**
      * Function to safely get the field value from the object,
      * this is a support method for sort method
+     * @param { Object } object - Object from which field need to get 
+     * @param { string } fieldName - field value which need to get
      */
     getFieldValue(object, fieldName) {
       return fieldName
@@ -9406,19 +9418,26 @@
       const screenWidth = window.innerWidth;
       const bodyHeight = document.documentElement.clientHeight;
 
+      const tooltipWidth = tooltip.offsetWidth;
+      const tooltipHeight = tooltip.offsetHeight;
+
+      const MARGIN_X = 10; // Horizontal margin
+      const MARGIN_Y = 25; // Vertical margin
+      const SCREEN_EDGE_MARGIN = 15; // Screen edge margin
+
       // Calculate new positions
-      let top = e.clientY + 25;
-      let left = e.clientX + 10;
+      let top = e.clientY + MARGIN_Y;
+      let left = e.clientX + MARGIN_X;
 
       // Adjust left position if tooltip goes beyond screen width
-      if (left + tooltip.offsetWidth > screenWidth - 15) {
-        left = e.clientX - tooltip.offsetWidth;
+      if (left + tooltipWidth > screenWidth - SCREEN_EDGE_MARGIN) {
+        left = e.clientX - tooltipWidth;
         if (left < 0) left = 0;
       }
 
       // Adjust top position if tooltip goes beyond body height
-      if (top + tooltip.offsetHeight > bodyHeight - 5) {
-        top = e.clientY - tooltip.offsetHeight;
+      if (top + tooltipHeight > bodyHeight - SCREEN_EDGE_MARGIN) {
+        top = e.clientY - tooltipHeight;
       }
 
       // Apply the new positions
@@ -9438,7 +9457,10 @@
       tooltip.style.display = "none";
     }
 
-    // method to update tooltip innerHTML
+    /**
+     * method to update tooltip innerHTML
+     * @param { Object } task task for tooltip need to update
+     */
     updateTooltipBody(task) {
       const tooltip = this.tooltip;
 
@@ -9453,8 +9475,10 @@
       );
 
       if (tooltipContent !== false) {
-        tooltip.innerHTML = tooltipContent;
-        tooltip.style.display = "block";
+        if (tooltip.innerHTML !== tooltipContent) {
+          tooltip.innerHTML = tooltipContent;
+          tooltip.style.display = "block";
+        }
       } else {
         this.hideTooltip();
       }
@@ -9520,9 +9544,8 @@
      * @param { Object } task task to select
      */
     selectTask(task) {
-      const that = this;
-      removeClassFromElements(".js-gantt-selected", "js-gantt-selected");
-      removeClassFromElements(
+      this.removeClassFromElements(".js-gantt-selected", "js-gantt-selected");
+      this.removeClassFromElements(
         ".js-gantt-selected-task-bar",
         "js-gantt-selected-task-bar"
       );
@@ -9552,12 +9575,6 @@
       this.options.selectedRow = `${task.id}`;
       this.options.selectedTask = `${task.id}`;
 
-      function removeClassFromElements(selector, className) {
-        const elements = that.element.querySelectorAll(selector);
-        elements.forEach((element) => {
-          element.classList.remove(className);
-        });
-      }
     }
 
     /**
@@ -9576,6 +9593,18 @@
         let cellBefore = taskBar.offsetLeft - 80;
         horizontalScroll.scrollLeft = cellBefore < 0 ? 0 : cellBefore;
       }
+    }
+
+    /**
+     * Helper method to remove a class from elements matching the selector
+     * @param { string } selector - CSS selector to find elements
+     * @param { string } className - Class name to remove
+     */
+    removeClassFromElements(selector, className) {
+      const elements = this.element.querySelectorAll(selector);
+      elements.forEach((element) => {
+        element.classList.remove(className);
+      });
     }
 
     /**

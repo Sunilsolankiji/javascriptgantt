@@ -1145,7 +1145,7 @@
   position: absolute;
   z-index: -1;
   width: 100%;
-  border: 2px solid var(--task-area-border);
+  border: 1px solid var(--task-area-border);
   background: var(--task-area-background);
   transition: all 0.2s ease;
   opacity: 0;
