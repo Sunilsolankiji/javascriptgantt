@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>jsGantt</title>
+    <title>javascriptgantt</title>
     <link rel="stylesheet" href="./style.css" />
     <link rel="stylesheet" href="src/gantt.css" />
     <link rel="stylesheet" href="src/assets/zt-tour/zt-tour.css" />
@@ -294,8 +294,8 @@
         // }
 
         let element = document.getElementById("js-gantt");
-        let ZT_Gantt = new jsGantt(element);
-        window.jsGantt = ZT_Gantt;
+        let javascriptGantt = new jsGantt(element);
+        window.javascriptGantt = javascriptGantt;
 
         const textEditor = { type: "text", map_to: "text" };
         const dateEditor = {
@@ -305,7 +305,7 @@
         const numberEditor = { type: "number", map_to: "progress", min: 0, max: 100 };
         const selectEditor = { type: "select", map_to: "priority", options: ["Low", "Medium", "High"] };
 
-        ZT_Gantt.options.columns = [
+        javascriptGantt.options.columns = [
             {
                 name: "text",
                 width: 245,
@@ -363,15 +363,15 @@
             // },
         ];
 
-        ZT_Gantt.options.date_format = "%m-%d-%Y";
-        ZT_Gantt.options.localLang = "en";
-        ZT_Gantt.options.data = data;
-        ZT_Gantt.options.collapse = false;
-        ZT_Gantt.options.weekends = ["Sat", "Sun"];
-        ZT_Gantt.options.fullWeek = true;
-        ZT_Gantt.options.todayMarker = true;
-        ZT_Gantt.options.dropArea = true;
-        ZT_Gantt.options.customMarker = [
+        javascriptGantt.options.date_format = "%m-%d-%Y";
+        javascriptGantt.options.localLang = "en";
+        javascriptGantt.options.data = data;
+        javascriptGantt.options.collapse = false;
+        javascriptGantt.options.weekends = ["Sat", "Sun"];
+        javascriptGantt.options.fullWeek = true;
+        javascriptGantt.options.todayMarker = true;
+        javascriptGantt.options.dropArea = true;
+        javascriptGantt.options.customMarker = [
             {
                 start_date: '06-20-2024',
                 css: "party",
@@ -379,27 +379,27 @@
                 title: "Ek aur Sal Barbad!"
             }
         ];
-        ZT_Gantt.options.updateLinkOnDrag = true;
-        ZT_Gantt.options.splitTask = false;
-        ZT_Gantt.options.sort = true;
+        javascriptGantt.options.updateLinkOnDrag = true;
+        javascriptGantt.options.splitTask = false;
+        javascriptGantt.options.sort = true;
         // ZT_Gantt.templates.showLightBox = false;
 
         // new feature of gantt -----
-        ZT_Gantt.options.mouseScroll = true; // default is false
-        ZT_Gantt.options.ctrlKeyRequiredForMouseScroll = true; // default is true
+        javascriptGantt.options.mouseScroll = true; // default is false
+        javascriptGantt.options.ctrlKeyRequiredForMouseScroll = true; // default is true
 
-        ZT_Gantt.options.addLinks = (task) => {
+        javascriptGantt.options.addLinks = (task) => {
             if (task.parent === 0) {
                 return false;
             }
             return true;
         };
 
-        ZT_Gantt.options.exportApi = "https://js-gantt.zehntech.net/";
+        javascriptGantt.options.exportApi = "https://js-gantt.zehntech.net/";
         // ZT_Gantt.options.exportApi = "http://192.168.0.155:8300/";
-        ZT_Gantt.options.taskColor = true;
-        ZT_Gantt.options.taskOpacity = 0.7;
-        ZT_Gantt.options.links = [
+        javascriptGantt.options.taskColor = true;
+        javascriptGantt.options.taskOpacity = 0.7;
+        javascriptGantt.options.links = [
             // 0 is  finish_to_start  
             // 1 is  start_to_start  
             // 2 is  finish_to_finish  
@@ -409,18 +409,18 @@
             { id: 3, source: 4, target: 23, type: 3 },
             { id: 4, source: 12, target: 15 },
         ];
-        ZT_Gantt.options.weekStart = 1; // set the start of the week
-        ZT_Gantt.options.sidebarWidth = 300;
-        ZT_Gantt.options.scales = [
+        javascriptGantt.options.weekStart = 1; // set the start of the week
+        javascriptGantt.options.sidebarWidth = 300;
+        javascriptGantt.options.scales = [
             {
                 unit: "week",
                 step: 1,
                 format: (t) => {
                     const { startDate: a, endDate: n, weekNum: i } = weekStartAndEnd(t);
-                    return ` ${ZT_Gantt.formatDateToString(
+                    return ` ${javascriptGantt.formatDateToString(
                         "%j %M",
                         a
-                    )} - ${ZT_Gantt.formatDateToString(
+                    )} - ${javascriptGantt.formatDateToString(
                         "%j %M",
                         n
                     )}, ${a.getFullYear()}`;
@@ -429,10 +429,10 @@
             { unit: "day", step: 1, format: "%d %D" },
         ];
 
-        ZT_Gantt.options.zoomLevel = "day";
+        javascriptGantt.options.zoomLevel = "day";
 
         // zoom config
-        ZT_Gantt.options.zoomConfig = {
+        javascriptGantt.options.zoomConfig = {
             levels: [
                 {
                     name: "hour",
@@ -467,10 +467,10 @@
                                     endDate: n,
                                     weekNum: i,
                                 } = weekStartAndEnd(t);
-                                return ` ${ZT_Gantt.formatDateToString(
+                                return ` ${javascriptGantt.formatDateToString(
                                     "%j %M",
                                     a
-                                )} - ${ZT_Gantt.formatDateToString(
+                                )} - ${javascriptGantt.formatDateToString(
                                     "%j %M",
                                     n
                                 )}, ${a.getFullYear()}`;
@@ -509,11 +509,11 @@
             ],
         };
 
-        ZT_Gantt.options.scale_height = 30;
-        ZT_Gantt.options.row_height = 24;
-        ZT_Gantt.options.minColWidth = 80;
-        ZT_Gantt.options.selectAreaOnDrag = true;
-        ZT_Gantt.options.taskProgress = true;
+        javascriptGantt.options.scale_height = 30;
+        javascriptGantt.options.row_height = 24;
+        javascriptGantt.options.minColWidth = 80;
+        javascriptGantt.options.selectAreaOnDrag = true;
+        javascriptGantt.options.taskProgress = true;
 
         // Gantt layout to implement columns in right side
         // ZT_Gantt.options.rightGrid = [
@@ -548,31 +548,31 @@
             const e = t.getDay();
             let a, n;
             0 === e
-                ? ((a = ZT_Gantt.add(t, -6, "day")), (n = t))
-                : ((a = ZT_Gantt.add(t, -1 * e + 1, "day")),
-                    (n = ZT_Gantt.add(t, 7 - e, "day")));
+                ? ((a = javascriptGantt.add(t, -6, "day")), (n = t))
+                : ((a = javascriptGantt.add(t, -1 * e + 1, "day")),
+                    (n = javascriptGantt.add(t, 7 - e, "day")));
             return {
                 startDate: a,
                 endDate: n,
-                weekNum: ZT_Gantt.formatDateToString("%W", t),
+                weekNum: javascriptGantt.formatDateToString("%W", t),
             };
         }
 
-        ZT_Gantt.options.startDate = "2024-06-01T11:46:17.775Z";
-        ZT_Gantt.options.endDate = "2024-10-30T11:46:17.775Z";
+        javascriptGantt.options.startDate = "2024-06-01T11:46:17.775Z";
+        javascriptGantt.options.endDate = "2024-10-30T11:46:17.775Z";
 
-        ZT_Gantt.templates.tooltip_text = function (start, end, task) {
+        javascriptGantt.templates.tooltip_text = function (start, end, task) {
             return `<b>${task.parent === 0 ? "Project" : "Task"}:</b>
             ${task.text}
             <br/><b>Start date:</b>
-            ${ZT_Gantt.formatDateToString("%d-%m-%y %H:%i", start)}
+            ${javascriptGantt.formatDateToString("%d-%m-%y %H:%i", start)}
             <br/><b>End date:</b>
-            ${ZT_Gantt.formatDateToString("%d-%m-%y %H:%i", end)}<br/>
+            ${javascriptGantt.formatDateToString("%d-%m-%y %H:%i", end)}<br/>
             <b>Duration:</b> ${task.duration} ${task.duration > 1 ? "Days" : "Day"
                 }`;
         };
 
-        ZT_Gantt.templates.taskbar_text = function (start, end, task) {
+        javascriptGantt.templates.taskbar_text = function (start, end, task) {
             if (task.parent == 0 && task.type !== "milestone") {
                 return `Project : ${task.text}`;
             } else if (task.type === "milestone") {
@@ -582,7 +582,7 @@
             }
         };
 
-        ZT_Gantt.templates.grid_folder = (task) => {
+        javascriptGantt.templates.grid_folder = (task) => {
             var name = task?.text?.trim().split(" ");
             var firstname = name?.[0];
             var lastname = name?.[1] ? name?.[1] : "";
@@ -592,7 +592,7 @@
             return `<div></div>`;
         };
 
-        ZT_Gantt.templates.grid_file = (task) => {
+        javascriptGantt.templates.grid_file = (task) => {
             if (task.parent != 0) {
                 var tracker_name = task.hasOwnProperty("tracker")
                     ? task.tracker.name
@@ -602,7 +602,7 @@
             }
         };
 
-        ZT_Gantt.templates.task_drag = (mode, task) => {
+        javascriptGantt.templates.task_drag = (mode, task) => {
             if (task.parent == 0 || (task.children && task.children.length > 0)) {
                 // || task.children
                 return false;
@@ -618,7 +618,7 @@
         //   console.log(start, end);
         //   return "my-grid-row-class test"
         // }
-        ZT_Gantt.templates.task_class = (start, end, task) => {
+        javascriptGantt.templates.task_class = (start, end, task) => {
             if (task.parent == 0) {
                 return "parent-task test";
             } else {
@@ -628,7 +628,7 @@
         // ZT_Gantt.templates.task_row_class = (start, end, task) => {
         //   return "my-task-row-class test"
         // }
-        ZT_Gantt.templates.scale_cell_class = (date, scale, scaleIndex) => {
+        javascriptGantt.templates.scale_cell_class = (date, scale, scaleIndex) => {
             if (scaleIndex === 1) {
                 return "my-scale-class-2";
             } else {
@@ -643,13 +643,13 @@
         // }
 
         // add custom marker
-        ZT_Gantt.addMarker({
-            start_date: ZT_Gantt.add(new Date(), 1, "day"), //a Date object that sets the marker's date
+        javascriptGantt.addMarker({
+            start_date: javascriptGantt.add(new Date(), 1, "day"), //a Date object that sets the marker's date
             css: "tomorrow", //a CSS class applied to the marker
             text: "Tomorrow", //the marker title
-            title: ZT_Gantt.formatDateToString(
+            title: javascriptGantt.formatDateToString(
                 "%d %F %y",
-                ZT_Gantt.add(new Date(), 1, "day")
+                javascriptGantt.add(new Date(), 1, "day")
             ), // the marker's tooltip
         });
 
@@ -661,7 +661,7 @@
         // });
 
         // render gantt
-        ZT_Gantt.render(element);
+        javascriptGantt.render(element);
 
         const jsGanttTheme = localStorage.getItem('jsGantt-theme');
 
@@ -672,36 +672,36 @@
         // console.log(ZT_Gantt.getTask(69));
 
         // custom events
-        ZT_Gantt.attachEvent("onTaskDblClick", (event) => {
+        javascriptGantt.attachEvent("onTaskDblClick", (event) => {
             // console.log("onTaskDblClick: ", event);
         });
         let idCount = 0;
-        ZT_Gantt.attachEvent("selectAreaOnDrag", (event) => {
+        javascriptGantt.attachEvent("selectAreaOnDrag", (event) => {
             // console.log("selectAreaOnDrag: ", event.task);
-            ZT_Gantt.addTask({
+            javascriptGantt.addTask({
                 id: "Added" + idCount,
                 start_date: new Date(event.task.startDate),
                 end_date: new Date(event.task.endDate),
                 parent: event.task.parent,
                 text: "Task Added",
             });
-            ZT_Gantt.render();
+            javascriptGantt.render();
             idCount += 1;
         });
-        ZT_Gantt.attachEvent("onLinkDblClick", (event) => {
+        javascriptGantt.attachEvent("onLinkDblClick", (event) => {
             // console.log("onLinkDblClick: ", event);
             // ZT_Gantt.deleteLink(event.link.id);
         });
-        ZT_Gantt.attachEvent("onBeforeLinkAdd", (event) => {
+        javascriptGantt.attachEvent("onBeforeLinkAdd", (event) => {
             // console.log("onBeforeLinkAdd: ", event);
         });
-        ZT_Gantt.attachEvent("onLinkAdd", (event) => {
+        javascriptGantt.attachEvent("onLinkAdd", (event) => {
             // console.log("onLinkAdd: ", event);
         });
-        ZT_Gantt.attachEvent("onDeleteLink", (event) => {
+        javascriptGantt.attachEvent("onDeleteLink", (event) => {
             // console.log("onDeleteLink: ", event);
         });
-        ZT_Gantt.attachEvent("onBeforeTaskDrag", (event) => {
+        javascriptGantt.attachEvent("onBeforeTaskDrag", (event) => {
             // console.log("onBeforeTaskDrag: ", event);
             if (event.task.children.length !== 0) {
                 return false;
@@ -709,37 +709,37 @@
                 return true;
             }
         });
-        ZT_Gantt.attachEvent("onTaskDrag", (event) => {
+        javascriptGantt.attachEvent("onTaskDrag", (event) => {
             // console.log("onTaskDrag: ", event);
         });
-        ZT_Gantt.attachEvent("onAfterTaskDrag", (event) => {
+        javascriptGantt.attachEvent("onAfterTaskDrag", (event) => {
             console.log("onAfterTaskDrag: ", event);
-            console.log("onAfterTaskDrag??: ", ZT_Gantt.options.data);
+            console.log("onAfterTaskDrag??: ", javascriptGantt.options.data);
             // ZT_Gantt.autoScheduling(); 
         });
-        ZT_Gantt.attachEvent("onBeforeTaskDrop", (event) => {
+        javascriptGantt.attachEvent("onBeforeTaskDrop", (event) => {
             console.log("onBeforeTaskDrop: ", event);
             if (event.parentTask?.id == 12) {
                 return false;
             }
         });
-        ZT_Gantt.attachEvent("onTaskToggle", (event) => {
+        javascriptGantt.attachEvent("onTaskToggle", (event) => {
             // console.log("onTaskToggle: ", event);
         });
 
-        ZT_Gantt.attachEvent("onTaskDelete", (event) => {
+        javascriptGantt.attachEvent("onTaskDelete", (event) => {
             console.log("onTaskDelete: ", event);
         });
-        ZT_Gantt.attachEvent("onAfterTaskUpdate", (event) => {
+        javascriptGantt.attachEvent("onAfterTaskUpdate", (event) => {
             // console.log("onAfterTaskUpdate: ", event);
         });
-        ZT_Gantt.attachEvent("onCellClick", (event) => {
+        javascriptGantt.attachEvent("onCellClick", (event) => {
             // console.log("onCellClick: ", event);
         });
-        ZT_Gantt.attachEvent("onRequestFullScreen", (event) => {
+        javascriptGantt.attachEvent("onRequestFullScreen", (event) => {
             // console.log("onRequestFullScreen: ", event);
         });
-        ZT_Gantt.attachEvent("onExitFullScreen", (event) => {
+        javascriptGantt.attachEvent("onExitFullScreen", (event) => {
             // console.log("onExitFullScreen: ", event);
         });
         // ZT_Gantt.attachEvent("onScroll", (event) => {
@@ -748,10 +748,10 @@
         // ZT_Gantt.attachEvent("onResize", (event) => {
         //   console.log("onResize: ", event);
         // });
-        ZT_Gantt.attachEvent("onAfterProgressDrag", (event) => {
+        javascriptGantt.attachEvent("onAfterProgressDrag", (event) => {
             // console.log("onAfterProgressDrag: ", event);
         });
-        ZT_Gantt.attachEvent("onBeforeProgressDrag", (event) => {
+        javascriptGantt.attachEvent("onBeforeProgressDrag", (event) => {
             // console.log("onBeforeProgressDrag: ", event);
             // if(event.task.parent === 0){
             //   return false;
@@ -759,67 +759,67 @@
             //   return true;
             // }
         });
-        ZT_Gantt.attachEvent("onAutoScheduling", (event) => {
+        javascriptGantt.attachEvent("onAutoScheduling", (event) => {
             // console.log("onAutoScheduling: ", event);
         });
-        ZT_Gantt.attachEvent("onColorChange", (event) => {
+        javascriptGantt.attachEvent("onColorChange", (event) => {
             // console.log("onColorChange: ", event);
         });
-        ZT_Gantt.attachEvent("onBeforeTaskDblClick", (event) => {
+        javascriptGantt.attachEvent("onBeforeTaskDblClick", (event) => {
             // console.log("onBeforeTaskDblClick: ", event);
             // if(event.task.id === 3){
             //   return false;
             // }
         });
-        ZT_Gantt.attachEvent("onBeforeSave", (event) => {
+        javascriptGantt.attachEvent("onBeforeSave", (event) => {
             // console.log("onBeforeSave: ", event);
         });
-        ZT_Gantt.attachEvent("onSave", (event) => {
+        javascriptGantt.attachEvent("onSave", (event) => {
             // console.log("onSave: ", event);
         });
 
         let fullscreen = false;
         function changeScreen() {
             if (fullscreen === false) {
-                ZT_Gantt.requestFullScreen();
+                javascriptGantt.requestFullScreen();
                 // ZT_Gantt.openTask(3);
             } else {
-                ZT_Gantt.exitFullScreen();
+                javascriptGantt.exitFullScreen();
             }
         }
 
         function changeZoom(e) {
-            ZT_Gantt.options.zoomLevel = e.target.value;
+            javascriptGantt.options.zoomLevel = e.target.value;
             if (e.target.value === "month" || e.target.value === "quarter") {
-                ZT_Gantt.options.startDate = "2024-01-01T11:46:17.775Z";
-                ZT_Gantt.options.endDate = "2024-12-31T11:46:17.775Z";
+                javascriptGantt.options.startDate = "2024-01-01T11:46:17.775Z";
+                javascriptGantt.options.endDate = "2024-12-31T11:46:17.775Z";
             } else if (e.target.value === "year") {
-                ZT_Gantt.options.startDate = "2022-01-01T11:46:17.775Z";
-                ZT_Gantt.options.endDate = "2024-12-31T11:46:17.775Z";
+                javascriptGantt.options.startDate = "2022-01-01T11:46:17.775Z";
+                javascriptGantt.options.endDate = "2024-12-31T11:46:17.775Z";
             } else {
-                ZT_Gantt.options.startDate = "2024-03-01T11:46:17.775Z";
-                ZT_Gantt.options.endDate = "2024-03-30T11:46:17.775Z";
+                javascriptGantt.options.startDate = "2024-03-01T11:46:17.775Z";
+                javascriptGantt.options.endDate = "2024-03-30T11:46:17.775Z";
             }
-            ZT_Gantt.zoomInit();
+            javascriptGantt.zoomInit();
         }
 
         function changeLang(e) {
-            ZT_Gantt.setLocalLang(e.target.value);
+            javascriptGantt.setLocalLang(e.target.value);
         }
 
         function changeCollapse(e) {
             if (e.target.checked === true) {
-                ZT_Gantt.collapseAll();
+                javascriptGantt.collapseAll();
             } else {
-                ZT_Gantt.expandAll();
+                javascriptGantt.expandAll();
             }
         }
 
         function changeToday(e) {
             if (event.target.checked === true) {
-                ZT_Gantt.addTodayFlag();
+                javascriptGantt.addTodayFlag();
             } else {
-                ZT_Gantt.removeTodayFlag();
+                javascriptGantt.removeTodayFlag();
             }
         }
 
@@ -829,20 +829,20 @@
                 "https://zehntech.github.io/js-gantt/style.css",
             ];
             if (e.target.value === "png") {
-                ZT_Gantt.exportToPNG("jsGanttChart", stylesheet);
+                javascriptGantt.exportToPNG("jsGanttChart", stylesheet);
             } else if (e.target.value === "pdf") {
-                ZT_Gantt.exportToPDF("jsGanttChart", stylesheet);
+                javascriptGantt.exportToPDF("jsGanttChart", stylesheet);
             } else {
-                ZT_Gantt.exportToExcel("jsGanttChart");
+                javascriptGantt.exportToExcel("jsGanttChart");
             }
             e.target.value = "";
         }
 
         function autoScheduling() {
-            ZT_Gantt.autoScheduling();
+            javascriptGantt.autoScheduling();
         }
         function addTask() {
-            ZT_Gantt.addTask({
+            javascriptGantt.addTask({
                 id: 5354653546,
                 tracker_id: 4,
                 project_id: 86,
@@ -877,7 +877,7 @@
             //   ZT_Gantt.openTask(280);
             // },0)
             // ZT_Gantt.parse(data);
-            ZT_Gantt.render();
+            javascriptGantt.render();
             // ZT_Gantt.deleteLink(1);
         }
 
@@ -922,17 +922,17 @@
         this.changeTheme(jsGanttTheme == 'dark');
 
         let getScale = () => {
-            console.log(ZT_Gantt.getScale());
+            console.log(javascriptGantt.getScale());
         };
 
         function searchTask(e) {
             let isFilter = e.target.value.trim() !== "";
-            ZT_Gantt.filterTask((task) => {
+            javascriptGantt.filterTask((task) => {
                 return task.text.toLowerCase().includes(e.target.value.toLowerCase());
             }, isFilter, true);
         }
         function addCol() {
-            ZT_Gantt.options.columns.push({
+            javascriptGantt.options.columns.push({
                 name: "progress",
                 width: 245,
                 min_width: 80,
@@ -945,12 +945,12 @@
                     return `<span>${task.progress || 0}</span>`;
                 },
             });
-            ZT_Gantt.render();
+            javascriptGantt.render();
         }
 
         function removeCol() {
-            ZT_Gantt.options.columns.splice(ZT_Gantt.options.columns.length - 1, 1);
-            ZT_Gantt.render();
+            javascriptGantt.options.columns.splice(javascriptGantt.options.columns.length - 1, 1);
+            javascriptGantt.render();
         }
 
         function startTour() {

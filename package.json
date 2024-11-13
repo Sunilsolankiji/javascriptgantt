@@ -8,7 +8,7 @@
       },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/Sunilsolankiji/jsgantt"
+        "url": "git+https://github.com/Sunilsolankiji/javascriptgantt"
     },
     "keywords": [
         "gantt",
@@ -17,14 +17,15 @@
         "scheduler",
         "timeline",
         "jsganttchart",
-        "jsgantt"
+        "jsgantt",
+        "javascriptgantt"
     ],
     "author": "Sunil Solanki",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/Sunilsolankiji/jsgantt/issues"
+        "url": "https://github.com/Sunilsolankiji/javascriptgantt/issues"
     },
-    "homepage": "https://github.com/Sunilsolankiji/jsgantt#readme",
+    "homepage": "https://github.com/Sunilsolankiji/javascriptgantt#readme",
     "devDependencies": {
         "@eslint/js": "^9.6.0",
         "eslint": "^9.6.0",
