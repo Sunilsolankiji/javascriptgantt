@@ -395,7 +395,7 @@
             return true;
         };
 
-        ZT_Gantt.options.exportApi = "https://js-gantt.zehntech.net/";
+        ZT_Gantt.options.exportApi = "";
         // ZT_Gantt.options.exportApi = "http://192.168.0.155:8300/";
         ZT_Gantt.options.taskColor = true;
         ZT_Gantt.options.taskOpacity = 0.7;
@@ -824,10 +824,7 @@
         }
 
         function exportChange(e) {
-            let stylesheet = [
-                "https://zehntech.github.io/js-gantt/gantt.css",
-                "https://zehntech.github.io/js-gantt/style.css",
-            ];
+            let stylesheet = [];
             if (e.target.value === "png") {
                 ZT_Gantt.exportToPNG("jsGanttChart", stylesheet);
             } else if (e.target.value === "pdf") {
