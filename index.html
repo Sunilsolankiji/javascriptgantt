@@ -824,10 +824,7 @@
         }
 
         function exportChange(e) {
-            let stylesheet = [
-                "https://zehntech.github.io/js-gantt/gantt.css",
-                "https://zehntech.github.io/js-gantt/style.css",
-            ];
+            let stylesheet = [];
             if (e.target.value === "png") {
                 javascriptGantt.exportToPNG("jsGanttChart", stylesheet);
             } else if (e.target.value === "pdf") {
