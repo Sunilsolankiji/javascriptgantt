@@ -1,6 +1,6 @@
 {
     "name": "javascriptgantt",
-    "version": "1.0.1",
+    "version": "1.2.0",
     "description": "An open source JavaScript Gantt. This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management.",
     "main": "src/gantt.js",
     "scripts": {
