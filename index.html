@@ -110,8 +110,8 @@
                 </g>
             </svg>
         </div>
-        <!-- <button onclick="ZT_Gantt.destroy()">destroy</button>
-      <button onclick="ZT_Gantt.render()">render</button> -->
+        <!-- <button onclick="javascriptgantt.destroy()">destroy</button>
+      <button onclick="javascriptgantt.render()">render</button> -->
         <!-- <button onclick="addCol()">Add Column</button>
       <button onclick="removeCol()">Remove Column</button> -->
         <input type="search" placeholder="Search Task" id="gantt-search" name="gantt-search" class="gantt-search"
@@ -294,8 +294,8 @@
         // }
 
         let element = document.getElementById("js-gantt");
-        let javascriptGantt = new jsGantt(element);
-        window.javascriptGantt = javascriptGantt;
+        let javascriptGantt = new javascriptgantt(element);
+        window.javascriptgantt = javascriptGantt;
 
         const textEditor = { type: "text", map_to: "text" };
         const dateEditor = {
@@ -382,7 +382,7 @@
         javascriptGantt.options.updateLinkOnDrag = true;
         javascriptGantt.options.splitTask = false;
         javascriptGantt.options.sort = true;
-        // ZT_Gantt.templates.showLightBox = false;
+        // javascriptgantt.templates.showLightBox = false;
 
         // new feature of gantt -----
         javascriptGantt.options.mouseScroll = true; // default is false
@@ -395,8 +395,8 @@
             return true;
         };
 
-        javascriptGantt.options.exportApi = "https://js-gantt.zehntech.net/";
-        // ZT_Gantt.options.exportApi = "http://192.168.0.155:8300/";
+        javascriptGantt.options.exportApi = "";
+        // javascriptgantt.options.exportApi = "http://192.168.0.155:8300/";
         javascriptGantt.options.taskColor = true;
         javascriptGantt.options.taskOpacity = 0.7;
         javascriptGantt.options.links = [
@@ -516,7 +516,7 @@
         javascriptGantt.options.taskProgress = true;
 
         // Gantt layout to implement columns in right side
-        // ZT_Gantt.options.rightGrid = [
+        // javascriptgantt.options.rightGrid = [
         // {
         //     name: "text",
         //     width: 245,
@@ -611,10 +611,10 @@
         };
 
         // add custom classes
-        // ZT_Gantt.templates.grid_header_class = (columns,i) => {
+        // javascriptgantt.templates.grid_header_class = (columns,i) => {
         //   return "my-header-class test"
         // }
-        // ZT_Gantt.templates.grid_row_class = (start, end, task) => {
+        // javascriptgantt.templates.grid_row_class = (start, end, task) => {
         //   console.log(start, end);
         //   return "my-grid-row-class test"
         // }
@@ -625,7 +625,7 @@
                 return "child-task test";
             }
         };
-        // ZT_Gantt.templates.task_row_class = (start, end, task) => {
+        // javascriptgantt.templates.task_row_class = (start, end, task) => {
         //   return "my-task-row-class test"
         // }
         javascriptGantt.templates.scale_cell_class = (date, scale, scaleIndex) => {
@@ -635,10 +635,10 @@
                 return "my-scale-class-1";
             }
         };
-        // ZT_Gantt.templates.grid_cell_class = (col, task) => {
+        // javascriptgantt.templates.grid_cell_class = (col, task) => {
         //   return "my-grid-cell-class test"
         // }
-        // ZT_Gantt.templates.timeline_cell_class = (task, date) => {
+        // javascriptgantt.templates.timeline_cell_class = (task, date) => {
         //   return "my-task-cell-class  Test  "
         // }
 
@@ -653,23 +653,23 @@
             ), // the marker's tooltip
         });
 
-        // ZT_Gantt.addMarker({
-        //   start_date: ZT_Gantt.add(new Date(),-1, "day"), //a Date object that sets the marker's date
+        // javascriptgantt.addMarker({
+        //   start_date: javascriptgantt.add(new Date(),-1, "day"), //a Date object that sets the marker's date
         //   css: "yesterday", //a CSS class applied to the marker
         //   text: "Yesterday", //the marker title
-        //   title: ZT_Gantt.formatDateToString("%d %F %Y", ZT_Gantt.add(new Date(),-1, "day")), // the marker's tooltip
+        //   title: javascriptgantt.formatDateToString("%d %F %Y", javascriptgantt.add(new Date(),-1, "day")), // the marker's tooltip
         // });
 
         // render gantt
         javascriptGantt.render(element);
 
-        const jsGanttTheme = localStorage.getItem('jsGantt-theme');
+        const jsGanttTheme = localStorage.getItem('javascriptgantt-theme');
 
 
-        // console.log(ZT_Gantt);
+        // console.log(javascriptgantt);
 
         // to find task in gantt
-        // console.log(ZT_Gantt.getTask(69));
+        // console.log(javascriptgantt.getTask(69));
 
         // custom events
         javascriptGantt.attachEvent("onTaskDblClick", (event) => {
@@ -690,7 +690,7 @@
         });
         javascriptGantt.attachEvent("onLinkDblClick", (event) => {
             // console.log("onLinkDblClick: ", event);
-            // ZT_Gantt.deleteLink(event.link.id);
+            // javascriptgantt.deleteLink(event.link.id);
         });
         javascriptGantt.attachEvent("onBeforeLinkAdd", (event) => {
             // console.log("onBeforeLinkAdd: ", event);
@@ -715,7 +715,7 @@
         javascriptGantt.attachEvent("onAfterTaskDrag", (event) => {
             console.log("onAfterTaskDrag: ", event);
             console.log("onAfterTaskDrag??: ", javascriptGantt.options.data);
-            // ZT_Gantt.autoScheduling(); 
+            // javascriptgantt.autoScheduling(); 
         });
         javascriptGantt.attachEvent("onBeforeTaskDrop", (event) => {
             console.log("onBeforeTaskDrop: ", event);
@@ -742,10 +742,10 @@
         javascriptGantt.attachEvent("onExitFullScreen", (event) => {
             // console.log("onExitFullScreen: ", event);
         });
-        // ZT_Gantt.attachEvent("onScroll", (event) => {
+        // javascriptgantt.attachEvent("onScroll", (event) => {
         //   console.log("onScroll: ", event);
         // });
-        // ZT_Gantt.attachEvent("onResize", (event) => {
+        // javascriptgantt.attachEvent("onResize", (event) => {
         //   console.log("onResize: ", event);
         // });
         javascriptGantt.attachEvent("onAfterProgressDrag", (event) => {
@@ -782,7 +782,7 @@
         function changeScreen() {
             if (fullscreen === false) {
                 javascriptGantt.requestFullScreen();
-                // ZT_Gantt.openTask(3);
+                // javascriptgantt.openTask(3);
             } else {
                 javascriptGantt.exitFullScreen();
             }
@@ -871,18 +871,18 @@
             });
             // setTimeout(()=>{
 
-            //   ZT_Gantt.openTask(280);
+            //   javascriptgantt.openTask(280);
             // },0)
-            // ZT_Gantt.parse(data);
+            // javascriptgantt.parse(data);
             javascriptGantt.render();
-            // ZT_Gantt.deleteLink(1);
+            // javascriptgantt.deleteLink(1);
         }
 
         // get the position of the cell
-        // console.log(ZT_Gantt.posFromDate(new Date()));
+        // console.log(javascriptgantt.posFromDate(new Date()));
 
         // iterate over each task
-        // ZT_Gantt.eachTask((task)=>{
+        // javascriptgantt.eachTask((task)=>{
         //   console.log(task._id,"task _id ?????????????????????????????????");
         // })
 
@@ -896,7 +896,7 @@
                 cssStyle.setAttribute("rel", "stylesheet");
                 cssStyle.setAttribute("href", "src/theme/dark.css");
                 document.getElementsByTagName("head")[0].append(cssStyle);
-                localStorage.setItem('jsGantt-theme', 'dark');
+                localStorage.setItem('javascriptgantt-theme', 'dark');
 
                 root.style.setProperty("--bg-color", "#333332");
                 root.style.setProperty("--text-color", "#fff");
@@ -912,7 +912,7 @@
                 root.style.setProperty("--text-secondary-color", "#fff");
                 root.style.setProperty("--index-primary-color", "#4ca0fff2");
                 root.style.setProperty("--index-primary-hover-color", "#3585e0f2");
-                localStorage.setItem('jsGantt-theme', 'light');
+                localStorage.setItem('javascriptgantt-theme', 'light');
             }
         }
 
@@ -1095,8 +1095,8 @@
             });
         }
         let intro = `
-        <h2 style="font-size: 18px; margin-bottom: 5px; font-weight: 600; text-align:center">jsGantt Chart</h2>
-        <p style="line-height: 18px; text-align: justify;margin-bottom: 5px;">Welcome to the jsGantt Chart Library. 
+        <h2 style="font-size: 18px; margin-bottom: 5px; font-weight: 600; text-align:center">javascriptgantt Chart</h2>
+        <p style="line-height: 18px; text-align: justify;margin-bottom: 5px;">Welcome to the javascriptgantt Chart Library. 
           This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management. This documentation will guide you through the installation process, 
           usage instructions, and available features of the library.</p>
           <p>Click on "Start Tour" to start the tour.</p>
