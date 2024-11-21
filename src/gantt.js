@@ -5001,12 +5001,12 @@
     }
 
     // export Gantt as PNG
-    exportToPNG(name = "jsGantt", styleSheet) {
+    exportToPNG(name = "javascriptgantt", styleSheet) {
       this.getFile(name, "png", styleSheet);
     }
 
     // export Gantt as PDF
-    exportToPDF(name = "jsGantt", styleSheet) {
+    exportToPDF(name = "javascriptgantt", styleSheet) {
       this.getFile(name, "pdf", styleSheet);
     }
 
@@ -5014,7 +5014,7 @@
      * Method to export Gantt as Excel.
      * @param { string } name - Name of the exported excel file.
      */
-    exportToExcel(name = "jsGantt") {
+    exportToExcel(name = "javascriptgantt") {
       let csv = "";
       const regexIgnorePattern =
         /<[^>]+?\sjs-gantt-ignore=(["'])(true)\1[^>]*>.*?<\/[^>]+?>/g;
@@ -5081,7 +5081,7 @@
     }
 
     // Method for calling api
-    getFile(filename = "jsGantt", type, styleSheet) {
+    getFile(filename = "javascriptgantt", type, styleSheet) {
       const apiUrl = this.options.exportApi;
 
       if (!this.options.exportApi) {
