@@ -15,7 +15,7 @@
  * ========================================================= */
 
 (function (global) {
-  class jsGantt {
+  class javascriptgantt {
     #arrangeData = true;
     #ganttHeight = 0;
     #debounceTimers = new Map();
@@ -9667,5 +9667,5 @@
     }
   }
 
-  global.jsGantt = jsGantt;
+  global.javascriptgantt = javascriptgantt;
 })(this);
