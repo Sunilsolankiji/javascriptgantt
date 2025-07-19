@@ -1774,6 +1774,8 @@
       if (this.templates?.showLightBox !== false) {
         this.createLightbox();
       }
+
+      this.debouncedFilterTask = this.#filterTasks();
     }
 
     handleResizeWindow(event) {
@@ -2265,18 +2267,7 @@
                     this.removeTaskFromOpenedList(task.id);
                   }
 
-                  this.setCollapseAll(
-                    task.children,
-                    task.id,
-                    isTaskCollapse ? "open" : "collapse"
-                  );
-
-                  this.createTaskBars();
-
-                  treeIcon.classList.toggle("js-gantt-tree-close");
-                  treeIcon.classList.toggle("js-gantt-tree-open");
-
-                  this.createScrollbar(jsGanttLayout);
+                  this.render();
 
                   // custom event of toggle tree
                   this.dispatchEvent("onTaskToggle", {
@@ -2308,7 +2299,11 @@
           leftDataContainer.append(dataItem);
         }
 
-        if (!this.options.splitTask && task?.children?.length) {
+        if (
+          !this.options.splitTask &&
+          task?.children?.length &&
+          this.isTaskOpened(task.id)
+        ) {
           this.createSidebarChild(
             task.children,
             options,
@@ -2512,13 +2507,15 @@
           jsGanttTaskData.append(timelineRow);
         }
 
+        const isTaskOpened = this.isTaskOpened(task.id);
+
         // if children exist
-        if (task?.children?.length && !this.options.splitTask) {
+        if (task?.children?.length && !this.options.splitTask && isTaskOpened) {
           this.createTimelineChildBody(
             task.children,
             jsGanttTaskData,
             j,
-            this.options.openedTasks.includes(task.id),
+            isTaskOpened,
             timelineRowTemplate
           );
         }
@@ -3499,7 +3496,7 @@
      * @returns {string} The date formatted as a string in the specified format.
      */
     formatDateToString(format, date) {
-      const dateFormat = this.#dateFormat;
+      const dateFormat = this.options.currentLanguage;
       date = new Date(date);
 
       return format.replace(/%[a-zA-Z]/g, (format) => {
@@ -3716,55 +3713,19 @@
      * Method to expand all rows of gantt
      */
     expandAll() {
-      const childRows = this.element.querySelectorAll(".js-gantt-child-row");
-      const toggleIcons = this.element.querySelectorAll(".js-gantt-tree-close");
-
-      for (let icon of toggleIcons) {
-        icon.classList.remove("js-gantt-tree-close");
-        icon.classList.add("js-gantt-tree-open");
-      }
-
-      for (let row of childRows) {
-        if (row.classList.contains("js-gantt-d-none")) {
-          row.classList.add("js-gantt-d-flex");
-          row.classList.remove("js-gantt-d-none");
-        }
-      }
-
-      this.options.openedTasks = this.originalData.map((task) => task?.id);
-      this.createTaskBars();
-      const jsGanttLayout = this.element.querySelector("#js-gantt-layout");
-      this.createScrollbar(jsGanttLayout);
       this.options.collapse = false;
+      this.render();
     }
 
     /**
      * Method to collapse all rows of gantt
      */
     collapseAll() {
-      const childRows = this.element.querySelectorAll(".js-gantt-child-row");
-      const toggleIcons = this.element.querySelectorAll(".js-gantt-tree-icon");
-
-      // Make the opened task array empty
-      this.options.openedTasks.length = 0;
-
-      // Change all the toggle icons to close
-      for (let icon of toggleIcons) {
-        icon.classList.remove("js-gantt-tree-open");
-        icon.classList.add("js-gantt-tree-close");
-      }
-
-      // Hide all the child rows
-      for (let row of childRows) {
-        row.classList.add("js-gantt-d-none");
-        row.classList.remove("js-gantt-d-flex");
-      }
-
-      // Again create all taskBars
-      this.createTaskBars();
-      const jsGanttLayout = this.element.querySelector("#js-gantt-layout");
-      this.createScrollbar(jsGanttLayout);
       this.options.collapse = true;
+      // Make the opened task array empty
+      this.options.openedTasks = [];
+
+      this.render();
     }
 
     // get start and end dates from children array
@@ -5321,19 +5282,7 @@
                     this.removeTaskFromOpenedList(task.id);
                   }
 
-                  this.setCollapseAll(
-                    task.children,
-                    task.id,
-                    isTaskCollapse ? "open" : "collapse"
-                  );
-
-                  this.createTaskBars();
-                  treeIcon.classList.toggle("js-gantt-tree-close");
-                  treeIcon.classList.toggle("js-gantt-tree-open");
-
-                  let jsGanttLayout =
-                    this.element.querySelector("#js-gantt-layout");
-                  this.createScrollbar(jsGanttLayout);
+                  this.render();
 
                   // custom event of toggle tree
                   this.dispatchEvent("onTaskToggle", {
@@ -5364,15 +5313,18 @@
           leftDataContainer.append(dataItem);
         }
 
-        this.createSidebarChild(
-          task.children,
-          options,
-          leftDataContainer,
-          nestedLevel + 1,
-          taskParents,
-          isRight,
-          isOpened ? this.isTaskOpened(task.id) : isOpened
-        );
+        const isTaskOpened = this.isTaskOpened(task.id);
+        if (isTaskOpened) {
+          this.createSidebarChild(
+            task.children,
+            options,
+            leftDataContainer,
+            nestedLevel + 1,
+            taskParents,
+            isRight,
+            isOpened ? isTaskOpened : isOpened
+          );
+        }
       }
     }
 
@@ -5439,13 +5391,15 @@
           jsGanttTaskData.append(timelineRow);
         }
 
+        const isTaskOpened = this.isTaskOpened(task.id);
+
         // if children exist
-        if (task?.children?.length) {
+        if (task?.children?.length && isTaskOpened) {
           this.createTimelineChildBody(
             task.children,
             jsGanttTaskData,
             taskParents,
-            isOpened ? this.isTaskOpened(task.id) : isOpened,
+            isOpened ? isTaskOpened : isOpened,
             timelineRowTemplate
           );
         }
@@ -5847,41 +5801,6 @@
       return openedTasks;
     }
 
-    /**
-     *
-     * @param {Array} data - tasks children data to be collapsed.
-     * @param {number | string} parentId - task id which need to be collapsed.
-     * @param {string} type - open | collapse.
-     */
-    setCollapseAll(data, parentId, type) {
-      if (!data) return;
-
-      data.forEach((child) => {
-        if (child.children && child?.children?.length) {
-          const childType =
-            this.isTaskOpened(parentId) && type === "open"
-              ? "open"
-              : "collapse";
-          this.setCollapseAll(child.children, child.id, childType);
-        }
-      });
-
-      const childrenSelector =
-        type === "collapse"
-          ? `.js-gantt-child-${parentId}:not(.js-gantt-d-none)`
-          : `.js-gantt-child-${parentId}.js-gantt-d-none`;
-
-      const children = this.element.querySelectorAll(childrenSelector);
-
-      Array.from(children).forEach((child) => {
-        if (type === "collapse") {
-          child.classList.add("js-gantt-d-none");
-        } else if (this.isTaskOpened(parentId)) {
-          child.classList.remove("js-gantt-d-none");
-        }
-      });
-    }
-
     // create right sidebar
     createRightSidebar(options, mainContainer) {
       // sidebar head cells
@@ -6093,16 +6012,7 @@
                     this.removeTaskFromOpenedList(task.id);
                   }
 
-                  this.setCollapseAll(
-                    task.children,
-                    task.id,
-                    isTaskOpened ? "open" : "collapse"
-                  );
-
-                  this.createTaskBars();
-
-                  treeIcon.classList.toggle("js-gantt-tree-close");
-                  treeIcon.classList.toggle("js-gantt-tree-open");
+                  this.render();
 
                   // custom event of toggle tree
                   this.dispatchEvent("onTaskToggle", {
@@ -6445,19 +6355,14 @@
       return null;
     }
 
-    /**
-     * Filter tasks based on user-defined conditions.
-     * @param {Function} condition - The condition function used to filter tasks.
-     * @param {boolean} isFilter - Indicates whether to apply the filter or reset.
-     * @param {boolean} findRecursive - Indicates whether to find recursive parent-child tasks.
-     */
-    filterTask(condition, isFilter, findRecursive = false) {
-      let parents = new Set();
-      const that = this;
-
-      const debouncedFilterTask = this.debounce(
+    #filterTasks() {
+      return this.debounce(
         "filterTaskTimer",
-        () => {
+        (condition, isFilter, findRecursive = false) => {
+          console.log("first filter");
+          let parents = new Set();
+          const that = this;
+
           if (!this.#searchedData) {
             this.oldOpenedTasks = [...this.options.openedTasks];
           }
@@ -6475,43 +6380,57 @@
           this.#searchedData = findTask(allData, condition);
 
           this.render();
+
+          function findTask(data, condition) {
+            let result = new Set();
+
+            data.forEach((item) => {
+              if (condition(item)) {
+                result.add(item.id);
+                if (that.options.splitTask || findRecursive) {
+                  findParents(item, result);
+                }
+              }
+              if (Array.isArray(item.children)) {
+                const filteredChildrenIds = findTask(item.children, condition);
+                filteredChildrenIds.forEach((id) => result.add(id));
+              }
+            });
+
+            return Array.from(result);
+          }
+
+          function findParents(item, result) {
+            while (
+              item.parent &&
+              item.parent != 0 &&
+              !parents.has(item.parent)
+            ) {
+              parents.add(item.parent);
+              result.add(item.parent);
+              let parentItem = that.getTask(item.parent);
+              if (parentItem) {
+                item = parentItem;
+              } else {
+                break;
+              }
+            }
+          }
         },
         300
       );
+    }
 
-      debouncedFilterTask();
+    /**
+     * Filter tasks based on user-defined conditions.
+     * @param {Function} condition - The condition function used to filter tasks.
+     * @param {boolean} isFilter - Indicates whether to apply the filter or reset.
+     * @param {boolean} findRecursive - Indicates whether to find recursive parent-child tasks.
+     */
+    filterTask(condition, isFilter, findRecursive = false) {
 
-      function findTask(data, condition) {
-        let result = new Set();
+      this.debouncedFilterTask(condition, isFilter, findRecursive);
 
-        data.forEach((item) => {
-          if (condition(item)) {
-            result.add(item.id);
-            if (that.options.splitTask || findRecursive) {
-              findParents(item, result);
-            }
-          }
-          if (Array.isArray(item.children)) {
-            const filteredChildrenIds = findTask(item.children, condition);
-            filteredChildrenIds.forEach((id) => result.add(id));
-          }
-        });
-
-        return Array.from(result);
-      }
-
-      function findParents(item, result) {
-        while (item.parent && item.parent != 0 && !parents.has(item.parent)) {
-          parents.add(item.parent);
-          result.add(item.parent);
-          let parentItem = that.getTask(item.parent);
-          if (parentItem) {
-            item = parentItem;
-          } else {
-            break;
-          }
-        }
-      }
     }
 
     /**
@@ -9253,7 +9172,7 @@
     /**
      * Function to safely get the field value from the object,
      * this is a support method for sort method
-     * @param { Object } object - Object from which field need to get 
+     * @param { Object } object - Object from which field need to get
      * @param { string } fieldName - field value which need to get
      */
     getFieldValue(object, fieldName) {
@@ -9574,7 +9493,6 @@
       // Update selected task in options
       this.options.selectedRow = `${task.id}`;
       this.options.selectedTask = `${task.id}`;
-
     }
 
     /**
