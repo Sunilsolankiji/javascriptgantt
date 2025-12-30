@@ -1,6 +1,7 @@
 {
   "name": "javascriptgantt",
   "version": "1.2.0",
+  "type": "module",
   "description": "A modern, feature-rich JavaScript Gantt chart library for project management. Build interactive, responsive Gantt charts with zero dependencies, featuring drag-and-drop functionality, task dependencies, auto-scheduling, and extensive customization options.",
   "main": "src/gantt.js",
   "files": [
