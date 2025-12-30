@@ -38,17 +38,20 @@ Feature suggestions are tracked as GitHub issues. When creating a feature reques
 ## Development Setup
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/Sunilsolankiji/javascriptgantt.git
 cd javascriptgantt
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Run linting:
+
 ```bash
 npm run lint
 ```
@@ -84,6 +87,7 @@ npm run lint
 - Reference issues and pull requests after the first line
 
 Example:
+
 ```
 Add dark theme support
 

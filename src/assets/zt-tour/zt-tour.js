@@ -56,9 +56,11 @@
         nextBtnText: opt.nextBtnText || "Next &rarr;",
         prevBtnText: opt.prevBtnText || "&larr; Previous",
         doneBtnText: opt.doneBtnText || "Done",
-        allowBackdropClose: opt.allowBackdropClose !== undefined ? opt.allowBackdropClose : true,
+        allowBackdropClose:
+          opt.allowBackdropClose !== undefined ? opt.allowBackdropClose : true,
         popupClass: opt.popupClass || false,
-        keyboardControl: opt.keyboardControl !== undefined ? opt.keyboardControl : true,
+        keyboardControl:
+          opt.keyboardControl !== undefined ? opt.keyboardControl : true,
         animationDuration: opt.animationDuration || 400,
       };
     }
@@ -117,50 +119,57 @@
       this.highlightStep(0);
     }
 
-    showHint(hint, isAnnouncement = false){
+    showHint(hint, isAnnouncement = false) {
       this.removeHint(isAnnouncement);
 
-      let popupType = isAnnouncement ? "announcement" : "hint";
+      const popupType = isAnnouncement ? "announcement" : "hint";
 
-      let hintEle = document.createElement("div");
-      let hintBackdrop = document.createElement("div");
+      const hintEle = document.createElement("div");
+      const hintBackdrop = document.createElement("div");
       hintBackdrop.classList.add(`zt-tour-${popupType}-backdrop`);
-      hintBackdrop.addEventListener('click',()=>{
+      hintBackdrop.addEventListener("click", () => {
         hintEle.remove();
         hintBackdrop.remove();
-      })
+      });
       hintEle.innerHTML = hint.innerHTML;
       hintEle.classList.add(`zt-tour-${popupType}`);
 
       let dimentions;
-      if(!isAnnouncement){
-        dimentions = document.querySelector(hint.element).getBoundingClientRect();
-      } 
-      
+      if (!isAnnouncement) {
+        dimentions = document
+          .querySelector(hint.element)
+          .getBoundingClientRect();
+      }
+
       document.body.appendChild(hintBackdrop);
       document.body.appendChild(hintEle);
-      
 
-      hintEle.style.top = isAnnouncement ? "50%" : dimentions.top + dimentions.height + 10 + "px";
-      hintEle.style.left = isAnnouncement ? "50%" : dimentions.left + 10 + "px";
+      hintEle.style.top = isAnnouncement
+        ? "50%"
+        : `${dimentions.top + dimentions.height + 10}px`;
+      hintEle.style.left = isAnnouncement ? "50%" : `${dimentions.left + 10}px`;
       hintEle.style.transform = isAnnouncement ? "translate(-50%, -50%)" : "";
     }
 
-    showAnnouncement(announcement){
-      announcement = {innerHTML: announcement};
+    showAnnouncement(announcement) {
+      announcement = { innerHTML: announcement };
       this.showHint(announcement, true);
     }
 
-    removeHint(isAnnouncement = false){
-      let popupType = isAnnouncement ? "announcement" : "hint";
-      let oldHint = document.querySelectorAll(`.zt-tour-${popupType}`);
-      let oldHintBackdrop = document.querySelectorAll(`.zt-tour-${popupType}-backdrop`);
+    removeHint(isAnnouncement = false) {
+      const popupType = isAnnouncement ? "announcement" : "hint";
+      const oldHint = document.querySelectorAll(`.zt-tour-${popupType}`);
+      const oldHintBackdrop = document.querySelectorAll(
+        `.zt-tour-${popupType}-backdrop`
+      );
 
-      Array.from(oldHint).forEach((hint)=>hint.remove())
-      Array.from(oldHintBackdrop).forEach((hintBackdrop)=>hintBackdrop.remove())
+      Array.from(oldHint).forEach((hint) => hint.remove());
+      Array.from(oldHintBackdrop).forEach((hintBackdrop) =>
+        hintBackdrop.remove()
+      );
     }
 
-    removeAnnouncement(){
+    removeAnnouncement() {
       this.removeHint(true);
     }
 
@@ -170,7 +179,7 @@
         return;
       }
 
-      let step = this.options.steps[currentStep];
+      const step = this.options.steps[currentStep];
       let element = document.querySelector(step?.element);
 
       if (!element) {
@@ -254,10 +263,10 @@
     }
 
     renderPopup(element, step) {
-      let popup = this.createPopup();
+      const popup = this.createPopup();
       this.options.popup = popup;
 
-      let oldPopups = document.querySelectorAll(".zt-tour-popup");
+      const oldPopups = document.querySelectorAll(".zt-tour-popup");
 
       // remove all old popups
       Array.from(oldPopups).forEach((ele) => {
@@ -350,7 +359,7 @@
       }
 
       popup.nextButton.addEventListener("click", () => {
-        let isOutOfIndex =
+        const isOutOfIndex =
           this.options.currentStep + 1 < 0 ||
           this.options.currentStep + 1 >= this.getOption("steps").length;
         this.highlightStep(this.options.currentStep + 1);
@@ -576,7 +585,7 @@
     }
 
     repositionPopup(element, step) {
-      const popup = this.options.popup;
+      const { popup } = this.options;
       let { align = "start", side = "left" } = step?.popup || {};
 
       align = step.element ? align : "over";
@@ -686,7 +695,7 @@
             popupDimensions.realHeight -
             popupArrowDimensions.width
         );
-        let leftToSet = this.calculateLeftForTopBottom(requiredAlignment, {
+        const leftToSet = this.calculateLeftForTopBottom(requiredAlignment, {
           elementDimensions,
           popupDimensions,
           popupPadding,
@@ -707,7 +716,7 @@
             popupArrowDimensions.width
         );
 
-        let leftToSet = this.calculateLeftForTopBottom(requiredAlignment, {
+        const leftToSet = this.calculateLeftForTopBottom(requiredAlignment, {
           elementDimensions,
           popupDimensions,
           popupPadding,
@@ -834,7 +843,7 @@
     }
 
     destroyTour() {
-      let popup = this.options.popup;
+      const { popup } = this.options;
       const overlaySvg = document.querySelector(".zt-tour-overlay");
 
       if (popup.wrapper) {
@@ -913,7 +922,7 @@
 
     changeHighlight(toElement, toStep, toStepIndex) {
       const duration = this.getOption("animationDuration");
-      let currentStepEle =
+      const currentStepEle =
         this.options.steps[this.options.currentStep]?.element;
 
       const start = Date.now();
@@ -1059,7 +1068,9 @@
 
     refreshStep() {
       const currentStep = this.getOption("currentStep");
-      if(!currentStep) return;
+      if (!currentStep) {
+        return;
+      }
       const step = this.getOption("steps")[currentStep];
       const element = document.querySelector(step.element);
       this.trackActiveElement(element);
@@ -1073,7 +1084,7 @@
         return isDummyElement;
       }
 
-      let element = document.createElement("div");
+      const element = document.createElement("div");
 
       element.id = "zt-popup-dummy-element";
       element.style.width = "0";

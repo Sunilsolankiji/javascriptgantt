@@ -10,6 +10,7 @@ Thumbs.db
 
 # Documentation
 docs/
+demo/
 *.md
 !README.md
 

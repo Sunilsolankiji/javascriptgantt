@@ -1,52 +1,76 @@
 {
-    "name": "javascriptgantt",
-    "version": "1.2.0",
-    "description": "A modern, feature-rich JavaScript Gantt chart library for project management. Build interactive, responsive Gantt charts with zero dependencies, featuring drag-and-drop functionality, task dependencies, auto-scheduling, and extensive customization options.",
-    "main": "src/gantt.js",
-    "files": [
-        "src/gantt.js",
-        "src/gantt.css",
-        "src/theme/"
+  "name": "javascriptgantt",
+  "version": "1.2.0",
+  "description": "A modern, feature-rich JavaScript Gantt chart library for project management. Build interactive, responsive Gantt charts with zero dependencies, featuring drag-and-drop functionality, task dependencies, auto-scheduling, and extensive customization options.",
+  "main": "src/gantt.js",
+  "files": [
+    "src/gantt.js",
+    "src/gantt.css",
+    "src/theme/"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,css,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,css,json,md}\"",
+    "test": "npm run lint && npm run format:check",
+    "prepare": "husky install",
+    "release": "standard-version",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "release:patch": "standard-version --release-as patch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sunilsolankiji/javascriptgantt.git"
+  },
+  "keywords": [
+    "gantt",
+    "chart",
+    "gantt chart",
+    "scheduler",
+    "timeline",
+    "jsganttchart",
+    "jsgantt",
+    "javascriptgantt",
+    "project-management",
+    "task-management",
+    "javascript",
+    "vanilla-js",
+    "drag-and-drop",
+    "task-dependencies",
+    "auto-scheduling",
+    "zero-dependencies"
+  ],
+  "author": "Sunil Solanki",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Sunilsolankiji/javascriptgantt/issues"
+  },
+  "homepage": "https://github.com/Sunilsolankiji/javascriptgantt#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^18.6.1",
+    "@commitlint/config-conventional": "^18.6.3",
+    "@eslint/js": "^9.6.0",
+    "eslint": "^9.6.0",
+    "eslint-config-prettier": "^9.1.2",
+    "globals": "^15.8.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.7.4",
+    "standard-version": "^9.5.0"
+  },
+  "lint-staged": {
+    "*.{js,css,json,md}": [
+      "prettier --write",
+      "git add"
     ],
-    "scripts": {
-        "lint": "eslint .",
-        "lint:fix": "eslint . --fix",
-        "test": "echo \"No tests specified\" && exit 0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/Sunilsolankiji/javascriptgantt.git"
-    },
-    "keywords": [
-        "gantt",
-        "chart",
-        "gantt chart",
-        "scheduler",
-        "timeline",
-        "jsganttchart",
-        "jsgantt",
-        "javascriptgantt",
-        "project-management",
-        "task-management",
-        "javascript",
-        "vanilla-js",
-        "drag-and-drop",
-        "task-dependencies",
-        "auto-scheduling",
-        "zero-dependencies"
-    ],
-    "author": "Sunil Solanki",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/Sunilsolankiji/javascriptgantt/issues"
-    },
-    "homepage": "https://github.com/Sunilsolankiji/javascriptgantt#readme",
-    "engines": {
-        "node": ">=14.0.0"
-    },
-    "devDependencies": {
-        "@eslint/js": "^9.6.0",
-        "eslint": "^9.6.0",
-        "globals": "^15.8.0"
-    }
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
+  }
 }
