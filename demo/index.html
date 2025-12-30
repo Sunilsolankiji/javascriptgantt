@@ -5,12 +5,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>javascriptgantt</title>
-    <link rel="stylesheet" href="./style.css" />
-    <link rel="stylesheet" href="src/gantt.css" />
-    <link rel="stylesheet" href="src/assets/zt-tour/zt-tour.css" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../src/gantt.css" />
+    <link rel="stylesheet" href="../src/assets/zt-tour/zt-tour.css" />
     <!-- <link rel="stylesheet" href="./theme/dark.css" /> -->
-    <link rel="shortcut icon" href="src/assets/images/jsGanttLogo.png" type="image/x-icon" />
-    <script src="src/gantt.js"></script>
+    <link rel="shortcut icon" href="../src/assets/images/jsGanttLogo.png" type="image/x-icon" />
+    <script src="../src/gantt.js"></script>
 </head>
 
 <body>
@@ -119,7 +119,7 @@
     </div>
     <div id="js-gantt"></div>
     </div>
-    <script src="src/assets/zt-tour/zt-tour.js"></script>
+    <script src="../src/assets/zt-tour/zt-tour.js"></script>
     <script>
         let data = generateGanttData();
 
@@ -142,18 +142,18 @@ function generateGanttData() {
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-based
-    
+
     function getRandomDay() {
         return Math.floor(Math.random() * 28) + 1; // Ensure the day is within a valid range
     }
-    
+
     function formatDate(day) {
         return `${currentMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}-${currentYear}`;
     }
-    
+
     let data = [];
     let idCounter = 1;
-    
+
     for (let project = 1; project <= 5; project++) {
         const projectId = idCounter++;
         data.push({ id: projectId, text: `Project ${project}`, parent: 0, progress: Math.floor(Math.random() * 100) });
@@ -162,7 +162,7 @@ function generateGanttData() {
         for (let task = 1; task <= numTasks; task++) {
             const startDay = getRandomDay();
             const endDay = Math.min(startDay + Math.floor(Math.random() * 5) + 1, 28);
-            
+
             data.push({
                 id: idCounter++,
                 text: `Task #${idCounter}`,
@@ -173,7 +173,7 @@ function generateGanttData() {
             });
         }
     }
-    
+
     return data;
 }
 
@@ -285,10 +285,10 @@ function generateGanttData() {
         javascriptGantt.options.taskColor = true;
         javascriptGantt.options.taskOpacity = 0.7;
         javascriptGantt.options.links = [
-            // 0 is  finish_to_start  
-            // 1 is  start_to_start  
-            // 2 is  finish_to_finish  
-            // 3 is  start_to_finish 
+            // 0 is  finish_to_start
+            // 1 is  start_to_start
+            // 2 is  finish_to_finish
+            // 3 is  start_to_finish
             { id: 1, source: 2, target: 23, type: 1 },
             { id: 2, source: 3, target: 6, type: 2 },
             { id: 3, source: 4, target: 23, type: 3 },
@@ -601,7 +601,7 @@ function generateGanttData() {
         javascriptGantt.attachEvent("onAfterTaskDrag", (event) => {
             console.log("onAfterTaskDrag: ", event);
             console.log("onAfterTaskDrag??: ", javascriptGantt.options.data);
-            // javascriptgantt.autoScheduling(); 
+            // javascriptgantt.autoScheduling();
         });
         javascriptGantt.attachEvent("onBeforeTaskDrop", (event) => {
             console.log("onBeforeTaskDrop: ", event);
@@ -982,8 +982,8 @@ function generateGanttData() {
         }
         let intro = `
         <h2 style="font-size: 18px; margin-bottom: 5px; font-weight: 600; text-align:center">javascriptgantt Chart</h2>
-        <p style="line-height: 18px; text-align: justify;margin-bottom: 5px;">Welcome to the javascriptgantt Chart Library. 
-          This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management. This documentation will guide you through the installation process, 
+        <p style="line-height: 18px; text-align: justify;margin-bottom: 5px;">Welcome to the javascriptgantt Chart Library.
+          This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management. This documentation will guide you through the installation process,
           usage instructions, and available features of the library.</p>
           <p>Click on "Start Tour" to start the tour.</p>
           `;

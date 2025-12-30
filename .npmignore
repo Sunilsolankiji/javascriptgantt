@@ -1,0 +1,39 @@
+# Development files
+.git/
+.github/
+.gitignore
+.editorconfig
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Documentation
+docs/
+demo/
+*.md
+!README.md
+
+# Configuration files
+eslint.config.mjs
+.eslintrc*
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Demo/Example files
+index.html
+style.css
+examples/
+
+# Development dependencies
+node_modules/
+package-lock.json
+
+# Build files
+.github/
+*.log
+npm-debug.log*

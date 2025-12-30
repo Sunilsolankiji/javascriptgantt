@@ -1813,7 +1813,7 @@
         this.options.weekStart > 6 ||
         typeof this.options.weekStart !== "number"
       ) {
-        let message =
+        const message =
           this.options.weekStart > 6
             ? "enter week start between 0 to 6"
             : "type of week start should be number!";
@@ -1828,7 +1828,7 @@
       }
 
       this.element = ele;
-      const options = this.options;
+      const { options } = this;
       this.options.currentLanguage = this.options.i18n[this.options.localLang];
       this.zoomInit("initial");
 
@@ -1837,7 +1837,7 @@
         this.originalData = [...this.options.data];
       }
 
-      const originalData = this.originalData;
+      const { originalData } = this;
       const { date_format } = options;
 
       // process task start and end date
@@ -1932,7 +1932,7 @@
       this.createTimelineBody(timeline, jsGanttLayout, true);
 
       if (options?.rightGrid) {
-        let newGridOptions = { ...options };
+        const newGridOptions = { ...options };
         newGridOptions.columns = options.rightGrid;
         this.createRightSidebar(newGridOptions, jsGanttLayout);
       }
@@ -1962,8 +1962,10 @@
         this.markerArea = markerArea;
 
         // add all markers
-        for (let marker of this.options.customMarker) {
-          if (this.outOfGanttRange(marker?.start_date)) continue;
+        for (const marker of this.options.customMarker) {
+          if (this.outOfGanttRange(marker?.start_date)) {
+            continue;
+          }
           this.addMarkerToGantt(marker);
         }
 
@@ -1991,7 +1993,7 @@
 
     // create left sidebar
     createSidebar(jsGanttLayout) {
-      const options = this.options;
+      const { options } = this;
 
       // sidebar head cells
       const sidebar = document.createElement("div");
@@ -2001,7 +2003,7 @@
       const headCellContainer = document.createElement("div");
       headCellContainer.classList.add("sidebar-head-cell-container");
 
-      let containerHeight = this.calculateScaleHeight("header");
+      const containerHeight = this.calculateScaleHeight("header");
 
       const totalWidth = options.columns.reduce(
         (totalWidth, col) => totalWidth + col.width,
@@ -2021,7 +2023,7 @@
       // head loop of left side
       for (let i = 0; i < options.columns.length; i++) {
         const column = options.columns[i];
-        let headCell = document.createElement("div");
+        const headCell = document.createElement("div");
         headCell.classList.add("head-cell");
 
         //add custom class from user
@@ -2033,7 +2035,7 @@
         );
 
         headCell.setAttribute("data-column-index", i);
-        headCell.style.width = (column.width || 80) + "px";
+        headCell.style.width = `${column.width || 80}px`;
         headCell.innerHTML = column.label;
         headCellContainer.append(headCell);
 
@@ -2055,7 +2057,7 @@
             this.options?.sortOption?.sortBy == column?.name
           ) {
             const sortIcon = document.createElement("div");
-            let isAsc = !this.options?.sortOption?.isAsc;
+            const isAsc = !this.options?.sortOption?.isAsc;
             sortIcon.classList.add(
               "js-gantt-sort",
               isAsc ? "js-gantt-asc" : "js-gantt-desc"
@@ -2067,7 +2069,7 @@
         if (i < options.columns.length) {
           const resizerWrap = document.createElement("div");
           resizerWrap.classList.add("js-gantt-col-resizer-wrap");
-          resizerWrap.id = "js-gantt-col-resizer-wrap-" + i;
+          resizerWrap.id = `js-gantt-col-resizer-wrap-${i}`;
           resizerWrap.style.height = this.calculateScaleHeight("header");
 
           if (column.resize === true) {
@@ -2075,7 +2077,7 @@
             resizer.classList.add("js-gantt-col-resizer");
             resizerWrap.append(resizer);
             resizerLeft += column.width || 80;
-            resizerWrap.style.left = resizerLeft + "px";
+            resizerWrap.style.left = `${resizerLeft}px`;
             headCellContainer.append(resizerWrap);
             this.resizeColumns(
               resizerWrap,
@@ -2127,8 +2129,8 @@
 
           dataItem.setAttribute("js-gantt-data-task-id", j);
           dataItem.setAttribute("js-gantt-task-id", task.id);
-          dataItem.style.height = options.row_height + "px";
-          dataItem.style.lineHeight = options.row_height + "px";
+          dataItem.style.height = `${options.row_height}px`;
+          dataItem.style.lineHeight = `${options.row_height}px`;
 
           const that = this;
 
@@ -2188,7 +2190,7 @@
               task
             );
 
-            cell.style.width = (column.width || 80) + "px";
+            cell.style.width = `${column.width || 80}px`;
 
             column.align ? (cell.style.textAlign = column.align) : "";
 
@@ -2201,7 +2203,7 @@
             );
             cell.setAttribute("data-column-index", k);
 
-            let jsGanttBlank = document.createElement("div");
+            const jsGanttBlank = document.createElement("div");
             jsGanttBlank.classList.add("js-gantt-blank");
 
             jsGanttBlank.innerHTML = this.callTemplate("grid_blank", task);
@@ -2294,7 +2296,9 @@
 
             if (column?.editor) {
               cell.addEventListener("click", (e) => {
-                if (e.target.classList.contains("js-gantt-tree-icon")) return;
+                if (e.target.classList.contains("js-gantt-tree-icon")) {
+                  return;
+                }
                 this.addInlineEditor(
                   task,
                   column.editor,
@@ -2338,8 +2342,8 @@
 
     // create header of scale
     createTimelineScale(timeline) {
-      const options = this.options;
-      const dates = this.dates;
+      const { options } = this;
+      const { dates } = this;
 
       this.#ganttHeight = this.calculateGanttHeight;
       this.attachEvent("onTaskToggle", () => {
@@ -2378,7 +2382,7 @@
           ) {
             continue;
           }
-          let dateFormat = this.isFunction(scale.format)
+          const dateFormat = this.isFunction(scale.format)
             ? scale.format(new Date(date))
             : this.formatDateToString(scale.format, date);
           let colDates;
@@ -2410,15 +2414,13 @@
           dateCell.innerHTML = `<span class="date-scale">${dateFormat}</span>`;
 
           if (isMultiUnitScale(scale)) {
-            dateCell.style.width =
-              colDates.dateCount * this.calculateGridWidth(date) + "px";
-            dateCell.style.left = rangeCount + "px";
+            dateCell.style.width = `${colDates.dateCount * this.calculateGridWidth(date)}px`;
+            dateCell.style.left = `${rangeCount}px`;
           } else {
-            dateCell.style.left =
-              j * this.calculateGridWidth(date, "day") + "px";
-            dateCell.style.width = this.calculateGridWidth(date, "day") + "px";
+            dateCell.style.left = `${j * this.calculateGridWidth(date, "day")}px`;
+            dateCell.style.width = `${this.calculateGridWidth(date, "day")}px`;
           }
-          let currentDate = new Date(date).setHours(0, 0, 0, 0);
+          const currentDate = new Date(date).setHours(0, 0, 0, 0);
           if (
             isMultiUnitScale(scale) &&
             new Date(endDate).getTime() < currentDate
@@ -2427,22 +2429,22 @@
             rangeCount += colDates.dateCount * this.calculateGridWidth(date);
             endDate = new Date(colDates.endDate);
           } else if (scale.unit == "hour") {
-            let dateStartHour = new Date(date).getHours();
-            let cellDate = new Date(date);
-            let cellWidth = this.calculateGridWidth(date);
+            const dateStartHour = new Date(date).getHours();
+            const cellDate = new Date(date);
+            const cellWidth = this.calculateGridWidth(date);
 
             const fragment = document.createDocumentFragment();
             for (let k = dateStartHour; k < 24; k++) {
-              let hourCell = dateCell.cloneNode(true);
+              const hourCell = dateCell.cloneNode(true);
 
-              let dateFormat = this.isFunction(scale.format)
+              const dateFormat = this.isFunction(scale.format)
                 ? scale.format(cellDate)
                 : this.formatDateToString(scale.format, cellDate);
 
               hourCell.innerHTML = dateFormat;
               cellDate.setHours(k + 1);
-              hourCell.style.width = cellWidth + "px";
-              hourCell.style.left = rangeCount + "px";
+              hourCell.style.width = `${cellWidth}px`;
+              hourCell.style.left = `${rangeCount}px`;
               // timelineScaleRow.append(hourCell);
               fragment.appendChild(hourCell);
               rangeCount += cellWidth;
@@ -2454,14 +2456,13 @@
         }
         timelineScale.append(timelineScaleRow);
       }
-      timelineScale.style.width =
-        this.calculateTimeLineWidth("updated", "day") + "px";
+      timelineScale.style.width = `${this.calculateTimeLineWidth("updated", "day")}px`;
       timeline.append(timelineScale);
     }
 
     // create grid body
     createTimelineBody(timeline, jsGanttLayout, isFromRender = false) {
-      const options = this.options;
+      const { options } = this;
       const timelineDataContainer = document.createElement("div");
       timelineDataContainer.classList.add("js-gantt-timeline-data");
       timelineDataContainer.id = "js-gantt-timeline-data";
@@ -2483,7 +2484,9 @@
           const timelineRow = timelineRowTemplate.cloneNode(true);
           const isSelected = options.selectedRow === `${task.id}`;
 
-          if (isSelected) timelineRow.classList.add("js-gantt-selected");
+          if (isSelected) {
+            timelineRow.classList.add("js-gantt-selected");
+          }
 
           timelineRow.setAttribute("js-gantt-data-task-id", j);
           timelineRow.setAttribute("js-gantt-task-id", task.id);
@@ -2524,13 +2527,12 @@
         }
       }
 
-      timelineDataContainer.style.width =
-        this.calculateTimeLineWidth("updated", "day") + "px";
+      timelineDataContainer.style.width = `${this.calculateTimeLineWidth("updated", "day")}px`;
 
       timelineDataContainer.append(jsGanttTaskData);
       timeline.append(timelineDataContainer);
 
-      let isCalendarExist = this.element.querySelector(
+      const isCalendarExist = this.element.querySelector(
         "#js-gantt-timeline-cell"
       );
 
@@ -2556,8 +2558,10 @@
           this.markerArea = markerArea;
 
           // add all markers
-          for (let marker of this.options.customMarker) {
-            if (this.outOfGanttRange(marker?.start_date)) continue;
+          for (const marker of this.options.customMarker) {
+            if (this.outOfGanttRange(marker?.start_date)) {
+              continue;
+            }
             this.addMarkerToGantt(marker);
           }
 
@@ -2585,7 +2589,7 @@
       const timelineRow = document.createElement("div");
       timelineRow.classList.add("js-gantt-task-row");
 
-      timelineRow.style.height = options.row_height + "px";
+      timelineRow.style.height = `${options.row_height}px`;
 
       let cellEndDate = new Date(0);
       let rangeCount = 0;
@@ -2594,15 +2598,15 @@
         this.options.zoomLevel === "day"
           ? "%Y-%m-%d"
           : this.options.zoomLevel === "week"
-          ? "W-%W"
-          : this.options.zoomLevel === "month"
-          ? "M-%m"
-          : this.options.zoomLevel === "quarter"
-          ? "Q-%q"
-          : "%Y";
+            ? "W-%W"
+            : this.options.zoomLevel === "month"
+              ? "M-%m"
+              : this.options.zoomLevel === "quarter"
+                ? "Q-%q"
+                : "%Y";
 
       for (let k = 0; k < dates.length; k++) {
-        let date = new Date(dates[k]);
+        const date = new Date(dates[k]);
 
         if (new Date(cellEndDate).getTime() >= date.setHours(0, 0, 0, 0)) {
           continue;
@@ -2610,7 +2614,7 @@
 
         let colDates;
 
-        let timelineCell = document.createElement("div");
+        const timelineCell = document.createElement("div");
 
         timelineCell.classList.add("js-gantt-task-cell");
 
@@ -2635,16 +2639,16 @@
         const gridWidth = this.calculateGridWidth(date);
 
         if (this.options.zoomLevel !== "day") {
-          timelineCell.style.left = rangeCount + "px";
+          timelineCell.style.left = `${rangeCount}px`;
 
           if (this.options.zoomLevel === "hour") {
-            timelineCell.style.width = gridWidth + "px";
+            timelineCell.style.width = `${gridWidth}px`;
           } else {
-            timelineCell.style.width = colDates.dateCount * gridWidth + "px";
+            timelineCell.style.width = `${colDates.dateCount * gridWidth}px`;
           }
         } else {
-          timelineCell.style.left = gridWidth * k + "px";
-          timelineCell.style.width = gridWidth + "px";
+          timelineCell.style.left = `${gridWidth * k}px`;
+          timelineCell.style.width = `${gridWidth}px`;
         }
 
         timelineCell.setAttribute(
@@ -2652,15 +2656,15 @@
           this.formatDateToString(dateFormat, date)
         );
 
-        let currentDate = new Date(date).setHours(0);
+        const currentDate = new Date(date).setHours(0);
 
         if (this.options.zoomLevel === "hour") {
-          let cellWidth = gridWidth;
+          const cellWidth = gridWidth;
           const fragment = document.createDocumentFragment();
           for (let i = 0; i < 24; i++) {
             const hourCell = timelineCell.cloneNode(true);
-            hourCell.style.left = rangeCount + "px";
-            hourCell.style.width = cellWidth + "px";
+            hourCell.style.left = `${rangeCount}px`;
+            hourCell.style.width = `${cellWidth}px`;
             rangeCount += cellWidth;
             // timelineRow.append(hourCell);
             fragment.appendChild(hourCell);
@@ -2699,7 +2703,7 @@
 
       for (let j = 0; j < this.options.data.length; j++) {
         const task = this.options.data[j];
-        let cellStartDate = this.options.startDate;
+        const cellStartDate = this.options.startDate;
 
         if (!this.isTaskNotInSearchedData(task.id)) {
           let start_date = new Date(task.start_date);
@@ -2725,7 +2729,7 @@
           } else {
             cellBefore = -(cellBefore.length - 1);
           }
-          let jsGanttBarTask = document.createElement("div");
+          const jsGanttBarTask = document.createElement("div");
 
           if (task.taskColor && task.type !== "milestone") {
             jsGanttBarTask.style.setProperty(
@@ -2774,24 +2778,26 @@
           let taskLeft =
             cellBefore * this.calculateGridWidth(start_date, "day");
 
-          let hourLeft = this.getPxByTime(start_date, "left");
+          const hourLeft = this.getPxByTime(start_date, "left");
           taskLeft += hourLeft;
 
-          jsGanttBarTask.style.left = taskLeft + "px";
+          jsGanttBarTask.style.left = `${taskLeft}px`;
 
-          jsGanttBarTask.style.top =
+          jsGanttBarTask.style.top = `${
             rowCount * this.options.row_height +
-            Math.floor((this.options.row_height * 10) / 100) +
-            "px";
+            Math.floor((this.options.row_height * 10) / 100)
+          }px`;
 
-          let barTaskHeight = Math.floor((this.options.row_height * 80) / 100);
+          const barTaskHeight = Math.floor(
+            (this.options.row_height * 80) / 100
+          );
           jsGanttBarTask.style.height = `${barTaskHeight}px`;
           jsGanttBarTask.style.lineHeight = `${barTaskHeight}px`;
           if (task.type === "milestone") {
             jsGanttBarTask.style.width = `${barTaskHeight}px`;
-            jsGanttBarTask.style.left =
-              (cellBefore + 1) * this.calculateGridWidth(start_date, "day") +
-              "px";
+            jsGanttBarTask.style.left = `${
+              (cellBefore + 1) * this.calculateGridWidth(start_date, "day")
+            }px`;
           }
 
           const jsGanttBarTaskContent = document.createElement("div");
@@ -2814,7 +2820,7 @@
             );
           }
 
-          let that = this;
+          const that = this;
 
           // handle double click event
           jsGanttBarTask.addEventListener("dblclick", handleDblClick);
@@ -2838,7 +2844,7 @@
             that.showLightBox(task);
           }
 
-          const userAgent = navigator.userAgent;
+          const { userAgent } = navigator;
 
           // Handle mouseover event
           jsGanttBarTask.addEventListener("mouseover", handleMouseOver);
@@ -2871,7 +2877,7 @@
             jsGanttTaskDragLeft.classList.add("js-gantt-task-drag-left");
 
             // right side resizer
-            let jsGanttTaskDragRight = document.createElement("div");
+            const jsGanttTaskDragRight = document.createElement("div");
             jsGanttTaskDragRight.classList.add("js-gantt-task-drag-right");
 
             jsGanttBarTask.append(jsGanttTaskDragLeft, jsGanttTaskDragRight);
@@ -2890,7 +2896,7 @@
             );
           }
 
-          let taskDates = this.getDates(start_date, end_date);
+          const taskDates = this.getDates(start_date, end_date);
 
           let taskProgress;
           const isTaskProgress = this.isFunction(this.options.taskProgress)
@@ -2923,7 +2929,7 @@
 
             // update the task progress onAfterTaskUpdate
             this.attachEvent("onAfterTaskUpdate", () => {
-              let progress = task.progress || 0;
+              const progress = task.progress || 0;
               taskProgress.style.width = `${progress}%`;
               taskProgressDrag.style.left = `${progress}%`;
             });
@@ -2947,7 +2953,7 @@
           }
 
           // link control pointers
-          let isAddLinks = this.isFunction(this.options.addLinks)
+          const isAddLinks = this.isFunction(this.options.addLinks)
             ? this.options.addLinks(task)
             : this.options.addLinks;
 
@@ -2982,7 +2988,7 @@
           }
 
           //add custom task color picker
-          let isCustomColor = this.isFunction(this.options.taskColor)
+          const isCustomColor = this.isFunction(this.options.taskColor)
             ? this.options.taskColor(task)
             : this.options.taskColor;
 
@@ -3031,10 +3037,10 @@
             }
 
             let hourWidth = this.getPxByTime(end_date, "width");
-            let hourLeft = this.getPxByTime(start_date, "left");
+            const hourLeft = this.getPxByTime(start_date, "left");
             hourWidth += hourLeft;
             taskWidth -= hourWidth;
-            jsGanttBarTask.style.width = taskWidth + "px";
+            jsGanttBarTask.style.width = `${taskWidth}px`;
           }
 
           let sideContent;
@@ -3107,14 +3113,14 @@
       }
       if (!isFromRender) {
         // create links if addLinks is true
-        let isLinksAreaExist = this.element.querySelector(
+        const isLinksAreaExist = this.element.querySelector(
           "#js-gantt-links-area"
         );
         // if lines already exist remove all lines
         if (isLinksAreaExist) {
           isLinksAreaExist.innerHTML = "";
         } else if (barContainer) {
-          let linksArea = document.createElement("div");
+          const linksArea = document.createElement("div");
           linksArea.classList.add("js-gantt-links-area");
           linksArea.id = "js-gantt-links-area";
           barContainer.append(linksArea);
@@ -3183,22 +3189,23 @@
         resizeArea = document.createElement("div");
         resizeArea.classList.add("js-gantt-grid-resize-area");
         resizeArea.id = "js-gantt-resize-area";
-        let resizeLeft = sidebar.offsetLeft + headCell.offsetLeft;
+        const resizeLeft = sidebar.offsetLeft + headCell.offsetLeft;
 
-        resizeArea.style.left = resizeLeft + "px";
+        resizeArea.style.left = `${resizeLeft}px`;
 
         const jsGanttLayout = document.getElementById("js-gantt-layout");
 
-        resizeArea.style.height = jsGanttLayout.scrollHeight + "px";
+        resizeArea.style.height = `${jsGanttLayout.scrollHeight}px`;
 
-        let resizeAreaWidth = headCell.offsetWidth;
+        const resizeAreaWidth = headCell.offsetWidth;
 
-        resizeArea.style.width =
-          (resizeAreaWidth < (minWidth || 80)
+        resizeArea.style.width = `${
+          resizeAreaWidth < (minWidth || 80)
             ? minWidth || 80
             : resizeAreaWidth > maxWidth
-            ? maxWidth
-            : resizeAreaWidth) + "px";
+              ? maxWidth
+              : resizeAreaWidth
+        }px`;
 
         jsGanttLayout.append(resizeArea);
         document.addEventListener("mousemove", resize, false);
@@ -3210,16 +3217,16 @@
         document.removeEventListener("mouseup", handleMouseUp, false);
         resizeArea.remove();
         if (colResizing) {
-          let columns = that.element.querySelectorAll(`[${attr}]`);
+          const columns = that.element.querySelectorAll(`[${attr}]`);
           let colWidth = columns[0].offsetWidth + (e.x - startX);
           colWidth =
             colWidth < (minWidth || 80)
               ? minWidth || 80
               : colWidth > maxWidth
-              ? maxWidth
-              : colWidth;
-          for (let col of columns) {
-            col.style.width = colWidth + "px";
+                ? maxWidth
+                : colWidth;
+          for (const col of columns) {
+            col.style.width = `${colWidth}px`;
           }
 
           if (!isRight) {
@@ -3228,7 +3235,7 @@
             that.options.rightGrid[columnIndex].width = colWidth;
           }
 
-          let headerCell = document.getElementsByClassName(
+          const headerCell = document.getElementsByClassName(
             isRight ? "right-head-cell" : "head-cell"
           );
           const totalHeadWidth = Array.from(headerCell).reduce(
@@ -3237,8 +3244,8 @@
           );
           if (!isRight) {
             const sidebar = document.getElementById("js-gantt-grid-left-data");
-            sidebar.style.width = totalHeadWidth + 1 + "px";
-            sidebar.style.minWidth = totalHeadWidth + 1 + "px";
+            sidebar.style.width = `${totalHeadWidth + 1}px`;
+            sidebar.style.minWidth = `${totalHeadWidth + 1}px`;
 
             that.options.sidebarWidth = sidebar.offsetWidth;
           }
@@ -3257,30 +3264,29 @@
               );
             }
             if (resizerWrap) {
-              resizerWrap.style.left = resizerLeft + "px";
+              resizerWrap.style.left = `${resizerLeft}px`;
             }
           }
 
           if (!isRight) {
-            headCellContainer.style.width = resizerLeft + "px";
+            headCellContainer.style.width = `${resizerLeft}px`;
             document.getElementById("js-gantt-left-grid").style.width =
-              resizerLeft + "px";
+              `${resizerLeft}px`;
             document.getElementById(
               "js-gantt-left-layout-resizer-wrap"
-            ).style.left =
-              document.getElementById("js-gantt-grid-left-data").offsetWidth +
-              "px";
+            ).style.left = `${
+              document.getElementById("js-gantt-grid-left-data").offsetWidth
+            }px`;
           } else {
-            let rightResizer = that.element.querySelector(
+            const rightResizer = that.element.querySelector(
               "#js-gantt-timeline-resizer-wrap"
             );
-            headCellContainer.style.width = totalHeadWidth + "px";
-            sidebar.style.width = totalHeadWidth + "px";
-            sidebar.style.minWidth = totalHeadWidth + "px";
-            sidebar.style.width = totalHeadWidth + "px";
-            let resizerLeft = sidebar.offsetLeft - rightResizer.offsetLeft;
-            rightResizer.style.left =
-              rightResizer.offsetLeft + resizerLeft + "px";
+            headCellContainer.style.width = `${totalHeadWidth}px`;
+            sidebar.style.width = `${totalHeadWidth}px`;
+            sidebar.style.minWidth = `${totalHeadWidth}px`;
+            sidebar.style.width = `${totalHeadWidth}px`;
+            const resizerLeft = sidebar.offsetLeft - rightResizer.offsetLeft;
+            rightResizer.style.left = `${rightResizer.offsetLeft + resizerLeft}px`;
             that.options.rightGridWidth = sidebar.offsetWidth;
           }
           // rerender the calendar and scale
@@ -3290,7 +3296,8 @@
           ) {
             that.updateBody();
           } else {
-            let jsGanttLayout = that.element.querySelector(".js-gantt-layout");
+            const jsGanttLayout =
+              that.element.querySelector(".js-gantt-layout");
             that.createScrollbar(jsGanttLayout);
           }
         }
@@ -3300,17 +3307,17 @@
       // resize the column
       function resize(e) {
         colResizing = true;
-        let newWidth = headCell.offsetWidth + (e.x - startX);
+        const newWidth = headCell.offsetWidth + (e.x - startX);
         if (newWidth <= (minWidth || 80)) {
-          resizeArea.style.width = (minWidth || 80) + "px";
+          resizeArea.style.width = `${minWidth || 80}px`;
           return;
         } else if (newWidth >= maxWidth) {
-          resizeArea.style.width = maxWidth + "px";
+          resizeArea.style.width = `${maxWidth}px`;
           return;
         }
 
         document.getElementById("js-gantt-resize-area").style.width =
-          newWidth + "px";
+          `${newWidth}px`;
       }
     }
 
@@ -3339,7 +3346,7 @@
         document.removeEventListener("mousemove", resize, false);
         document.removeEventListener("mouseup", handleMouseUp, false);
         if (sidebarResizing) {
-          let rightResizer = that.element.querySelector(
+          const rightResizer = that.element.querySelector(
             "#js-gantt-timeline-resizer-wrap"
           );
           // add the all columns minWidth
@@ -3350,7 +3357,7 @@
 
           let left = e.x;
           if (rightResizer) {
-            let x = e.x;
+            let { x } = e;
             x =
               rightResizer.offsetLeft - 80 <= resizer.offsetLeft
                 ? rightResizer.offsetLeft - resizer.offsetLeft
@@ -3367,16 +3374,17 @@
             left -= 50;
           }
 
-          let singleColIncrease = (left - startX) / that.options.columns.length;
+          const singleColIncrease =
+            (left - startX) / that.options.columns.length;
 
           for (let j = 0; j < headerCell.length; j++) {
-            let columns = that.element.querySelectorAll(
+            const columns = that.element.querySelectorAll(
               `[data-column-index="${j}"]`
             );
 
             let incrasedWidth = headerCell[j].offsetWidth + singleColIncrease;
 
-            let resizerWrap = document.getElementById(
+            const resizerWrap = document.getElementById(
               `js-gantt-col-resizer-wrap-${j}`
             );
 
@@ -3386,8 +3394,8 @@
                 : that.options.columns[j].min_width || 80;
 
             // set the sidebar columns width
-            for (let col of columns) {
-              col.style.width = incrasedWidth + "px";
+            for (const col of columns) {
+              col.style.width = `${incrasedWidth}px`;
             }
 
             that.options.columns[j].width = incrasedWidth;
@@ -3395,7 +3403,7 @@
             // set the sidebar columns resizer left
             resizerLeft += headerCell[j].offsetWidth;
             if (resizerWrap) {
-              resizerWrap.style.left = resizerLeft + "px";
+              resizerWrap.style.left = `${resizerLeft}px`;
             }
           }
 
@@ -3405,22 +3413,22 @@
           );
 
           // set the sidebar width
-          let sidebarWidth = totalHeadWidth;
+          const sidebarWidth = totalHeadWidth;
 
-          sidebar.style.width =
-            (sidebarWidth < totalMinWidth ? totalMinWidth : sidebarWidth) +
-            "px";
-          sidebar.style.minWidth =
-            (sidebarWidth < totalMinWidth ? totalMinWidth : sidebarWidth) +
-            "px";
-          resizer.style.left =
-            (sidebarWidth < totalMinWidth ? totalMinWidth : sidebarWidth) +
-            "px";
+          sidebar.style.width = `${
+            sidebarWidth < totalMinWidth ? totalMinWidth : sidebarWidth
+          }px`;
+          sidebar.style.minWidth = `${
+            sidebarWidth < totalMinWidth ? totalMinWidth : sidebarWidth
+          }px`;
+          resizer.style.left = `${
+            sidebarWidth < totalMinWidth ? totalMinWidth : sidebarWidth
+          }px`;
 
           that.options.sidebarWidth = sidebar.offsetWidth;
 
           // set the sidebar header and body width
-          sidebarData.style.width = sidebar.offsetWidth + "px";
+          sidebarData.style.width = `${sidebar.offsetWidth}px`;
 
           // rerender the calendar and scale
           if (
@@ -3429,7 +3437,8 @@
           ) {
             that.updateBody();
           } else {
-            let jsGanttLayout = that.element.querySelector(".js-gantt-layout");
+            const jsGanttLayout =
+              that.element.querySelector(".js-gantt-layout");
             that.createScrollbar(jsGanttLayout);
           }
         }
@@ -3440,8 +3449,10 @@
       // resize the sidebar
       function resize(e) {
         sidebarResizing = true;
-        let size = sidebarStartWidth + (e.x - startX);
-        if (that.element.offsetWidth - size <= 50) return;
+        const size = sidebarStartWidth + (e.x - startX);
+        if (that.element.offsetWidth - size <= 50) {
+          return;
+        }
         resizer.style.left = `${size}px`;
       }
     }
@@ -3449,22 +3460,26 @@
     // add today flag
     addTodayFlag() {
       // return from here if current date is out of range
-      if (this.outOfGanttRange(new Date())) return;
+      if (this.outOfGanttRange(new Date())) {
+        return;
+      }
 
       const isFullWeek = this.options.fullWeek;
       const isWeekend = this.options.weekends.includes(
         this.#dateFormat.day_short[new Date().getDay()]
       );
 
-      if (!isFullWeek && isWeekend) return;
+      if (!isFullWeek && isWeekend) {
+        return;
+      }
 
-      let isTodayExist = document.getElementById("js-gantt-marker-today");
+      const isTodayExist = document.getElementById("js-gantt-marker-today");
       if (!isTodayExist) {
-        let todayFlag = document.createElement("div");
+        const todayFlag = document.createElement("div");
         todayFlag.classList.add("js-gantt-marker-today");
         todayFlag.id = "js-gantt-marker-today";
         todayFlag.title = this.formatDateToString("%d %F %Y", new Date());
-        let todayFlagText = document.createElement("div");
+        const todayFlagText = document.createElement("div");
         todayFlagText.classList.add("js-gantt-marker-today-text");
         todayFlagText.innerHTML = "Today";
         todayFlag.append(todayFlagText);
@@ -3477,8 +3492,8 @@
 
         daysDiff = daysDiff.length - 1 || 0;
 
-        let colWidth = this.calculateGridWidth(new Date(), "day");
-        todayFlag.style.left = colWidth * daysDiff + colWidth / 2 + "px";
+        const colWidth = this.calculateGridWidth(new Date(), "day");
+        todayFlag.style.left = `${colWidth * daysDiff + colWidth / 2}px`;
 
         this.markerArea.append(todayFlag);
       }
@@ -3486,7 +3501,7 @@
 
     // remove today flag
     removeTodayFlag() {
-      let today = document.getElementById("js-gantt-marker-today");
+      const today = document.getElementById("js-gantt-marker-today");
       if (today) {
         today.remove();
       }
@@ -3550,17 +3565,19 @@
       });
 
       function toFixed(t) {
-        return t < 10 ? "0" + t : t;
+        return t < 10 ? `0${t}` : t;
       }
 
       // get week number
       function _getWeekNumber(t) {
-        if (!t) return !1;
+        if (!t) {
+          return !1;
+        }
         let n = t.getDay();
         0 === n && (n = 7);
-        let i = new Date(t.valueOf());
+        const i = new Date(t.valueOf());
         i.setDate(t.getDate() + (4 - n));
-        let r = i.getFullYear(),
+        const r = i.getFullYear(),
           a = Math.round((i.getTime() - new Date(r, 0, 1).getTime()) / 864e5);
         return 1 + Math.floor(a / 7);
       }
@@ -3595,7 +3612,7 @@
           newDate.setTime(newDate.getTime() + 60 * amount * 1e3);
           break;
         default:
-          return this["add_" + unit](date, amount, unit);
+          return this[`add_${unit}`](date, amount, unit);
       }
       return newDate;
     }
@@ -3603,14 +3620,15 @@
     // add days in date
     _add_days(t, e, n) {
       t.setDate(t.getDate() + e);
-      let i = e >= 0,
+      const i = e >= 0,
         r = !n.getHours() && t.getHours(),
         a =
           t.getDate() <= n.getDate() ||
           t.getMonth() < n.getMonth() ||
           t.getFullYear() < n.getFullYear();
       return (
-        i && r && a && t.setTime(t.getTime() + 36e5 * (24 - t.getHours())), t
+        i && r && a && t.setTime(t.getTime() + 36e5 * (24 - t.getHours())),
+        t
       );
     }
 
@@ -3638,11 +3656,11 @@
       this.element.classList.add("js-gantt-fullScreen");
 
       this.fullScreen = true;
-      let isVerScrollExist = this.element.querySelectorAll(
+      const isVerScrollExist = this.element.querySelectorAll(
         ".js-gantt-ver-scroll-cell"
       );
       if (isVerScrollExist && isVerScrollExist.length > 0) {
-        for (let scroll of isVerScrollExist) {
+        for (const scroll of isVerScrollExist) {
           scroll.remove();
         }
       }
@@ -3655,14 +3673,14 @@
       ) {
         this.updateBody();
       } else {
-        let jsGanttLayout = this.element.querySelector(".js-gantt-layout");
-        let verScroll =
+        const jsGanttLayout = this.element.querySelector(".js-gantt-layout");
+        const verScroll =
           this.element.querySelector(".js-gantt-ver-scroll")?.scrollTop || 0;
-        let horScroll =
+        const horScroll =
           this.element.querySelector(".js-gantt-hor-scroll")?.scrollLeft || 0;
         this.createScrollbar(jsGanttLayout, verScroll, horScroll);
       }
-      resizer.style.left = sidebar.offsetWidth + "px";
+      resizer.style.left = `${sidebar.offsetWidth}px`;
     }
 
     // exit browser fullscreen
@@ -3683,12 +3701,12 @@
 
       this.fullScreen = false;
 
-      let isVerScrollExist = this.element.querySelectorAll(
+      const isVerScrollExist = this.element.querySelectorAll(
         ".js-gantt-ver-scroll-cell"
       );
 
       if (isVerScrollExist) {
-        for (let scroll of isVerScrollExist) {
+        for (const scroll of isVerScrollExist) {
           scroll.remove();
         }
       }
@@ -3701,7 +3719,7 @@
           this.updateBody();
         }, 0);
       } else {
-        let jsGanttLayout = this.element.querySelector(".js-gantt-layout");
+        const jsGanttLayout = this.element.querySelector(".js-gantt-layout");
         this.createScrollbar(jsGanttLayout);
       }
 
@@ -3719,12 +3737,12 @@
       const childRows = this.element.querySelectorAll(".js-gantt-child-row");
       const toggleIcons = this.element.querySelectorAll(".js-gantt-tree-close");
 
-      for (let icon of toggleIcons) {
+      for (const icon of toggleIcons) {
         icon.classList.remove("js-gantt-tree-close");
         icon.classList.add("js-gantt-tree-open");
       }
 
-      for (let row of childRows) {
+      for (const row of childRows) {
         if (row.classList.contains("js-gantt-d-none")) {
           row.classList.add("js-gantt-d-flex");
           row.classList.remove("js-gantt-d-none");
@@ -3749,13 +3767,13 @@
       this.options.openedTasks.length = 0;
 
       // Change all the toggle icons to close
-      for (let icon of toggleIcons) {
+      for (const icon of toggleIcons) {
         icon.classList.remove("js-gantt-tree-open");
         icon.classList.add("js-gantt-tree-close");
       }
 
       // Hide all the child rows
-      for (let row of childRows) {
+      for (const row of childRows) {
         row.classList.add("js-gantt-d-none");
         row.classList.remove("js-gantt-d-flex");
       }
@@ -3884,11 +3902,11 @@
           const currentTaskPosition = +taskBar.getAttribute("data-task-pos");
 
           const updateData = (parentId, task, taskPositionId) => {
-            let currentIndex = that.originalData.findIndex(
+            const currentIndex = that.originalData.findIndex(
               (obj) => obj.id == task.id
             );
-            let newIndexTask = that.getTask(taskPositionId);
-            let newIndex = that.originalData.findIndex(
+            const newIndexTask = that.getTask(taskPositionId);
+            const newIndex = that.originalData.findIndex(
               (obj) => obj.id == taskPositionId
             );
 
@@ -3899,7 +3917,7 @@
           };
 
           if (isTaskbarIndexInRange) {
-            let currentTask = that.getTask(taskPositionId);
+            const currentTask = that.getTask(taskPositionId);
             const parentId =
               taskParentId.length > 1 ? currentTask.parent : currentTask.id;
             parentTask = that.getTask(parentId);
@@ -3911,7 +3929,7 @@
           that.dispatchEvent("onBeforeTaskDrop", {
             task,
             mode: type === "move" ? "move" : "resize",
-            parentTask: parentTask,
+            parentTask,
             oldParentTask: that.getTask(task.parent),
           });
 
@@ -3952,11 +3970,9 @@
             );
 
             // set the left and width to whole column
-            taskBar.style.left =
-              Math.round(taskBar.offsetLeft / gridWidth) * gridWidth + "px";
+            taskBar.style.left = `${Math.round(taskBar.offsetLeft / gridWidth) * gridWidth}px`;
             if (type !== "move") {
-              taskBar.style.width =
-                Math.round(taskBar.offsetWidth / gridWidth) * gridWidth + "px";
+              taskBar.style.width = `${Math.round(taskBar.offsetWidth / gridWidth) * gridWidth}px`;
             }
           }
           if (task.type === "milestone") {
@@ -4070,7 +4086,7 @@
         // move the taskbar
         if (type === "move") {
           resizer.style.cursor = "move";
-          let left =
+          const left =
             startLeft +
             (e.x - startX) -
             (startRightPanelScrollLeft - rightPanelScroll.scrollLeft);
@@ -4126,13 +4142,13 @@
 
           // if taskStartDate is less than the gantt range
           if (!taskStartDate) {
-            let dateDiff = Math.round(taskbarOffsetLeft / timelineCellWidth);
+            const dateDiff = Math.round(taskbarOffsetLeft / timelineCellWidth);
             taskStartDate = that.add(new Date(that.dates[0]), dateDiff, "day");
           }
 
           // if taskEndDate is greater than the gantt range
           if (!taskEndDate) {
-            let dateDiff =
+            const dateDiff =
               Math.round(
                 (taskbarOffsetLeft + taskbarOffsetWith) /
                   that.calculateGridWidth(task.start_date)
@@ -4177,8 +4193,8 @@
           if (size <= timelineCellWidth || left <= 0) {
             return;
           } else {
-            taskBar.style.left = left + "px";
-            taskBar.style.width = size + "px";
+            taskBar.style.left = `${left}px`;
+            taskBar.style.width = `${size}px`;
           }
         } else {
           size =
@@ -4193,7 +4209,7 @@
           ) {
             return;
           } else {
-            taskBar.style.width = size + "px";
+            taskBar.style.width = `${size}px`;
           }
         }
 
@@ -4219,7 +4235,7 @@
 
         // if taskStartDate is less than the gantt range
         if (!taskStartDate) {
-          let dateDiff =
+          const dateDiff =
             Math.round(taskbarOffsetLeft / timelineCellWidth) -
             that.dates.length;
           taskStartDate = that.add(
@@ -4231,7 +4247,7 @@
 
         // if taskEndDate is greater than the gantt range
         if (!taskEndDate) {
-          let dateDiff =
+          const dateDiff =
             Math.round(
               (taskbarOffsetLeft + taskbarOffsetWith) / timelineCellWidth
             ) - that.dates.length;
@@ -4282,17 +4298,17 @@
         ]
       );
 
-      let startTimePixel = Math.round(targetOffsetLeft % timelineCellWidth);
-      let startDateTime = this.getTimeByPx(startTimePixel, start);
+      const startTimePixel = Math.round(targetOffsetLeft % timelineCellWidth);
+      const startDateTime = this.getTimeByPx(startTimePixel, start);
 
       taskCurrentStart = new Date(taskCurrentStart);
       taskCurrentStart.setHours(startDateTime.hours, startDateTime.minutes);
 
-      let endTimePixel = Math.round(
+      const endTimePixel = Math.round(
         (targetOffsetLeft + targetOffsetWidth - 1) % timelineCellWidth
       );
 
-      let endDateTime = this.getTimeByPx(endTimePixel, end);
+      const endDateTime = this.getTimeByPx(endTimePixel, end);
 
       taskCurrentEnd = new Date(taskCurrentEnd);
       taskCurrentEnd.setHours(endDateTime.hours, endDateTime.minutes);
@@ -4321,29 +4337,29 @@
           "day"
         );
 
-        let taskLeft = Math.floor(
+        const taskLeft = Math.floor(
           (targetOffsetLeft + 1) / timelineCellStartWidth
         );
 
         start = this.dates[taskLeft];
-        let extraStartPX =
+        const extraStartPX =
           targetOffsetLeft + 1 - taskLeft * timelineCellStartWidth;
 
-        let taskStartTime = this.getTimeByPx(extraStartPX, new Date(start));
+        const taskStartTime = this.getTimeByPx(extraStartPX, new Date(start));
         start = new Date(new Date(start).setHours(taskStartTime.hours));
 
-        let taskLeftAndWidth = Math.floor(
+        const taskLeftAndWidth = Math.floor(
           (targetOffsetLeft + targetOffsetWidth) / timelineCellEndWidth
         );
 
         end = this.dates[taskLeftAndWidth];
-        let extraEndPX =
+        const extraEndPX =
           targetOffsetLeft +
           targetOffsetWidth +
           1 -
           taskLeftAndWidth * timelineCellEndWidth;
 
-        let taskEndTime = this.getTimeByPx(extraEndPX, new Date(end));
+        const taskEndTime = this.getTimeByPx(extraEndPX, new Date(end));
         end = new Date(new Date(end).setHours(taskEndTime.hours - 1));
       }
 
@@ -4354,9 +4370,9 @@
         return;
       }
 
-      let that = this;
-      let allParents = target.getAttribute("task-parent").split("");
-      let taskData = [...this.options.data];
+      const that = this;
+      const allParents = target.getAttribute("task-parent").split("");
+      const taskData = [...this.options.data];
       const cellStartDate = this.options.startDate;
 
       updateAllParents(taskData, allParents, eventType);
@@ -4376,7 +4392,9 @@
             allParents[i + 1]
           }`;
 
-          if (!currentLevel?.length || !currentParent) continue;
+          if (!currentLevel?.length || !currentParent) {
+            continue;
+          }
 
           let { start_date, end_date } = that.getLargeAndSmallDate(currentTask);
           const timelineCellStartWidth = that.calculateGridWidth(
@@ -4419,11 +4437,11 @@
                 );
             } else {
               // find All childs of current parent
-              let allChildsLeft = [];
-              let allChildsLeftAndWidth = [];
+              const allChildsLeft = [];
+              const allChildsLeftAndWidth = [];
 
               currentLevel.forEach((task) => {
-                let childTaskBar = that.element.querySelector(
+                const childTaskBar = that.element.querySelector(
                   `[js-gantt-taskbar-id="${task.id}"]`
                 );
                 if (childTaskBar) {
@@ -4447,7 +4465,7 @@
                   new Date(currentTask.start_date)
                 );
 
-                let taskDates = that.getDates(
+                const taskDates = that.getDates(
                   currentTask.start_date,
                   new Date(currentTask.end_date)
                 );
@@ -4514,7 +4532,7 @@
                   "day"
                 );
               } else {
-                let dateIndex = Math.floor(
+                const dateIndex = Math.floor(
                   (parentLeft + parentWidth) / timelineCellEndWidth
                 );
 
@@ -4680,7 +4698,7 @@
      * @returns { string | number } - The calculated height as a string with 'px' for header, or a number for scroll.
      */
     calculateScaleHeight(type, i = 0) {
-      const scales = this.options.scales;
+      const { scales } = this.options;
       const scaleHeight = this.options.scale_height;
 
       if (type === "header" || type === "scroll") {
@@ -4715,7 +4733,7 @@
      * @returns {Number} returns the timeline single grid cell width.
      */
     calculateGridWidth(date = new Date(0), levelType = this.options.zoomLevel) {
-      let sidebar = document.getElementById("js-gantt-grid-left-data");
+      const sidebar = document.getElementById("js-gantt-grid-left-data");
       const totalWidth = this.options.columns.reduce(
         (totalWidth, col) => totalWidth + col.width,
         0
@@ -4723,7 +4741,7 @@
 
       let sidebarWidth = 0;
       if (sidebar) {
-        let headCell = this.element.querySelectorAll(".head-cell");
+        const headCell = this.element.querySelectorAll(".head-cell");
         if (headCell.length !== this.options.columns.length) {
           sidebarWidth = totalWidth;
         } else {
@@ -4798,10 +4816,12 @@
 
         if (!isZoomLevelDay) {
           let cellEndDate = new Date(0);
-          const zoomLevel = this.options.zoomLevel;
+          const { zoomLevel } = this.options;
 
           for (const date of this.dates) {
-            if (cellEndDate.getTime() >= date) continue;
+            if (cellEndDate.getTime() >= date) {
+              continue;
+            }
             const { endDate, dateCount } = this.initColSizes(
               zoomLevel,
               1,
@@ -4831,7 +4851,9 @@
 
     // create lightbox
     createLightbox() {
-      if (this.lightbox) return;
+      if (this.lightbox) {
+        return;
+      }
 
       const lightbox = document.createElement("div");
       const lightboxBackdrop = document.createElement("div");
@@ -4856,7 +4878,9 @@
 
     // show lightbox
     showLightBox(task) {
-      if (!this.lightbox) return;
+      if (!this.lightbox) {
+        return;
+      }
 
       const { lightbox, lightboxBackdrop } = this.lightbox;
 
@@ -4873,7 +4897,7 @@
   <button role="save">${this.options.currentLanguage.buttons.save}</button>
   <button role="cancel">${this.options.currentLanguage.buttons.cancel}</button>
   <button role="delete">${this.options.currentLanguage.buttons.delete}</button>
-  </div>   
+  </div>
   `;
 
       lightbox.style.display = "block";
@@ -4915,7 +4939,9 @@
 
     // hide lightbox
     hideLightbox() {
-      if (!this.lightbox) return;
+      if (!this.lightbox) {
+        return;
+      }
       const { lightbox, lightboxBackdrop } = this.lightbox;
       const backdrop = lightboxBackdrop;
       lightbox.style.display = "none";
@@ -5039,12 +5065,12 @@
         .map((col) => escapeCSV(col.label))
         .join(",");
 
-      let right = this.options.rightGrid;
+      const right = this.options.rightGrid;
       if (right) {
-        headerRow += "," + right.map((col) => escapeCSV(col.label)).join(",");
+        headerRow += `,${right.map((col) => escapeCSV(col.label)).join(",")}`;
       }
 
-      csv += headerRow + "\n";
+      csv += `${headerRow}\n`;
 
       // Call the recursive function to convert data to CSV
       csv += convertToCSV(this.options.data, this.options.columns, right);
@@ -5054,11 +5080,11 @@
         let csvData = "";
 
         array.forEach((obj) => {
-          let rowData = columns.map((col) => escapeCSV(col.template(obj)));
+          const rowData = columns.map((col) => escapeCSV(col.template(obj)));
           if (right) {
             rowData.push(...right.map((col) => escapeCSV(col.template(obj))));
           }
-          csvData += rowData.join(",") + "\n";
+          csvData += `${rowData.join(",")}\n`;
 
           if (obj.children && obj.children.length > 0) {
             csvData += convertToCSV(obj.children, columns, right);
@@ -5069,10 +5095,10 @@
       }
 
       // Create a download link
-      let link = document.createElement("a");
+      const link = document.createElement("a");
       link.setAttribute(
         "href",
-        "data:text/csv;charset=utf-8," + encodeURIComponent(csv)
+        `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`
       );
       link.setAttribute("download", `${name}.csv`);
       // Programmatically trigger the download
@@ -5137,7 +5163,7 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = fileName + "." + type;
+      link.download = `${fileName}.${type}`;
       link.click();
       URL.revokeObjectURL(url);
     }
@@ -5155,14 +5181,14 @@
       // loop through all the children
       for (let l = 0; l < taskData.length; l++) {
         const task = taskData[l];
-        let taskParents = `${parentIdString}${l}`;
+        const taskParents = `${parentIdString}${l}`;
 
         if (!this.isTaskNotInSearchedData(task.id)) {
           if (this.#searchedData) {
             this.addTaskToOpenedList(task.id.id);
           }
 
-          let dataItem = document.createElement("div");
+          const dataItem = document.createElement("div");
           dataItem.classList.add(
             "js-gantt-row-item",
             "js-gantt-child-row",
@@ -5185,8 +5211,8 @@
 
           dataItem.setAttribute("js-gantt-data-task-id", `${taskParents}`);
           dataItem.setAttribute("js-gantt-task-id", task.id);
-          dataItem.style.height = options.row_height + "px";
-          dataItem.style.lineHeight = options.row_height + "px";
+          dataItem.style.height = `${options.row_height}px`;
+          dataItem.style.lineHeight = `${options.row_height}px`;
 
           const that = this;
 
@@ -5194,7 +5220,9 @@
           dataItem.addEventListener("dblclick", handleDblClick);
 
           function handleDblClick(e) {
-            if (e.target.classList.contains("js-gantt-tree-icon")) return;
+            if (e.target.classList.contains("js-gantt-tree-icon")) {
+              return;
+            }
 
             // custom event handler
             that.dispatchEvent("onBeforeTaskDblClick", { task });
@@ -5228,7 +5256,7 @@
           // loop through all the columns
           for (let k = 0; k < options.columns.length; k++) {
             const column = this.options.columns[k];
-            let cell = document.createElement("div");
+            const cell = document.createElement("div");
             cell.classList.add("js-gantt-cell");
 
             //add custom class from user
@@ -5239,24 +5267,24 @@
               task
             );
 
-            cell.style.width = (column.width || 80) + "px";
+            cell.style.width = `${column.width || 80}px`;
             column.align ? (cell.style.textAlign = column.align) : "";
             column.align ? (cell.style.justifyContent = column.align) : "";
 
-            let jsGanttBlank = document.createElement("div");
+            const jsGanttBlank = document.createElement("div");
             jsGanttBlank.classList.add("js-gantt-blank");
 
             jsGanttBlank.innerHTML = this.callTemplate("grid_blank", task);
 
             // content
-            let content = document.createElement("div");
+            const content = document.createElement("div");
             content.classList.add(
               "js-gantt-cell-data",
               "js-gantt-child-cell",
               `${k == 0 ? "js-gantt-d-block" : "js-gantt-child-data"}`
             );
             if (isRight) {
-              cell.setAttribute("data-column-index", "r-" + k);
+              cell.setAttribute("data-column-index", `r-${k}`);
             } else {
               cell.setAttribute("data-column-index", k);
             }
@@ -5289,13 +5317,13 @@
 
             if (column.tree) {
               // file icon
-              let file = document.createElement("div");
+              const file = document.createElement("div");
               file.classList.add("js-gantt-file-icon");
               file.innerHTML = this.callTemplate("grid_file", task);
 
               //add child indentation
               for (let n = 0; n < nestedLevel; n++) {
-                let indent = document.createElement("div");
+                const indent = document.createElement("div");
                 indent.classList.add("js-gantt-indent");
                 cell.append(indent);
               }
@@ -5303,7 +5331,7 @@
 
               if (task.children && task.children.length > 0) {
                 // tree icon
-                let treeIcon = document.createElement("div");
+                const treeIcon = document.createElement("div");
                 treeIcon.classList.add(
                   "js-gantt-tree-icon",
                   !this.options.openedTasks.includes(task.id)
@@ -5331,7 +5359,7 @@
                   treeIcon.classList.toggle("js-gantt-tree-close");
                   treeIcon.classList.toggle("js-gantt-tree-open");
 
-                  let jsGanttLayout =
+                  const jsGanttLayout =
                     this.element.querySelector("#js-gantt-layout");
                   this.createScrollbar(jsGanttLayout);
 
@@ -5350,7 +5378,9 @@
             dataItem.append(cell);
             if (column?.editor) {
               cell.addEventListener("click", (e) => {
-                if (e.target.classList.contains("js-gantt-tree-icon")) return;
+                if (e.target.classList.contains("js-gantt-tree-icon")) {
+                  return;
+                }
                 this.addInlineEditor(
                   task,
                   column.editor,
@@ -5383,7 +5413,7 @@
       isOpened,
       timelineRowTemplate
     ) {
-      const options = this.options;
+      const { options } = this;
 
       // loop through all the children
       for (let l = 0; l < taskData.length; l++) {
@@ -5461,7 +5491,7 @@
         const taskParents = `${taskParentString}${k}`;
 
         if (!this.isTaskNotInSearchedData(task.id)) {
-          let start_date = task.start_date;
+          let { start_date } = task;
           let end_date = task.end_date || task.start_date;
 
           if (task?.children?.length) {
@@ -5528,25 +5558,25 @@
           let taskLeft =
             cellBefore * this.calculateGridWidth(start_date, "day");
 
-          let hourLeft = this.getPxByTime(start_date, "left");
+          const hourLeft = this.getPxByTime(start_date, "left");
           taskLeft += hourLeft;
 
-          jsGanttBarTask.style.left = taskLeft + "px";
+          jsGanttBarTask.style.left = `${taskLeft}px`;
 
-          jsGanttBarTask.style.top =
+          jsGanttBarTask.style.top = `${
             rowCount * this.options.row_height +
-            Math.floor((this.options.row_height * 10) / 100) +
-            "px";
+            Math.floor((this.options.row_height * 10) / 100)
+          }px`;
           jsGanttBarTask.style.height = `${barTaskHeight}px`;
           jsGanttBarTask.style.lineHeight = `${barTaskHeight}px`;
           if (task.type === "milestone") {
             jsGanttBarTask.style.width = `${barTaskHeight}px`;
-            jsGanttBarTask.style.left =
-              (cellBefore + 1) * this.calculateGridWidth(start_date, "day") +
-              "px";
+            jsGanttBarTask.style.left = `${
+              (cellBefore + 1) * this.calculateGridWidth(start_date, "day")
+            }px`;
           }
 
-          let jsGanttBarTaskContent = document.createElement("div");
+          const jsGanttBarTaskContent = document.createElement("div");
           jsGanttBarTaskContent.classList.add(
             "js-gantt-bar-task-content",
             "child-task-bar-content"
@@ -5573,7 +5603,7 @@
 
           function handleDblClick() {
             // custom event handler
-            that.dispatchEvent("onBeforeTaskDblClick", { task: task });
+            that.dispatchEvent("onBeforeTaskDblClick", { task });
 
             // if onBeforeTaskDblClick return false then end here
             if (that.eventValue === false) {
@@ -5581,12 +5611,12 @@
               return;
             }
 
-            that.dispatchEvent("onTaskDblClick", { task: task });
+            that.dispatchEvent("onTaskDblClick", { task });
 
             that.showLightBox(task);
           }
 
-          const userAgent = navigator.userAgent;
+          const { userAgent } = navigator;
 
           // Handle mouseover event
           jsGanttBarTask.addEventListener("mouseover", handleMouseOver);
@@ -5614,9 +5644,9 @@
             this.callTemplate("task_drag", "resize", task) &&
             task.type !== "milestone"
           ) {
-            let jsGanttTaskDragLeft = document.createElement("div");
+            const jsGanttTaskDragLeft = document.createElement("div");
             jsGanttTaskDragLeft.classList.add("js-gantt-task-drag-left");
-            let jsGanttTaskDragRight = document.createElement("div");
+            const jsGanttTaskDragRight = document.createElement("div");
             jsGanttTaskDragRight.classList.add("js-gantt-task-drag-right");
 
             jsGanttBarTask.append(jsGanttTaskDragLeft, jsGanttTaskDragRight);
@@ -5679,7 +5709,7 @@
             ? this.options.taskProgress(task)
             : this.options.taskProgress;
           if (isTaskProgress === true && task.type !== "milestone") {
-            let progressPer = task.progress || 0;
+            const progressPer = task.progress || 0;
             const taskProgressContainer = document.createElement("div");
             taskProgressContainer.classList.add(
               "js-gantt-task-progress-wrapper"
@@ -5723,14 +5753,14 @@
           }
 
           //add custom task color picker
-          let isCustomColor = this.isFunction(this.options.taskColor)
+          const isCustomColor = this.isFunction(this.options.taskColor)
             ? this.options.taskColor(task)
             : this.options.taskColor;
 
           if (isCustomColor) {
-            let colorPicker = document.createElement("div");
+            const colorPicker = document.createElement("div");
             colorPicker.classList.add("js-gantt-task-color-picker");
-            let colorInput = document.createElement("input");
+            const colorInput = document.createElement("input");
             colorInput.type = "color";
 
             setTimeout(() => {
@@ -5763,7 +5793,7 @@
             );
           }
 
-          let taskDates = this.getDates(start_date, end_date);
+          const taskDates = this.getDates(start_date, end_date);
 
           if (task.type !== "milestone") {
             let taskWidth =
@@ -5774,11 +5804,11 @@
             }
 
             let hourWidth = this.getPxByTime(end_date, "width");
-            let hourLeft = this.getPxByTime(start_date, "left");
+            const hourLeft = this.getPxByTime(start_date, "left");
             hourWidth += hourLeft;
             taskWidth -= hourWidth;
 
-            jsGanttBarTask.style.width = taskWidth + "px";
+            jsGanttBarTask.style.width = `${taskWidth}px`;
           }
           start_date = new Date(start_date).setHours(0, 0, 0);
           end_date = new Date(end_date).setHours(0, 0, 0);
@@ -5854,7 +5884,9 @@
      * @param {string} type - open | collapse.
      */
     setCollapseAll(data, parentId, type) {
-      if (!data) return;
+      if (!data) {
+        return;
+      }
 
       data.forEach((child) => {
         if (child.children && child?.children?.length) {
@@ -5885,34 +5917,33 @@
     // create right sidebar
     createRightSidebar(options, mainContainer) {
       // sidebar head cells
-      let sidebar = document.createElement("div");
+      const sidebar = document.createElement("div");
       sidebar.classList.add("js-gantt-right-sidebar-cell");
       sidebar.id = "js-gantt-grid-right-data";
-      let headCellContainer = document.createElement("div");
+      const headCellContainer = document.createElement("div");
       headCellContainer.classList.add("right-sidebar-head-cell-container");
-      let containerHeight = this.calculateScaleHeight("header");
+      const containerHeight = this.calculateScaleHeight("header");
 
       const totalWidth = options.columns.reduce(
         (totalWidth, col) => totalWidth + col.width,
         0
       );
 
-      sidebar.style.width = (this.options.rightGridWidth || totalWidth) + "px";
-      sidebar.style.minWidth =
-        (this.options.rightGridWidth || totalWidth) + "px";
+      sidebar.style.width = `${this.options.rightGridWidth || totalWidth}px`;
+      sidebar.style.minWidth = `${this.options.rightGridWidth || totalWidth}px`;
 
       headCellContainer.style.height = containerHeight;
       headCellContainer.style.lineHeight = containerHeight;
 
       setTimeout(() => {
-        headCellContainer.style.width = sidebar.offsetWidth + "px";
+        headCellContainer.style.width = `${sidebar.offsetWidth}px`;
       }, 0);
       sidebar.append(headCellContainer);
       let resizerLeft = 0;
       // head loop of left side
       for (let i = 0; i < options.columns.length; i++) {
         const column = options.columns[i];
-        let headCell = document.createElement("div");
+        const headCell = document.createElement("div");
         headCell.classList.add("right-head-cell");
 
         //add custom class from user
@@ -5924,21 +5955,21 @@
         );
 
         headCell.setAttribute("data-column-index", `r-${i}`);
-        headCell.style.width = (column.width || 80) + "px";
+        headCell.style.width = `${column.width || 80}px`;
         headCell.innerHTML = column.label;
         headCellContainer.append(headCell);
         if (i < options.columns.length) {
-          let resizerWrap = document.createElement("div");
+          const resizerWrap = document.createElement("div");
           resizerWrap.classList.add("js-gantt-col-resizer-wrap");
-          resizerWrap.id = "js-gantt-col-resizer-wrap-r-" + i;
+          resizerWrap.id = `js-gantt-col-resizer-wrap-r-${i}`;
           resizerWrap.style.height = this.calculateScaleHeight("header");
 
           if (column.resize === true) {
-            let resizer = document.createElement("div");
+            const resizer = document.createElement("div");
             resizer.classList.add("js-gantt-col-resizer");
             resizerWrap.append(resizer);
             resizerLeft += column.width || 80;
-            resizerWrap.style.left = resizerLeft + "px";
+            resizerWrap.style.left = `${resizerLeft}px`;
             headCellContainer.append(resizerWrap);
             this.resizeColumns(
               resizerWrap,
@@ -5956,11 +5987,11 @@
       }
 
       // data loop of left side
-      let leftDataContainer = document.createElement("div");
+      const leftDataContainer = document.createElement("div");
       leftDataContainer.classList.add("js-gantt-grid-data");
       leftDataContainer.id = "js-gantt-left-grid";
       setTimeout(() => {
-        leftDataContainer.style.width = sidebar.offsetWidth + "px";
+        leftDataContainer.style.width = `${sidebar.offsetWidth}px`;
       }, 0);
       // loop through all the data
       for (let j = 0; j < options.data.length; j++) {
@@ -5981,9 +6012,9 @@
 
           dataItem.setAttribute("js-gantt-data-task-id", j);
           dataItem.setAttribute("js-gantt-task-id", task.id);
-          dataItem.style.height = options.row_height + "px";
-          dataItem.style.lineHeight = options.row_height + "px";
-          let that = this;
+          dataItem.style.height = `${options.row_height}px`;
+          dataItem.style.lineHeight = `${options.row_height}px`;
+          const that = this;
           // Handle mouseover event
           dataItem.addEventListener("mouseover", () =>
             this.updateTooltipBody(task)
@@ -5997,30 +6028,30 @@
               return;
             }
 
-            let selectedRows =
+            const selectedRows =
               this.element.querySelectorAll(".js-gantt-selected");
-            let selectedTaskBars = this.element.querySelectorAll(
+            const selectedTaskBars = this.element.querySelectorAll(
               ".js-gantt-selected-task-bar"
             );
 
-            for (let item of selectedRows) {
+            for (const item of selectedRows) {
               item.classList.remove("js-gantt-selected");
             }
 
-            for (let item of selectedTaskBars) {
+            for (const item of selectedTaskBars) {
               item.classList.remove("js-gantt-selected-task-bar");
             }
 
             // select the selected task taskBar
-            let currentTaskBar = this.element.querySelector(
+            const currentTaskBar = this.element.querySelector(
               `[js-gantt-taskbar-id="${task.id}"]`
             );
             currentTaskBar.classList.add("js-gantt-selected-task-bar");
 
-            let taskRow = this.element.querySelectorAll(
+            const taskRow = this.element.querySelectorAll(
               `[js-gantt-data-task-id="${j}"]`
             );
-            for (let item of taskRow) {
+            for (const item of taskRow) {
               item.classList.add("js-gantt-selected");
             }
             that.options.selectedRow = `${task.id}`;
@@ -6030,7 +6061,7 @@
           // loop through all the columns
           for (let k = 0; k < options.columns.length; k++) {
             const column = this.options.columns[k];
-            let cell = document.createElement("div");
+            const cell = document.createElement("div");
             cell.classList.add("js-gantt-cell");
 
             //add custom class from user
@@ -6041,18 +6072,18 @@
               task
             );
 
-            cell.style.width = (column.width || 80) + "px";
+            cell.style.width = `${column.width || 80}px`;
             column.align ? (cell.style.textAlign = column.align) : "";
             column.align ? (cell.style.justifyContent = column.align) : "";
 
-            let content = document.createElement("div");
+            const content = document.createElement("div");
             content.classList.add(
               "js-gantt-cell-data",
               `${k == 0 ? "js-gantt-d-block" : "js-gantt-data"}`
             );
             cell.setAttribute("data-column-index", `r-${k}`);
 
-            let jsGanttBlank = document.createElement("div");
+            const jsGanttBlank = document.createElement("div");
             jsGanttBlank.classList.add("js-gantt-blank");
 
             jsGanttBlank.innerHTML = this.callTemplate("grid_blank", task);
@@ -6065,14 +6096,14 @@
               cell.classList.add("js-gantt-d-flex");
 
               // folder icon
-              let folderIcon = document.createElement("div");
+              const folderIcon = document.createElement("div");
               folderIcon.classList.add("js-gantt-folder-icon");
 
               folderIcon.innerHTML = this.callTemplate("grid_folder", task);
 
               if (task.children && task.children.length > 0) {
                 // tree icon
-                let treeIcon = document.createElement("div");
+                const treeIcon = document.createElement("div");
                 treeIcon.classList.add(
                   "js-gantt-tree-icon",
                   !this.isTaskOpened(task.id)
@@ -6134,15 +6165,15 @@
       }
       sidebar.append(leftDataContainer);
 
-      let timelineResizerWrap = document.createElement("div");
+      const timelineResizerWrap = document.createElement("div");
       timelineResizerWrap.classList.add("js-gantt-timeline-resizer-wrap");
       timelineResizerWrap.id = "js-gantt-timeline-resizer-wrap";
 
-      let timelineResizer = document.createElement("div");
+      const timelineResizer = document.createElement("div");
       timelineResizer.classList.add("js-gantt-timeline-resizer");
       timelineResizerWrap.append(timelineResizer);
       setTimeout(() => {
-        timelineResizerWrap.style.left = sidebar.offsetLeft + "px";
+        timelineResizerWrap.style.left = `${sidebar.offsetLeft}px`;
       }, 0);
       mainContainer.append(timelineResizerWrap);
       this.resizeTimeline(timelineResizerWrap, timelineResizer, options);
@@ -6180,11 +6211,11 @@
       );
 
       const verticalScroll = createCustomScroll("js-gantt-ver-scroll");
-      verticalScroll.style.top = headerHeight + "px";
+      verticalScroll.style.top = `${headerHeight}px`;
       verticalScroll.style.height = `calc(100% - ${headerHeight}px)`;
 
       const verScrollContent = document.createElement("div");
-      verScrollContent.style.height = timelineData.scrollHeight - 1 + "px";
+      verScrollContent.style.height = `${timelineData.scrollHeight - 1}px`;
       verticalScroll.append(verScrollContent);
       verticalScrollContainer.append(verticalScroll);
 
@@ -6200,10 +6231,9 @@
       );
       const horScroll = createCustomScroll("js-gantt-hor-scroll");
       const horScrollContent = document.createElement("div");
-      horScrollContent.style.width =
-        timeline.scrollWidth +
-        (layout.offsetWidth - timeline.offsetWidth) +
-        "px";
+      horScrollContent.style.width = `${
+        timeline.scrollWidth + (layout.offsetWidth - timeline.offsetWidth)
+      }px`;
       horScroll.append(horScrollContent);
       horScrollContainer.append(horScroll);
 
@@ -6220,7 +6250,7 @@
       verticalScroll.scrollTop = verScrollPos || timeline.scrollTop;
       horScroll.scrollLeft = horScrollPos || timeline.scrollLeft;
 
-      let that = this;
+      const that = this;
       timeline.removeEventListener("scroll", handleCalendarScroll);
       timeline.addEventListener("scroll", handleCalendarScroll);
 
@@ -6265,7 +6295,7 @@
       }
 
       // for vertical custom scroller
-      verticalScroll.addEventListener("scroll", function () {
+      verticalScroll.addEventListener("scroll", () => {
         timeline.scrollTop = verticalScroll.scrollTop;
         sidebar.scrollTop = verticalScroll.scrollTop;
         if (rightSideBar) {
@@ -6277,8 +6307,7 @@
         "#js-gantt-timeline-resizer-wrap"
       );
       if (timelineResizer) {
-        timelineResizer.style.left =
-          timeline.offsetLeft + timeline.offsetWidth + "px";
+        timelineResizer.style.left = `${timeline.offsetLeft + timeline.offsetWidth}px`;
       }
 
       function createCustomScrollContainer(id) {
@@ -6296,7 +6325,7 @@
 
       function removeExistingScrollElements(scrollElements) {
         if (scrollElements) {
-          for (let scroll of scrollElements) {
+          for (const scroll of scrollElements) {
             scroll.remove();
           }
         }
@@ -6340,7 +6369,7 @@
         document.removeEventListener("mousemove", resize, false);
         document.removeEventListener("mouseup", handleMouseUp, false);
         if (timeLineResizing) {
-          let rightSideBar = that.element.querySelector(
+          const rightSideBar = that.element.querySelector(
             "#js-gantt-grid-right-data"
           );
 
@@ -6358,19 +6387,19 @@
 
           widthSize = widthSize < totalMinWidth ? totalMinWidth : widthSize;
 
-          rightSideBar.style.width = widthSize + "px";
-          rightSideBar.style.minWidth = widthSize + "px";
+          rightSideBar.style.width = `${widthSize}px`;
+          rightSideBar.style.minWidth = `${widthSize}px`;
 
           let resizerLeft = 0,
             headerCell = document.getElementsByClassName("right-head-cell");
 
           for (let j = 0; j < headerCell.length; j++) {
-            let columns = that.element.querySelectorAll(
+            const columns = that.element.querySelectorAll(
               `[data-column-index="r-${j}"]`
             );
 
             // let incrasedWidth = widthSize / options.columns.length;
-            let resizerWrap = document.getElementById(
+            const resizerWrap = document.getElementById(
               `js-gantt-col-resizer-wrap-r-${j}`
             );
 
@@ -6384,8 +6413,8 @@
                 : colWidth;
 
             // set the sidebar columns width
-            for (let col of columns) {
-              col.style.width = colWidth + "px";
+            for (const col of columns) {
+              col.style.width = `${colWidth}px`;
             }
 
             that.options.rightGrid[j].width = colWidth;
@@ -6393,7 +6422,7 @@
             // set the sidebar columns resizer left
             resizerLeft += headerCell[j].offsetWidth;
             if (resizerWrap) {
-              resizerWrap.style.left = resizerLeft + "px";
+              resizerWrap.style.left = `${resizerLeft}px`;
             }
           }
 
@@ -6430,7 +6459,7 @@
      * @returns {Object|null} - The task object if found, otherwise null.
      */
     getTask(id, data = this.options.data) {
-      for (let item of data) {
+      for (const item of data) {
         if (item.id == id) {
           return item;
         }
@@ -6452,7 +6481,7 @@
      * @param {boolean} findRecursive - Indicates whether to find recursive parent-child tasks.
      */
     filterTask(condition, isFilter, findRecursive = false) {
-      let parents = new Set();
+      const parents = new Set();
       const that = this;
 
       const debouncedFilterTask = this.debounce(
@@ -6482,7 +6511,7 @@
       debouncedFilterTask();
 
       function findTask(data, condition) {
-        let result = new Set();
+        const result = new Set();
 
         data.forEach((item) => {
           if (condition(item)) {
@@ -6504,7 +6533,7 @@
         while (item.parent && item.parent != 0 && !parents.has(item.parent)) {
           parents.add(item.parent);
           result.add(item.parent);
-          let parentItem = that.getTask(item.parent);
+          const parentItem = that.getTask(item.parent);
           if (parentItem) {
             item = parentItem;
           } else {
@@ -6530,18 +6559,20 @@
       );
       const isFullWeek = this.options.fullWeek;
 
-      if (!isFullWeek && isWeekend) return;
+      if (!isFullWeek && isWeekend) {
+        return;
+      }
 
-      const markerArea = this.markerArea;
+      const { markerArea } = this;
 
-      let flag = document.createElement("div");
+      const flag = document.createElement("div");
       flag.classList.add(
         "js-gantt-marker",
         ...data.css.trim().replace(/\s+/g, " ").split(" ")
       );
       flag.title = data.title;
 
-      let flagText = document.createElement("div");
+      const flagText = document.createElement("div");
       flagText.classList.add("js-gantt-marker-content");
       flagText.innerHTML = data.text;
       flag.append(flagText);
@@ -6551,9 +6582,9 @@
 
       daysDiff = daysDiff.length - 1 || 0;
 
-      let colWidth = this.calculateGridWidth(data.start_date, "day");
+      const colWidth = this.calculateGridWidth(data.start_date, "day");
 
-      flag.style.left = colWidth * daysDiff + colWidth / 2 + "px";
+      flag.style.left = `${colWidth * daysDiff + colWidth / 2}px`;
 
       markerArea.append(flag);
     }
@@ -6575,7 +6606,7 @@
 
       this.element.addEventListener(name, handleEvent);
 
-      let that = this;
+      const that = this;
 
       function handleEvent(e) {
         if (eventNamesToCheck.includes(name)) {
@@ -6669,7 +6700,7 @@
       const jsGanttLayout = this.element.querySelector("#js-gantt-layout");
       const toggleTreeIcon = taskRow.querySelector(".js-gantt-tree-icon");
 
-      let task = this.getTask(id);
+      const task = this.getTask(id);
       if (task.parent !== 0) {
         this.openTask(task.parent);
       }
@@ -6688,9 +6719,9 @@
         toggleTreeIcon.classList.remove("js-gantt-tree-close");
         toggleTreeIcon.classList.add("js-gantt-tree-open");
       }
-      let verScroll =
+      const verScroll =
         this.element.querySelector(".js-gantt-ver-scroll")?.scrollTop || 0;
-      let horScroll =
+      const horScroll =
         this.element.querySelector(".js-gantt-hor-scroll")?.scrollLeft || 0;
       this.createScrollbar(jsGanttLayout, verScroll, horScroll);
     }
@@ -6721,9 +6752,9 @@
 
     // get time from pixels
     getTimeByPx(pixels, date) {
-      let pxPerMin = this.calculateGridWidth(date, "day") / (24 * 60);
-      let dateTime = pixels / pxPerMin / 60;
-      let { hours, minutes } = this.convertDecimalToTime(dateTime);
+      const pxPerMin = this.calculateGridWidth(date, "day") / (24 * 60);
+      const dateTime = pixels / pxPerMin / 60;
+      const { hours, minutes } = this.convertDecimalToTime(dateTime);
       return { hours, minutes };
     }
 
@@ -6733,8 +6764,8 @@
       if (type === "width") {
         hours = hours === 0 ? 0 : 23 - hours;
       }
-      let pxPerHour = this.calculateGridWidth(date, "day") / 24;
-      let pixels = hours * pxPerHour;
+      const pxPerHour = this.calculateGridWidth(date, "day") / 24;
+      const pixels = hours * pxPerHour;
       return pixels;
     }
 
@@ -6769,7 +6800,7 @@
         return;
       }
 
-      let rowHeight =
+      const rowHeight =
           this.element.querySelector(".js-gantt-bar-task").offsetHeight,
         sourceLeft = source.offsetLeft,
         sourceWidth = source.offsetWidth,
@@ -6791,7 +6822,7 @@
 
       const that = this;
       // handle double click event
-      taskLink.addEventListener("dblclick", function () {
+      taskLink.addEventListener("dblclick", () => {
         that.dispatchEvent("onLinkDblClick", { link });
       });
 
@@ -6812,139 +6843,118 @@
 
       if (linkType == 0) {
         // 0 is  finish_to_start
-        startLine.style.left = sourceLeft + sourceWidth + "px";
-        startLine.style.top = sourceTop + rowHeight / 2 + "px";
-        startLine.style.width = 15 + "px";
-        let innerHorLine = linkHorInnerLine.cloneNode(true);
+        startLine.style.left = `${sourceLeft + sourceWidth}px`;
+        startLine.style.top = `${sourceTop + rowHeight / 2}px`;
+        startLine.style.width = `${15}px`;
+        const innerHorLine = linkHorInnerLine.cloneNode(true);
         startLine.append(innerHorLine);
         taskLink.append(startLine);
 
         if (sourceLeft + sourceWidth + 15 >= targetLeft) {
-          let middleLine = document.createElement("div");
+          const middleLine = document.createElement("div");
           middleLine.classList.add(
             "js-gantt-ver-link-line",
             "js-gantt-link-line"
           );
-          middleLine.style.left =
-            startLine.offsetLeft + startLine.offsetWidth - 2 + "px";
+          middleLine.style.left = `${startLine.offsetLeft + startLine.offsetWidth - 2}px`;
           if (sourceTop < targetTop) {
-            middleLine.style.top =
-              Math.min(sourceTop, targetTop) + rowHeight / 2 + "px";
-            middleLine.style.height =
-              source.offsetHeight / 2 + (extraHeight + 2) + "px";
+            middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2}px`;
+            middleLine.style.height = `${source.offsetHeight / 2 + (extraHeight + 2)}px`;
           } else {
-            middleLine.style.top =
-              Math.min(sourceTop, targetTop) +
-              rowHeight +
-              (extraHeight + 2) +
-              "px";
-            middleLine.style.height =
-              Math.abs(sourceTop - targetTop) -
-              rowHeight / 2 -
-              extraHeight +
-              "px";
+            middleLine.style.top = `${
+              Math.min(sourceTop, targetTop) + rowHeight + (extraHeight + 2)
+            }px`;
+            middleLine.style.height = `${
+              Math.abs(sourceTop - targetTop) - rowHeight / 2 - extraHeight
+            }px`;
           }
-          let innerLine = linkVerInnerLine.cloneNode(true);
+          const innerLine = linkVerInnerLine.cloneNode(true);
           middleLine.append(innerLine);
           taskLink.append(middleLine);
 
-          let horLine = document.createElement("div");
+          const horLine = document.createElement("div");
           horLine.classList.add("js-gantt-hor-link-line", "js-gantt-link-line");
-          horLine.style.left = targetLeft - 15 + "px";
-          horLine.style.top =
-            Math.min(sourceTop, targetTop) +
-            source.offsetHeight +
-            extraHeight +
-            "px";
-          horLine.style.width =
+          horLine.style.left = `${targetLeft - 15}px`;
+          horLine.style.top = `${
+            Math.min(sourceTop, targetTop) + source.offsetHeight + extraHeight
+          }px`;
+          horLine.style.width = `${
             Math.abs(
               startLine.offsetLeft + startLine.offsetWidth - targetLeft
-            ) +
-            15 +
-            "px";
-          let innerHorLine = linkHorInnerLine.cloneNode(true);
+            ) + 15
+          }px`;
+          const innerHorLine = linkHorInnerLine.cloneNode(true);
           horLine.append(innerHorLine);
           taskLink.append(horLine);
         }
 
         if (sourceLeft + sourceWidth + 15 >= targetLeft) {
-          middleLine.style.left = target.offsetLeft - 15 + "px";
+          middleLine.style.left = `${target.offsetLeft - 15}px`;
           if (sourceTop < targetTop) {
-            middleLine.style.top =
-              Math.min(sourceTop, targetTop) +
-              rowHeight +
-              (extraHeight + 2) +
-              "px";
-            middleLine.style.height =
-              Math.abs(sourceTop - targetTop) -
-              rowHeight / 2 -
-              extraHeight +
-              "px";
+            middleLine.style.top = `${
+              Math.min(sourceTop, targetTop) + rowHeight + (extraHeight + 2)
+            }px`;
+            middleLine.style.height = `${
+              Math.abs(sourceTop - targetTop) - rowHeight / 2 - extraHeight
+            }px`;
           } else {
-            middleLine.style.top =
-              Math.min(sourceTop, targetTop) + rowHeight / 2 + "px";
-            middleLine.style.height =
-              source.offsetHeight / 2 + extraHeight + "px";
+            middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2}px`;
+            middleLine.style.height = `${source.offsetHeight / 2 + extraHeight}px`;
           }
         } else {
-          middleLine.style.left =
-            startLine.offsetLeft + startLine.offsetWidth - 2 + "px";
-          middleLine.style.top =
-            Math.min(sourceTop, targetTop) + rowHeight / 2 + "px";
-          middleLine.style.height = Math.abs(sourceTop - targetTop) + "px";
+          middleLine.style.left = `${startLine.offsetLeft + startLine.offsetWidth - 2}px`;
+          middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2}px`;
+          middleLine.style.height = `${Math.abs(sourceTop - targetTop)}px`;
         }
-        let innerLine = linkVerInnerLine.cloneNode(true);
+        const innerLine = linkVerInnerLine.cloneNode(true);
         middleLine.append(innerLine);
         taskLink.append(middleLine);
 
         if (sourceLeft + sourceWidth + 15 >= targetLeft) {
-          endLine.style.left = middleLine.offsetLeft + "px";
-          endLine.style.top = targetTop + rowHeight / 2 + "px";
-          endLine.style.width = 15 + "px";
+          endLine.style.left = `${middleLine.offsetLeft}px`;
+          endLine.style.top = `${targetTop + rowHeight / 2}px`;
+          endLine.style.width = `${15}px`;
         } else {
-          endLine.style.left = middleLine.offsetLeft + "px";
-          endLine.style.top = targetTop + rowHeight / 2 + "px";
-          endLine.style.width =
-            Math.abs(
-              startLine.offsetLeft + startLine.offsetWidth - targetLeft
-            ) + "px";
+          endLine.style.left = `${middleLine.offsetLeft}px`;
+          endLine.style.top = `${targetTop + rowHeight / 2}px`;
+          endLine.style.width = `${Math.abs(
+            startLine.offsetLeft + startLine.offsetWidth - targetLeft
+          )}px`;
         }
 
-        let innerEndLine = linkHorInnerLine.cloneNode(true);
+        const innerEndLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndLine);
         taskLink.append(endLine);
       } else if (linkType == 1) {
         // 1 is  start_to_start
-        startLine.style.left = Math.min(sourceLeft, targetLeft) - 15 + "px";
-        startLine.style.top = sourceTop + rowHeight / 2 + "px";
+        startLine.style.left = `${Math.min(sourceLeft, targetLeft) - 15}px`;
+        startLine.style.top = `${sourceTop + rowHeight / 2}px`;
         if (sourceLeft > targetLeft) {
-          startLine.style.width = Math.abs(sourceLeft - targetLeft) + 15 + "px";
+          startLine.style.width = `${Math.abs(sourceLeft - targetLeft) + 15}px`;
         } else {
-          startLine.style.width = 15 + "px";
+          startLine.style.width = `${15}px`;
         }
-        let innerHorLine = linkVerInnerLine.cloneNode(true);
+        const innerHorLine = linkVerInnerLine.cloneNode(true);
         startLine.append(innerHorLine);
         taskLink.append(startLine);
 
         if (sourceLeft >= targetLeft) {
-          middleLine.style.left = target.offsetLeft - 15 + "px";
-          middleLine.style.top =
-            Math.min(sourceTop, targetTop) + rowHeight / 2 + "px";
-          middleLine.style.height = Math.abs(sourceTop - targetTop) + "px";
+          middleLine.style.left = `${target.offsetLeft - 15}px`;
+          middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2}px`;
+          middleLine.style.height = `${Math.abs(sourceTop - targetTop)}px`;
         } else {
-          middleLine.style.left = startLine.offsetLeft + "px";
-          middleLine.style.top =
-            Math.min(sourceTop, targetTop) + rowHeight / 2 + "px";
-          middleLine.style.height = Math.abs(sourceTop - targetTop) + "px";
+          middleLine.style.left = `${startLine.offsetLeft}px`;
+          middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2}px`;
+          middleLine.style.height = `${Math.abs(sourceTop - targetTop)}px`;
         }
-        let innerLine = linkVerInnerLine.cloneNode(true);
+        const innerLine = linkVerInnerLine.cloneNode(true);
         middleLine.append(innerLine);
         taskLink.append(middleLine);
 
-        endLine.style.left = middleLine.offsetLeft + "px";
-        endLine.style.top = targetTop + rowHeight / 2 + "px";
-        endLine.style.width = targetLeft - middleLine.offsetLeft + "px";
-        let innerEndLine = linkHorInnerLine.cloneNode(true);
+        endLine.style.left = `${middleLine.offsetLeft}px`;
+        endLine.style.top = `${targetTop + rowHeight / 2}px`;
+        endLine.style.width = `${targetLeft - middleLine.offsetLeft}px`;
+        const innerEndLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndLine);
         taskLink.append(endLine);
       } else if (linkType == 2) {
@@ -6958,7 +6968,7 @@
         } else {
           startLine.style.width = `${15}px`;
         }
-        let innerHorLine = linkHorInnerLine.cloneNode(true);
+        const innerHorLine = linkHorInnerLine.cloneNode(true);
         startLine.append(innerHorLine);
         taskLink.append(startLine);
 
@@ -6969,7 +6979,7 @@
           Math.min(sourceTop, targetTop) + rowHeight / 2
         }px`;
         middleLine.style.height = `${Math.abs(sourceTop - targetTop) + 2}px`;
-        let innerLine = linkVerInnerLine.cloneNode(true);
+        const innerLine = linkVerInnerLine.cloneNode(true);
         middleLine.append(innerLine);
         taskLink.append(middleLine);
 
@@ -6978,7 +6988,7 @@
         endLine.style.width = `${
           Math.abs(targetLeft + targetWidth - middleLine.offsetLeft) + 2
         }px`;
-        let innerEndHorLine = linkHorInnerLine.cloneNode(true);
+        const innerEndHorLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndHorLine);
         taskLink.append(endLine);
       } else if (linkType == 3) {
@@ -6993,12 +7003,12 @@
           startLine.style.width = `${15}px`;
         }
         startLine.style.top = `${sourceTop + rowHeight / 2}px`;
-        let innerHorLine = linkHorInnerLine.cloneNode(true);
+        const innerHorLine = linkHorInnerLine.cloneNode(true);
         startLine.append(innerHorLine);
         taskLink.append(startLine);
 
         if (sourceLeft <= targetLeft + targetWidth) {
-          let middleLine = document.createElement("div");
+          const middleLine = document.createElement("div");
           middleLine.classList.add(
             "js-gantt-ver-link-line",
             "js-gantt-link-line"
@@ -7019,11 +7029,11 @@
               Math.abs(sourceTop - targetTop) - rowHeight / 2 - extraHeight
             }px`;
           }
-          let innerLine = linkVerInnerLine.cloneNode(true);
+          const innerLine = linkVerInnerLine.cloneNode(true);
           middleLine.append(innerLine);
           taskLink.append(middleLine);
 
-          let horLine = document.createElement("div");
+          const horLine = document.createElement("div");
           horLine.classList.add("js-gantt-hor-link-line", "js-gantt-link-line");
           horLine.style.left = `${startLine.offsetLeft}px`;
           horLine.style.top = `${
@@ -7032,7 +7042,7 @@
           horLine.style.width = `${
             Math.abs(targetLeft + targetWidth - startLine.offsetLeft) + 15
           }px`;
-          let innerHorLine = linkHorInnerLine.cloneNode(true);
+          const innerHorLine = linkHorInnerLine.cloneNode(true);
           horLine.append(innerHorLine);
           taskLink.append(horLine);
         }
@@ -7066,14 +7076,14 @@
             }px`;
           }
         }
-        let innerLine = linkVerInnerLine.cloneNode(true);
+        const innerLine = linkVerInnerLine.cloneNode(true);
         middleLine.append(innerLine);
         taskLink.append(middleLine);
 
         endLine.style.left = `${targetLeft + targetWidth}px`;
         endLine.style.top = `${targetTop + rowHeight / 2}px`;
         endLine.style.width = `${15}px`;
-        let innerEndLine = linkHorInnerLine.cloneNode(true);
+        const innerEndLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndLine);
         taskLink.append(endLine);
       }
@@ -7105,7 +7115,7 @@
      * @param {object} linkObj - The link object containing information about the link.
      */
     updateLinkPosition(source, target, link, rowHeight, linkObj) {
-      let sourceLeft = source.offsetLeft,
+      const sourceLeft = source.offsetLeft,
         sourceWidth = source.offsetWidth,
         sourceTop = source.offsetTop,
         targetLeft = target.offsetLeft,
@@ -7136,149 +7146,130 @@
       const linkHorInnerLine = document.createElement("div");
       linkHorInnerLine.classList.add("hor-inner-line");
 
-      let linkType = linkObj.type || 0;
+      const linkType = linkObj.type || 0;
 
       if (linkType === 0) {
         // 0 is  finish_to_start
-        startLine.style.left = sourceLeft + sourceWidth + "px";
-        startLine.style.top = sourceTop + rowHeight / 2 + "px";
-        startLine.style.width = 15 + "px";
-        let innerHorLine = linkHorInnerLine.cloneNode(true);
+        startLine.style.left = `${sourceLeft + sourceWidth}px`;
+        startLine.style.top = `${sourceTop + rowHeight / 2}px`;
+        startLine.style.width = `${15}px`;
+        const innerHorLine = linkHorInnerLine.cloneNode(true);
         startLine.append(innerHorLine);
         taskLink.append(startLine);
 
         if (sourceLeft + sourceWidth + 15 >= targetLeft) {
-          let middleLine = document.createElement("div");
+          const middleLine = document.createElement("div");
           middleLine.classList.add(
             "js-gantt-ver-link-line",
             "js-gantt-link-line"
           );
-          middleLine.style.left = sourceLeft + sourceWidth + 15 + "px";
+          middleLine.style.left = `${sourceLeft + sourceWidth + 15}px`;
           if (sourceTop < targetTop) {
-            middleLine.style.top =
-              Math.min(sourceTop, targetTop) + rowHeight / 2 + "px";
-            middleLine.style.height =
-              source.offsetHeight / 2 + (extraHeight + 2) + "px";
+            middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2}px`;
+            middleLine.style.height = `${source.offsetHeight / 2 + (extraHeight + 2)}px`;
           } else {
             if (Math.abs(sourceTop - targetTop) <= rowHeight / 2) {
-              middleLine.style.top =
+              middleLine.style.top = `${
                 Math.min(sourceTop, targetTop) +
                 rowHeight / 2 +
-                Math.abs(sourceTop - targetTop) +
-                "px";
-              middleLine.style.height =
-                Math.abs(
-                  sourceTop - targetTop - rowHeight / 2 - (extraHeight + 2)
-                ) + "px";
+                Math.abs(sourceTop - targetTop)
+              }px`;
+              middleLine.style.height = `${Math.abs(
+                sourceTop - targetTop - rowHeight / 2 - (extraHeight + 2)
+              )}px`;
             } else {
-              middleLine.style.top =
-                Math.min(sourceTop, targetTop) + rowHeight + extraHeight + "px";
-              middleLine.style.height =
-                Math.abs(sourceTop - targetTop) - rowHeight / 2 + "px";
+              middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight + extraHeight}px`;
+              middleLine.style.height = `${Math.abs(sourceTop - targetTop) - rowHeight / 2}px`;
             }
           }
-          let innerLine = linkVerInnerLine.cloneNode(true);
+          const innerLine = linkVerInnerLine.cloneNode(true);
           middleLine.append(innerLine);
           taskLink.append(middleLine);
 
-          let horLine = document.createElement("div");
+          const horLine = document.createElement("div");
           horLine.classList.add("js-gantt-hor-link-line", "js-gantt-link-line");
-          horLine.style.left = targetLeft - 15 + "px";
-          horLine.style.top =
-            Math.min(sourceTop, targetTop) +
-            source.offsetHeight +
-            extraHeight +
-            "px";
+          horLine.style.left = `${targetLeft - 15}px`;
+          horLine.style.top = `${
+            Math.min(sourceTop, targetTop) + source.offsetHeight + extraHeight
+          }px`;
           if (0 < sourceLeft + sourceWidth + 15 - targetLeft <= 15) {
-            horLine.style.width =
-              Math.abs(sourceLeft + sourceWidth + 15 - targetLeft) + 15 + "px";
+            horLine.style.width = `${Math.abs(sourceLeft + sourceWidth + 15 - targetLeft) + 15}px`;
           } else {
-            horLine.style.width =
-              Math.abs(sourceLeft + sourceWidth - targetLeft) + 30 + "px";
+            horLine.style.width = `${Math.abs(sourceLeft + sourceWidth - targetLeft) + 30}px`;
           }
-          let innerHorLine = linkHorInnerLine.cloneNode(true);
+          const innerHorLine = linkHorInnerLine.cloneNode(true);
           horLine.append(innerHorLine);
           taskLink.append(horLine);
         }
 
         if (sourceLeft + sourceWidth + 15 >= targetLeft) {
-          middleLine.style.left = target.offsetLeft - 15 + "px";
+          middleLine.style.left = `${target.offsetLeft - 15}px`;
           if (sourceTop < targetTop) {
             if (Math.abs(sourceTop - targetTop) <= rowHeight / 2) {
-              middleLine.style.top =
+              middleLine.style.top = `${
                 Math.min(sourceTop, targetTop) +
                 rowHeight / 2 +
-                Math.abs(sourceTop - targetTop) +
-                "px";
-              middleLine.style.height =
-                Math.abs(sourceTop - targetTop + rowHeight / 2 + extraHeight) +
-                "px";
+                Math.abs(sourceTop - targetTop)
+              }px`;
+              middleLine.style.height = `${Math.abs(
+                sourceTop - targetTop + rowHeight / 2 + extraHeight
+              )}px`;
             } else {
-              middleLine.style.top =
-                Math.min(sourceTop, targetTop) +
-                rowHeight +
-                (extraHeight + 2) +
-                "px";
-              middleLine.style.height =
-                Math.abs(sourceTop - targetTop) -
-                rowHeight / 2 -
-                extraHeight +
-                "px";
+              middleLine.style.top = `${
+                Math.min(sourceTop, targetTop) + rowHeight + (extraHeight + 2)
+              }px`;
+              middleLine.style.height = `${
+                Math.abs(sourceTop - targetTop) - rowHeight / 2 - extraHeight
+              }px`;
             }
           } else {
-            middleLine.style.top =
-              Math.min(sourceTop, targetTop) + rowHeight / 2 + "px";
-            middleLine.style.height =
-              source.offsetHeight / 2 + extraHeight + "px";
+            middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2}px`;
+            middleLine.style.height = `${source.offsetHeight / 2 + extraHeight}px`;
           }
         } else {
-          middleLine.style.left = sourceLeft + sourceWidth + 13 + "px";
-          middleLine.style.top =
-            Math.min(sourceTop, targetTop) + rowHeight / 2 + 2 + "px";
-          middleLine.style.height = Math.abs(sourceTop - targetTop) + "px";
+          middleLine.style.left = `${sourceLeft + sourceWidth + 13}px`;
+          middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2 + 2}px`;
+          middleLine.style.height = `${Math.abs(sourceTop - targetTop)}px`;
         }
-        let innerLine = linkVerInnerLine.cloneNode(true);
+        const innerLine = linkVerInnerLine.cloneNode(true);
         middleLine.append(innerLine);
         taskLink.append(middleLine);
 
         if (sourceLeft + sourceWidth + 15 >= targetLeft) {
-          endLine.style.left = targetLeft - 15 + "px";
-          endLine.style.top = targetTop + rowHeight / 2 + "px";
-          endLine.style.width = 15 + "px";
+          endLine.style.left = `${targetLeft - 15}px`;
+          endLine.style.top = `${targetTop + rowHeight / 2}px`;
+          endLine.style.width = `${15}px`;
         } else {
-          endLine.style.left = sourceLeft + sourceWidth + 13 + "px";
-          endLine.style.top = targetTop + rowHeight / 2 + "px";
-          endLine.style.width =
-            Math.abs(sourceLeft + sourceWidth + 15 - targetLeft) + "px";
+          endLine.style.left = `${sourceLeft + sourceWidth + 13}px`;
+          endLine.style.top = `${targetTop + rowHeight / 2}px`;
+          endLine.style.width = `${Math.abs(sourceLeft + sourceWidth + 15 - targetLeft)}px`;
         }
-        let innerEndLine = linkHorInnerLine.cloneNode(true);
+        const innerEndLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndLine);
         taskLink.append(endLine);
       } else if (linkType === 1) {
         // 1 is  start_to_start
-        startLine.style.left = Math.min(sourceLeft, targetLeft) - 15 + "px";
-        startLine.style.top = sourceTop + rowHeight / 2 + "px";
+        startLine.style.left = `${Math.min(sourceLeft, targetLeft) - 15}px`;
+        startLine.style.top = `${sourceTop + rowHeight / 2}px`;
         if (sourceLeft > targetLeft) {
-          startLine.style.width = Math.abs(sourceLeft - targetLeft) + 15 + "px";
+          startLine.style.width = `${Math.abs(sourceLeft - targetLeft) + 15}px`;
         } else {
-          startLine.style.width = 15 + "px";
+          startLine.style.width = `${15}px`;
         }
-        let innerHorLine = linkHorInnerLine.cloneNode(true);
+        const innerHorLine = linkHorInnerLine.cloneNode(true);
         startLine.append(innerHorLine);
         taskLink.append(startLine);
 
         if (sourceLeft >= targetLeft) {
-          middleLine.style.left = targetLeft - 15 + "px";
-          middleLine.style.top =
-            Math.min(sourceTop, targetTop) + rowHeight / 2 + "px";
-          middleLine.style.height = Math.abs(sourceTop - targetTop) + "px";
+          middleLine.style.left = `${targetLeft - 15}px`;
+          middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2}px`;
+          middleLine.style.height = `${Math.abs(sourceTop - targetTop)}px`;
         } else {
-          middleLine.style.left = Math.min(sourceLeft, targetLeft) - 15 + "px";
-          middleLine.style.top =
-            Math.min(sourceTop, targetTop) + rowHeight / 2 + "px";
-          middleLine.style.height = Math.abs(sourceTop - targetTop) + "px";
+          middleLine.style.left = `${Math.min(sourceLeft, targetLeft) - 15}px`;
+          middleLine.style.top = `${Math.min(sourceTop, targetTop) + rowHeight / 2}px`;
+          middleLine.style.height = `${Math.abs(sourceTop - targetTop)}px`;
         }
-        let innerLine = linkVerInnerLine.cloneNode(true);
+        const innerLine = linkVerInnerLine.cloneNode(true);
         middleLine.append(innerLine);
         taskLink.append(middleLine);
 
@@ -7287,7 +7278,7 @@
         endLine.style.width = `${
           targetLeft - (Math.min(targetLeft, sourceLeft) - 15)
         }px`;
-        let innerEndLine = linkHorInnerLine.cloneNode(true);
+        const innerEndLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndLine);
         taskLink.append(endLine);
       } else if (linkType === 2) {
@@ -7301,7 +7292,7 @@
         } else {
           startLine.style.width = `${15}px`;
         }
-        let innerHorLine = linkHorInnerLine.cloneNode(true);
+        const innerHorLine = linkHorInnerLine.cloneNode(true);
         startLine.append(innerHorLine);
         taskLink.append(startLine);
 
@@ -7312,7 +7303,7 @@
           Math.min(sourceTop, targetTop) + rowHeight / 2
         }px`;
         middleLine.style.height = `${Math.abs(sourceTop - targetTop) + 2}px`;
-        let innerLine = linkVerInnerLine.cloneNode(true);
+        const innerLine = linkVerInnerLine.cloneNode(true);
         middleLine.append(innerLine);
         taskLink.append(middleLine);
 
@@ -7325,7 +7316,7 @@
             Math.abs(targetLeft + targetWidth - (sourceLeft + sourceWidth)) + 15
           }px`;
         }
-        let innerEndLine = linkHorInnerLine.cloneNode(true);
+        const innerEndLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndLine);
         taskLink.append(endLine);
       } else if (linkType === 3) {
@@ -7340,12 +7331,12 @@
           startLine.style.left = `${sourceLeft - 15}px`;
           startLine.style.width = `${15}px`;
         }
-        let innerHorLine = linkHorInnerLine.cloneNode(true);
+        const innerHorLine = linkHorInnerLine.cloneNode(true);
         startLine.append(innerHorLine);
         taskLink.append(startLine);
 
         if (sourceLeft - 30 < targetLeft + targetWidth) {
-          let middleLine = document.createElement("div");
+          const middleLine = document.createElement("div");
           middleLine.classList.add(
             "js-gantt-ver-link-line",
             "js-gantt-link-line"
@@ -7360,15 +7351,14 @@
             }px`;
           } else {
             if (Math.abs(sourceTop - targetTop) <= rowHeight / 2) {
-              middleLine.style.top =
+              middleLine.style.top = `${
                 Math.min(sourceTop, targetTop) +
                 rowHeight / 2 +
-                Math.abs(sourceTop - targetTop) +
-                "px";
-              middleLine.style.height =
-                Math.abs(
-                  sourceTop - targetTop - rowHeight / 2 - (extraHeight + 2)
-                ) + "px";
+                Math.abs(sourceTop - targetTop)
+              }px`;
+              middleLine.style.height = `${Math.abs(
+                sourceTop - targetTop - rowHeight / 2 - (extraHeight + 2)
+              )}px`;
             } else {
               middleLine.style.top = `${
                 Math.min(sourceTop, targetTop) + rowHeight + (extraHeight + 2)
@@ -7378,11 +7368,11 @@
               }px`;
             }
           }
-          let innerLine = linkVerInnerLine.cloneNode(true);
+          const innerLine = linkVerInnerLine.cloneNode(true);
           middleLine.append(innerLine);
           taskLink.append(middleLine);
 
-          let horLine = document.createElement("div");
+          const horLine = document.createElement("div");
           horLine.classList.add("js-gantt-hor-link-line", "js-gantt-link-line");
           horLine.style.left = `${sourceLeft - 15}px`;
           horLine.style.top = `${
@@ -7397,7 +7387,7 @@
               Math.abs(targetLeft + targetWidth - sourceLeft) + 30
             }px`;
           }
-          let innerHorLine = linkHorInnerLine.cloneNode(true);
+          const innerHorLine = linkHorInnerLine.cloneNode(true);
           horLine.append(innerHorLine);
           taskLink.append(horLine);
         }
@@ -7411,15 +7401,14 @@
             middleLine.style.height = `${Math.abs(sourceTop - targetTop)}px`;
           } else {
             if (Math.abs(sourceTop - targetTop) <= rowHeight / 2) {
-              middleLine.style.top =
+              middleLine.style.top = `${
                 Math.min(sourceTop, targetTop) +
                 rowHeight / 2 +
-                Math.abs(sourceTop - targetTop) +
-                "px";
-              middleLine.style.height =
-                Math.abs(
-                  sourceTop - targetTop + rowHeight / 2 + extraHeight + 2
-                ) + "px";
+                Math.abs(sourceTop - targetTop)
+              }px`;
+              middleLine.style.height = `${Math.abs(
+                sourceTop - targetTop + rowHeight / 2 + extraHeight + 2
+              )}px`;
             } else {
               middleLine.style.top = `${
                 Math.min(sourceTop, targetTop) + rowHeight + extraHeight
@@ -7444,14 +7433,14 @@
             }px`;
           }
         }
-        let innerLine = linkVerInnerLine.cloneNode(true);
+        const innerLine = linkVerInnerLine.cloneNode(true);
         middleLine.append(innerLine);
         taskLink.append(middleLine);
 
         endLine.style.left = `${targetLeft + targetWidth}px`;
         endLine.style.top = `${targetTop + rowHeight / 2}px`;
         endLine.style.width = `${15}px`;
-        let innerEndLine = linkHorInnerLine.cloneNode(true);
+        const innerEndLine = linkHorInnerLine.cloneNode(true);
         endLine.append(innerEndLine);
         taskLink.append(endLine);
       }
@@ -7463,7 +7452,7 @@
      * @param {string | number} id - The ID of the link to be deleted.
      */
     deleteLink(id) {
-      let link = this.element.querySelector(`[link-id="${id}"]`);
+      const link = this.element.querySelector(`[link-id="${id}"]`);
       if (link !== undefined && link !== null) {
         link.remove();
         const linkIndex = this.options.links.findIndex((obj) => obj.id == id);
@@ -7504,7 +7493,7 @@
         startX = e.clientX + rightPanelScroll.scrollLeft;
         startY = e.clientY + rightPanelScroll.scrollTop;
 
-        let linksArea = that.element.querySelector("#js-gantt-links-area");
+        const linksArea = that.element.querySelector("#js-gantt-links-area");
 
         if (!linkDirection) {
           linkDirection = document.createElement("div");
@@ -7527,7 +7516,7 @@
         document.removeEventListener("mousemove", strechLink, false);
         document.removeEventListener("mouseup", handleMouseUp, false);
 
-        let selectedTarget = that.element.querySelector(".selected-target");
+        const selectedTarget = that.element.querySelector(".selected-target");
         if (selectedTarget) {
           selectedTarget.classList.remove("selected-target");
         }
@@ -7537,15 +7526,15 @@
 
         if (strech) {
           linkDirection.remove();
-          let linkType =
+          const linkType =
             type === "left" && targetType === "left"
               ? 1
               : type === "right" && targetType === "right"
-              ? 2
-              : type === "left" && targetType === "right"
-              ? 3
-              : 0;
-          let isLinkExist = that.options.links.some(
+                ? 2
+                : type === "left" && targetType === "right"
+                  ? 3
+                  : 0;
+          const isLinkExist = that.options.links.some(
             (obj) =>
               obj.source == sourceId &&
               obj.target == targetId &&
@@ -7555,7 +7544,7 @@
           targetId =
             isNaN(targetId) || targetId === null ? targetId : +targetId;
 
-          let hasCycle = that.hasCycle(sourceId, targetId);
+          const hasCycle = that.hasCycle(sourceId, targetId);
 
           // handle custom event
           that.dispatchEvent("onBeforeLinkAdd", {
@@ -7596,29 +7585,31 @@
       function strechLink(e) {
         strech = true;
 
-        linkDirection.style.left =
-          (type === "right"
+        linkDirection.style.left = `${
+          type === "right"
             ? source.offsetLeft + source.offsetWidth
-            : source.offsetLeft) + "px";
-        linkDirection.style.top =
-          source.offsetTop + source.offsetHeight / 2 + "px";
-        let base = Math.abs(
+            : source.offsetLeft
+        }px`;
+        linkDirection.style.top = `${source.offsetTop + source.offsetHeight / 2}px`;
+        const base = Math.abs(
           e.clientX -
             (startX -
               (type === "left" && e.clientX - startX > 0
                 ? -20
                 : type === "left" && e.clientX - startX < 0
-                ? 0
-                : e.clientX - startX > 0
-                ? 0
-                : 20) -
+                  ? 0
+                  : e.clientX - startX > 0
+                    ? 0
+                    : 20) -
               rightPanelScroll.scrollLeft)
         );
-        let perp = Math.abs(e.clientY - (startY - rightPanelScroll.scrollTop));
-        let hypo = Math.sqrt(base * base + perp * perp);
-        linkDirection.style.width = hypo + "px";
+        const perp = Math.abs(
+          e.clientY - (startY - rightPanelScroll.scrollTop)
+        );
+        const hypo = Math.sqrt(base * base + perp * perp);
+        linkDirection.style.width = `${hypo}px`;
 
-        let scrollSpeed = 5;
+        const scrollSpeed = 5;
 
         function startAutoScroll(type) {
           if (type === "right") {
@@ -7692,21 +7683,21 @@
         }
 
         // Retrieve the mouse coordinates from the event
-        let mouseX = e.pageX;
-        let mouseY = e.pageY;
+        const mouseX = e.pageX;
+        const mouseY = e.pageY;
 
         // Calculate the differences between the mouse coordinates and the point coordinates
-        let deltaX =
+        const deltaX =
           mouseX -
           (startX -
             (type === "left" ? -20 : 20) -
             rightPanelScroll.scrollLeft +
             window.scrollX);
-        let deltaY =
+        const deltaY =
           mouseY - (startY - rightPanelScroll.scrollTop + window.scrollY);
 
         // Calculate the angle in radians
-        let radians = Math.atan2(deltaY, deltaX);
+        const radians = Math.atan2(deltaY, deltaX);
         linkDirection.style.transform = `rotate(${radians}rad)`;
         if (e.target.classList.contains("js-gantt-link-point")) {
           targetId = e.target.parentElement.parentElement.getAttribute(
@@ -7723,7 +7714,7 @@
         } else {
           targetId = null;
           targetType = undefined;
-          let selectedTarget = that.element.querySelector(".selected-target");
+          const selectedTarget = that.element.querySelector(".selected-target");
           if (selectedTarget !== undefined && selectedTarget !== null) {
             selectedTarget.classList.remove("selected-target");
           }
@@ -7759,7 +7750,7 @@
 
     // method to initialize zoom options
     zoomInit(type = "after") {
-      let zoomLevels = this.options.zoomConfig;
+      const zoomLevels = this.options.zoomConfig;
       for (const levels of zoomLevels.levels) {
         if (this.options.zoomLevel == levels.name) {
           this.options.scale_height =
@@ -7849,15 +7840,16 @@
           that.options.mouseScroll &&
           that.options.ctrlKeyRequiredForMouseScroll &&
           e.ctrlKey
-        )
+        ) {
           return;
+        }
         taskBarArea = that.element.querySelector("#js-gantt-bars-area");
         timelineContainer = that.element.querySelector(
           "#js-gantt-timeline-cell"
         );
         startX =
           e.clientX + timelineContainer.scrollLeft - that.element.offsetLeft;
-        let classesToCheck = ["js-gantt-task-row", "js-gantt-task-cell"];
+        const classesToCheck = ["js-gantt-task-row", "js-gantt-task-cell"];
 
         let isClassPresent = false;
         for (let i = 0; i < classesToCheck.length; i++) {
@@ -7886,11 +7878,11 @@
         }px`;
         taskArea.style.height = `${taskAreaRow.offsetHeight}px`;
 
-        let allTaskBars = taskBarArea.querySelectorAll(".js-gantt-bar-task");
+        const allTaskBars = taskBarArea.querySelectorAll(".js-gantt-bar-task");
         taskParent = allTaskBars[
           Math.floor(taskAreaRow.offsetTop / taskAreaRow.offsetHeight)
         ].getAttribute("js-gantt-taskbar-id");
-        let parentTask = that.getTask(taskParent);
+        const parentTask = that.getTask(taskParent);
         if (that.hasProperty(parentTask, "end_date")) {
           end_date = parentTask.start_date;
         }
@@ -7918,7 +7910,7 @@
               )
             ];
 
-          let isAtLastCol =
+          const isAtLastCol =
             that.calculateTimeLineWidth("current") <
             taskArea.offsetLeft + taskArea.offsetWidth;
           let dateIndex;
@@ -7935,7 +7927,7 @@
           if (taskArea) {
             taskArea.remove();
           }
-          let task = {
+          const task = {
             startDate: new Date(taskStartDate),
             endDate: new Date(taskEndDate),
             parent: isNaN(taskParent) ? taskParent : +taskParent,
@@ -7972,7 +7964,7 @@
             that.element.offsetLeft
           }px`;
         }
-        let isTaskAreaExist = that.element.querySelector("#task-area");
+        const isTaskAreaExist = that.element.querySelector("#task-area");
         if (!isTaskAreaExist) {
           if (startX !== e.clientX) {
             taskBarArea.append(taskArea);
@@ -8056,7 +8048,7 @@
         document.removeEventListener("mousemove", resize, false);
         document.removeEventListener("mouseup", handleMouseUp, false);
         if (dragging === true) {
-          let progressPer = Math.round(
+          const progressPer = Math.round(
             (progress.offsetWidth / taskBar.offsetWidth) * 100
           );
           progress.style.width = `${progressPer}%`;
@@ -8092,8 +8084,8 @@
           progressWidth > taskBar.offsetWidth
             ? taskBar.offsetWidth
             : progressWidth < 0
-            ? 0
-            : progressWidth;
+              ? 0
+              : progressWidth;
 
         progress.style.width = `${progressWidth}px`;
         resizer.style.left = `${progressWidth}px`;
@@ -8167,19 +8159,23 @@
       for (let i = 0; i < linksLength; i++) {
         const link = this.options.links[i];
 
-        if (!link) return;
+        if (!link) {
+          return;
+        }
 
-        let source = this.element.querySelector(
+        const source = this.element.querySelector(
           `[js-gantt-taskbar-id="${link.source}"]`
         );
 
-        let target = this.element.querySelector(
+        const target = this.element.querySelector(
           `[js-gantt-taskbar-id="${link.target}"]`
         );
 
-        if (!source || !target) continue;
+        if (!source || !target) {
+          continue;
+        }
 
-        let sourceLeft = source.offsetLeft,
+        const sourceLeft = source.offsetLeft,
           sourceWidth = source.offsetWidth,
           targetLeft = target.offsetLeft,
           targetWidth = target.offsetWidth;
@@ -8187,32 +8183,32 @@
         switch (link.type) {
           case 1:
             if (targetLeft < sourceLeft) {
-              target.style.left = sourceLeft + "px";
+              target.style.left = `${sourceLeft}px`;
             }
             break;
           case 2:
             if (targetLeft + targetWidth < sourceLeft + sourceWidth) {
-              target.style.left =
+              target.style.left = `${
                 targetLeft +
-                (sourceLeft + sourceWidth - (targetLeft + targetWidth)) +
-                "px";
+                (sourceLeft + sourceWidth - (targetLeft + targetWidth))
+              }px`;
             }
             break;
           case 3:
             if (targetLeft + targetWidth < sourceLeft) {
-              target.style.left = sourceLeft - targetWidth + "px";
+              target.style.left = `${sourceLeft - targetWidth}px`;
             }
             break;
           case 0:
             if (targetLeft < sourceLeft + sourceWidth) {
-              target.style.left = sourceLeft + sourceWidth + "px";
+              target.style.left = `${sourceLeft + sourceWidth}px`;
             }
             break;
         }
 
-        let task = this.getTask(link.target);
-        let taskStartDate = this.calculateTaskStartDate(target, task);
-        let taskEndDate = this.calculateTaskEndDate(target, task);
+        const task = this.getTask(link.target);
+        const taskStartDate = this.calculateTaskStartDate(target, task);
+        const taskEndDate = this.calculateTaskEndDate(target, task);
 
         this.#updateTask(task, taskStartDate, taskEndDate, target);
 
@@ -8248,7 +8244,7 @@
 
       // if taskEndDate is greater than the gantt range
       if (!taskEndDate) {
-        let dateDiff =
+        const dateDiff =
           Math.round(
             (target.offsetLeft + target.offsetWidth) /
               this.calculateGridWidth(task.start_date, "day")
@@ -8272,15 +8268,21 @@
      * @returns {boolean} - Returns true if a cycle is detected, false otherwise.
      */
     hasCycle(currentSource, currentTarget, linkId = "") {
-      if (!currentTarget) return false;
+      if (!currentTarget) {
+        return false;
+      }
 
-      if (currentSource == currentTarget) return true;
+      if (currentSource == currentTarget) {
+        return true;
+      }
 
-      let currentTargetTask = this.getTask(currentTarget);
+      const currentTargetTask = this.getTask(currentTarget);
 
-      if (currentTargetTask?.parent == currentSource) return true;
+      if (currentTargetTask?.parent == currentSource) {
+        return true;
+      }
 
-      let currentSourceTask = this.getTask(currentSource);
+      const currentSourceTask = this.getTask(currentSource);
 
       if (
         (currentSourceTask?.children?.length &&
@@ -8293,7 +8295,9 @@
 
       // check is child or parent
       function findTask(parentTask, targetId) {
-        if (!parentTask?.children?.length) return false;
+        if (!parentTask?.children?.length) {
+          return false;
+        }
 
         for (const task of parentTask.children) {
           if (task?.id == targetId) {
@@ -8308,9 +8312,11 @@
       const filteredLinks = this.options.links.filter(
         (link) => link.target == currentSource && link.id != linkId
       );
-      if (!filteredLinks?.length) return false;
+      if (!filteredLinks?.length) {
+        return false;
+      }
 
-      for (let link of filteredLinks) {
+      for (const link of filteredLinks) {
         if (
           link.source === currentTarget ||
           this.hasCycle(link?.source, currentTarget, link?.id)
@@ -8563,12 +8569,12 @@
       const tempElement = document.createElement("div");
       tempElement.style.color = color;
       document.body.appendChild(tempElement);
-      let computedColor = window.getComputedStyle(tempElement).color;
+      const computedColor = window.getComputedStyle(tempElement).color;
       document.body.removeChild(tempElement);
 
-      let rgbaColor = computedColor
+      const rgbaColor = computedColor
         .replace("rgb", "rgba")
-        .replace(")", "," + opacity + ")");
+        .replace(")", `,${opacity})`);
       return rgbaColor;
     }
 
@@ -8576,11 +8582,11 @@
     rgbaToHex(rgbaColor) {
       if (rgbaColor) {
         const rgbaArray = rgbaColor.match(/\d+/g);
-        const hexValue =
-          "#" +
-          ("0" + parseInt(rgbaArray[0], 10).toString(16)).slice(-2) +
-          ("0" + parseInt(rgbaArray[1], 10).toString(16)).slice(-2) +
-          ("0" + parseInt(rgbaArray[2], 10).toString(16)).slice(-2);
+        const hexValue = `#${`0${parseInt(rgbaArray[0], 10).toString(16)}`.slice(
+          -2
+        )}${`0${parseInt(rgbaArray[1], 10).toString(16)}`.slice(
+          -2
+        )}${`0${parseInt(rgbaArray[2], 10).toString(16)}`.slice(-2)}`;
         return hexValue;
       }
       return false;
@@ -8607,7 +8613,9 @@
         layout.remove();
       }
 
-      if (this.tooltip) this.tooltip.remove();
+      if (this.tooltip) {
+        this.tooltip.remove();
+      }
 
       if (this.lightbox) {
         this.lightbox.lightbox.remove();
@@ -8624,7 +8632,7 @@
         this.handleFullScreenChange
       );
       window.removeEventListener("resize", this.handleResizeWindow);
-      let newElement = this.element.cloneNode(true);
+      const newElement = this.element.cloneNode(true);
       this.element.replaceWith(newElement);
       this.element = newElement;
     }
@@ -8637,18 +8645,22 @@
      * @returns {boolean} - Returns true if both elements exist and are not hidden, false otherwise.
      */
     isTaskExistOrHidden(source, target) {
-      let sourceStyle = source ? window.getComputedStyle(source) : null;
-      let targetStyle = target ? window.getComputedStyle(target) : null;
+      const sourceStyle = source ? window.getComputedStyle(source) : null;
+      const targetStyle = target ? window.getComputedStyle(target) : null;
 
-      let isSourceHidden = sourceStyle ? sourceStyle.display === "none" : false;
-      let isTargetHidden = targetStyle ? targetStyle.display === "none" : false;
+      const isSourceHidden = sourceStyle
+        ? sourceStyle.display === "none"
+        : false;
+      const isTargetHidden = targetStyle
+        ? targetStyle.display === "none"
+        : false;
 
       if (
-        source == undefined ||
-        source == null ||
-        target == undefined ||
-        target == null ||
-        source == target ||
+        source === undefined ||
+        source === null ||
+        target === undefined ||
+        target === null ||
+        source === target ||
         isTargetHidden ||
         isSourceHidden
       ) {
@@ -8659,16 +8671,16 @@
     }
 
     createSplitTask(barContainer = null, isFromRender = false) {
-      let rowCount = 0;
+      const rowCount = 0;
 
-      let jsGanttBarsArea = document.createElement("div");
+      const jsGanttBarsArea = document.createElement("div");
       jsGanttBarsArea.classList.add("js-gantt-bars-area");
       jsGanttBarsArea.id = "js-gantt-bars-area";
 
-      let tasksData = [];
+      const tasksData = [];
 
       function getUniqueObjects(data) {
-        let tasksArray = [];
+        const tasksArray = [];
         for (let i = 0; i < data.length; i++) {
           const task = data[i];
 
@@ -8701,7 +8713,7 @@
 
       for (let i = 0; i < this.options.data.length; i++) {
         if (this.options.data[i].children) {
-          let tasks = getUniqueObjects(this.options.data[i].children);
+          const tasks = getUniqueObjects(this.options.data[i].children);
           tasksData.push(tasks);
         }
       }
@@ -8710,16 +8722,18 @@
         for (let k = 0; k < tasksData[j].length; k++) {
           const task = tasksData[j][k];
 
-          if (this.isTaskNotInSearchedData(task.id)) continue;
+          if (this.isTaskNotInSearchedData(task.id)) {
+            continue;
+          }
 
-          let start_date = task.start_date;
+          let { start_date } = task;
           let end_date = task.end_date || task.start_date;
 
           if (task.children && task.children.length > 0) {
-            let data = [...task.children];
-            let startAndEndDate = this.getStartAndEndDate(data);
-            let start = startAndEndDate.startDate;
-            let end = startAndEndDate.endDate;
+            const data = [...task.children];
+            const startAndEndDate = this.getStartAndEndDate(data);
+            const start = startAndEndDate.startDate;
+            const end = startAndEndDate.endDate;
 
             const setDate = (date) => {
               const d = new Date(date);
@@ -8738,7 +8752,7 @@
             end_date = new Date(Math.max(...dates));
           }
 
-          let cellStartDate = this.options.startDate;
+          const cellStartDate = this.options.startDate;
           let isCellGreater = true;
           let cellBefore = this.getDates(cellStartDate, start_date);
 
@@ -8752,7 +8766,7 @@
           } else {
             cellBefore = -(cellBefore.length - 1);
           }
-          let jsGanttBarTask = document.createElement("div");
+          const jsGanttBarTask = document.createElement("div");
 
           if (task.taskColor && task.type !== "milestone") {
             jsGanttBarTask.style.setProperty(
@@ -8801,26 +8815,28 @@
           let taskLeft =
             cellBefore * this.calculateGridWidth(start_date, "day");
 
-          let hourLeft = this.getPxByTime(start_date, "left");
+          const hourLeft = this.getPxByTime(start_date, "left");
           taskLeft += hourLeft;
 
-          jsGanttBarTask.style.left = taskLeft + "px";
+          jsGanttBarTask.style.left = `${taskLeft}px`;
 
-          jsGanttBarTask.style.top =
+          jsGanttBarTask.style.top = `${
             rowCount * this.options.row_height +
-            Math.floor((this.options.row_height * 10) / 100) +
-            "px";
-          let barTaskHeight = Math.floor((this.options.row_height * 80) / 100);
+            Math.floor((this.options.row_height * 10) / 100)
+          }px`;
+          const barTaskHeight = Math.floor(
+            (this.options.row_height * 80) / 100
+          );
           jsGanttBarTask.style.height = `${barTaskHeight}px`;
           jsGanttBarTask.style.lineHeight = `${barTaskHeight}px`;
           if (task.type === "milestone") {
             jsGanttBarTask.style.width = `${barTaskHeight}px`;
-            jsGanttBarTask.style.left =
-              (cellBefore + 1) * this.calculateGridWidth(start_date, "day") +
-              "px";
+            jsGanttBarTask.style.left = `${
+              (cellBefore + 1) * this.calculateGridWidth(start_date, "day")
+            }px`;
           }
 
-          let jsGanttBarTaskContent = document.createElement("div");
+          const jsGanttBarTaskContent = document.createElement("div");
           jsGanttBarTaskContent.classList.add(
             "js-gantt-bar-task-content",
             "parent-task-bar-content"
@@ -8840,7 +8856,7 @@
             );
           }
 
-          let that = this;
+          const that = this;
 
           // handle double click event
           jsGanttBarTask.addEventListener("dblclick", handleDblClick);
@@ -8860,7 +8876,7 @@
             that.showLightBox(task);
           }
 
-          const userAgent = navigator.userAgent;
+          const { userAgent } = navigator;
 
           // Handle mouseover event
           jsGanttBarTask.addEventListener("mouseover", handleMouseOver);
@@ -8888,11 +8904,11 @@
             task.type !== "milestone"
           ) {
             // left side resizer
-            let jsGanttTaskDragLeft = document.createElement("div");
+            const jsGanttTaskDragLeft = document.createElement("div");
             jsGanttTaskDragLeft.classList.add("js-gantt-task-drag-left");
 
             // right side resizer
-            let jsGanttTaskDragRight = document.createElement("div");
+            const jsGanttTaskDragRight = document.createElement("div");
             jsGanttTaskDragRight.classList.add("js-gantt-task-drag-right");
 
             jsGanttBarTask.append(jsGanttTaskDragLeft, jsGanttTaskDragRight);
@@ -8910,15 +8926,15 @@
             );
           }
 
-          let taskDates = this.getDates(start_date, end_date);
+          const taskDates = this.getDates(start_date, end_date);
 
           let taskProgress;
           const isTaskProgress = this.isFunction(this.options.taskProgress)
             ? this.options.taskProgress(task)
             : this.options.taskProgress;
           if (isTaskProgress === true && task.type !== "milestone") {
-            let progressPer = task.progress || 0;
-            let taskProgressContainer = document.createElement("div");
+            const progressPer = task.progress || 0;
+            const taskProgressContainer = document.createElement("div");
             taskProgressContainer.classList.add(
               "js-gantt-task-progress-wrapper"
             );
@@ -8938,7 +8954,7 @@
 
             taskProgressContainer.append(taskProgress);
 
-            let taskProgressDrag = document.createElement("div");
+            const taskProgressDrag = document.createElement("div");
             taskProgressDrag.classList.add("js-gantt-task-progress-drag");
             taskProgressDrag.style.left = `${
               progressPer > 100 ? 100 : progressPer
@@ -8946,7 +8962,7 @@
 
             // update the task progress onAfterTaskUpdate
             this.attachEvent("onAfterTaskUpdate", () => {
-              let progress = progressPer > 100 ? 100 : task.progress || 0;
+              const progress = progressPer > 100 ? 100 : task.progress || 0;
               taskProgress.style.width = `${progress}%`;
 
               taskProgressDrag.style.left = `${progress}%`;
@@ -8971,27 +8987,27 @@
           }
 
           // link control pointers
-          let isAddLinks = this.isFunction(this.options.addLinks)
+          const isAddLinks = this.isFunction(this.options.addLinks)
             ? this.options.addLinks(task)
             : this.options.addLinks;
 
           if (isAddLinks === true) {
             // left point
-            let leftLinkPoint = document.createElement("div");
+            const leftLinkPoint = document.createElement("div");
             leftLinkPoint.classList.add(
               "js-gantt-link-control",
               "js-gantt-left-point"
             );
-            let leftPoint = document.createElement("div");
+            const leftPoint = document.createElement("div");
             leftPoint.classList.add("js-gantt-link-point");
 
             // right point
-            let rightLinkPoint = document.createElement("div");
+            const rightLinkPoint = document.createElement("div");
             rightLinkPoint.classList.add(
               "js-gantt-link-control",
               "js-gantt-right-point"
             );
-            let rightPoint = document.createElement("div");
+            const rightPoint = document.createElement("div");
             rightPoint.classList.add("js-gantt-link-point");
 
             leftLinkPoint.append(leftPoint);
@@ -9003,14 +9019,14 @@
           }
 
           //add custom task color picker
-          let isCustomColor = this.isFunction(this.options.taskColor)
+          const isCustomColor = this.isFunction(this.options.taskColor)
             ? this.options.taskColor(task)
             : this.options.taskColor;
 
           if (isCustomColor) {
-            let colorPicker = document.createElement("div");
+            const colorPicker = document.createElement("div");
             colorPicker.classList.add("js-gantt-task-color-picker");
-            let colorInput = document.createElement("input");
+            const colorInput = document.createElement("input");
             colorInput.type = "color";
 
             setTimeout(() => {
@@ -9048,11 +9064,11 @@
             }
 
             let hourWidth = this.getPxByTime(end_date, "width");
-            let hourLeft = this.getPxByTime(start_date, "left");
+            const hourLeft = this.getPxByTime(start_date, "left");
             hourWidth += hourLeft;
             taskWidth -= hourWidth;
 
-            jsGanttBarTask.style.width = taskWidth + "px";
+            jsGanttBarTask.style.width = `${taskWidth}px`;
           }
 
           let sideContent;
@@ -9114,7 +9130,7 @@
     get calculateGanttHeight() {
       let totalGanttHeight = this.calculateScaleHeight("scroll");
 
-      let that = this;
+      const that = this;
       this.options.data.forEach((task) => {
         totalGanttHeight += this.options.row_height;
         if (this.isTaskOpened(task.id)) {
@@ -9190,8 +9206,9 @@
         if (
           (that.options.ctrlKeyRequiredForMouseScroll && !event.ctrlKey) ||
           event.target.closest(".js-gantt-bar-task")
-        )
+        ) {
           return;
+        }
 
         document.addEventListener("mouseup", handleMouseUp, false);
         document.addEventListener("mousemove", scrollTimeline, false);
@@ -9208,7 +9225,9 @@
       }
 
       function scrollTimeline(event) {
-        if (!isScrolling) return;
+        if (!isScrolling) {
+          return;
+        }
 
         const xScroll = startX - event.clientX;
         const yScroll = startY - event.clientY;
@@ -9253,7 +9272,7 @@
     /**
      * Function to safely get the field value from the object,
      * this is a support method for sort method
-     * @param { Object } object - Object from which field need to get 
+     * @param { Object } object - Object from which field need to get
      * @param { string } fieldName - field value which need to get
      */
     getFieldValue(object, fieldName) {
@@ -9389,7 +9408,9 @@
      */
     createTooltip() {
       // if tooltip exist then return
-      if (this.tooltip) return;
+      if (this.tooltip) {
+        return;
+      }
 
       const tooltip = document.createElement("div");
       tooltip.classList.add("js-gantt-tooltip");
@@ -9414,7 +9435,7 @@
      * @param {MouseEvent} e - The mouse event containing cursor coordinates.
      */
     updateTooltipPosition(e) {
-      const tooltip = this.tooltip;
+      const { tooltip } = this;
       const screenWidth = window.innerWidth;
       const bodyHeight = document.documentElement.clientHeight;
 
@@ -9432,7 +9453,9 @@
       // Adjust left position if tooltip goes beyond screen width
       if (left + tooltipWidth > screenWidth - SCREEN_EDGE_MARGIN) {
         left = e.clientX - tooltipWidth;
-        if (left < 0) left = 0;
+        if (left < 0) {
+          left = 0;
+        }
       }
 
       // Adjust top position if tooltip goes beyond body height
@@ -9449,9 +9472,11 @@
      * Hides the tooltip by clearing its content and setting its display style to 'none'.
      */
     hideTooltip() {
-      const tooltip = this.tooltip;
+      const { tooltip } = this;
 
-      if (!tooltip) return;
+      if (!tooltip) {
+        return;
+      }
 
       tooltip.innerHTML = "";
       tooltip.style.display = "none";
@@ -9462,9 +9487,11 @@
      * @param { Object } task task for tooltip need to update
      */
     updateTooltipBody(task) {
-      const tooltip = this.tooltip;
+      const { tooltip } = this;
 
-      if (!tooltip) return;
+      if (!tooltip) {
+        return;
+      }
 
       const { start_date, end_date } = this.getLargeAndSmallDate(task);
 
@@ -9520,7 +9547,7 @@
     addClassesFromFunction(func, element, ...params) {
       if (this.isFunction(func)) {
         // Call the function with the provided parameters
-        let cssClass = func(...params);
+        const cssClass = func(...params);
         this.addClass(element, cssClass);
       }
     }
@@ -9574,7 +9601,6 @@
       // Update selected task in options
       this.options.selectedRow = `${task.id}`;
       this.options.selectedTask = `${task.id}`;
-
     }
 
     /**
@@ -9590,7 +9616,7 @@
       );
 
       if (taskBar && horizontalScroll) {
-        let cellBefore = taskBar.offsetLeft - 80;
+        const cellBefore = taskBar.offsetLeft - 80;
         horizontalScroll.scrollLeft = cellBefore < 0 ? 0 : cellBefore;
       }
     }

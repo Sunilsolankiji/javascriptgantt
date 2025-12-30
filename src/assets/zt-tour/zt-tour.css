@@ -1,6 +1,12 @@
 .zt-tour-popup * {
-  font-family: Helvetica Neue, Inter, ui-sans-serif, "Apple Color Emoji",
-    Helvetica, Arial, sans-serif;
+  font-family:
+    Helvetica Neue,
+    Inter,
+    ui-sans-serif,
+    "Apple Color Emoji",
+    Helvetica,
+    Arial,
+    sans-serif;
   color: var(--text-color);
 }
 
