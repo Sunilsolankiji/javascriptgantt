@@ -40,7 +40,7 @@ npm run lint:fix
 
 Enforces conventional commit message format for better changelog generation.
 
-**Configuration:** `commitlint.config.js`
+**Configuration:** `commitlint.config.cjs` (CommonJS format for compatibility)
 
 #### Commit Message Format:
 
