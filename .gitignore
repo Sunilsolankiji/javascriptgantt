@@ -19,12 +19,19 @@
 Thumbs.db
 .vscode/settings.json
 
-#node_modules
-node_modules
+# Dependencies
+node_modules/
 
-#eslint
+# ESLint config (if local)
 eslint.config.mjs
 
-#package
-package.json
-package-lock.json
+# Build output
+dist/
+build/
+
+# Test coverage
+coverage/
+
+# Logs
+*.log
+npm-debug.log*

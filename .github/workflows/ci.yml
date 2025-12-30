@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, add-standards ]
+  pull_request:
+    branches: [ main, add-standards ]
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run ESLint
+        run: npm run lint
+        
+  validate:
+    name: Validate Package
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Check for vulnerabilities
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+        
+      - name: Validate package.json
+        run: npm pack --dry-run

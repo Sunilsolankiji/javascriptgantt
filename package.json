@@ -1,14 +1,21 @@
 {
     "name": "javascriptgantt",
     "version": "1.2.0",
-    "description": "An open source JavaScript Gantt. This library provides a powerful set of tools and functionalities to create interactive Gantt charts for project management.",
+    "description": "A modern, feature-rich JavaScript Gantt chart library for project management. Build interactive, responsive Gantt charts with zero dependencies, featuring drag-and-drop functionality, task dependencies, auto-scheduling, and extensive customization options.",
     "main": "src/gantt.js",
+    "files": [
+        "src/gantt.js",
+        "src/gantt.css",
+        "src/theme/"
+    ],
     "scripts": {
-        "lint": "eslint ."
-      },
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "test": "echo \"No tests specified\" && exit 0"
+    },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/Sunilsolankiji/javascriptgantt"
+        "url": "git+https://github.com/Sunilsolankiji/javascriptgantt.git"
     },
     "keywords": [
         "gantt",
@@ -18,7 +25,15 @@
         "timeline",
         "jsganttchart",
         "jsgantt",
-        "javascriptgantt"
+        "javascriptgantt",
+        "project-management",
+        "task-management",
+        "javascript",
+        "vanilla-js",
+        "drag-and-drop",
+        "task-dependencies",
+        "auto-scheduling",
+        "zero-dependencies"
     ],
     "author": "Sunil Solanki",
     "license": "MIT",
@@ -26,6 +41,9 @@
         "url": "https://github.com/Sunilsolankiji/javascriptgantt/issues"
     },
     "homepage": "https://github.com/Sunilsolankiji/javascriptgantt#readme",
+    "engines": {
+        "node": ">=14.0.0"
+    },
     "devDependencies": {
         "@eslint/js": "^9.6.0",
         "eslint": "^9.6.0",
