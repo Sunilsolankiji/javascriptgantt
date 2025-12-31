@@ -4,17 +4,41 @@
   "type": "module",
   "description": "A modern, feature-rich JavaScript Gantt chart library for project management. Build interactive, responsive Gantt charts with zero dependencies, featuring drag-and-drop functionality, task dependencies, auto-scheduling, and extensive customization options.",
   "main": "src/gantt.js",
+  "module": "src/gantt.js",
+  "types": "src/gantt.d.ts",
+  "exports": {
+    ".": {
+      "import": "./src/gantt.js",
+      "types": "./src/gantt.d.ts"
+    },
+    "./utils": {
+      "import": "./src/utils/index.js"
+    },
+    "./modules": {
+      "import": "./src/modules/index.js"
+    },
+    "./gantt.css": "./src/gantt.css",
+    "./accessibility.css": "./src/accessibility.css",
+    "./theme/dark.css": "./src/theme/dark.css"
+  },
   "files": [
     "src/gantt.js",
     "src/gantt.css",
-    "src/theme/"
+    "src/gantt.d.ts",
+    "src/accessibility.css",
+    "src/theme/",
+    "src/utils/",
+    "src/modules/"
   ],
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,css,json,md}\"",
     "format:check": "prettier --check \"**/*.{js,css,json,md}\"",
-    "test": "npm run lint && npm run format:check",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "test:all": "npm run lint && npm run format:check && npm run test",
     "prepare": "husky install",
     "release": "standard-version",
     "release:minor": "standard-version --release-as minor",

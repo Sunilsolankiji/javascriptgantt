@@ -1,0 +1,255 @@
+/**
+ * Accessibility Styles
+ * WCAG 2.1 AA compliant styling
+ */
+
+/* High contrast mode for accessibility */
+.js-gantt.high-contrast-mode {
+  --text-color: #000;
+  --bg-color: #fff;
+  --border-color: #000;
+  --task-bg: #000;
+  --task-text: #fff;
+}
+
+.js-gantt.high-contrast-mode [js-gantt-task-id] {
+  border: 2px solid #000;
+}
+
+.js-gantt.high-contrast-mode [js-gantt-taskbar-id] {
+  border: 2px solid #000;
+  background-color: #000;
+  color: #fff;
+}
+
+/* Focus management - visible focus indicator */
+[js-gantt-task-id]:focus {
+  outline: 3px solid #0066cc;
+  outline-offset: 2px;
+}
+
+[js-gantt-task-id]:focus:not(:focus-visible) {
+  outline: none;
+}
+
+[js-gantt-task-id]:focus-visible {
+  outline: 3px solid #0066cc;
+  outline-offset: 2px;
+}
+
+/* Enhanced focus for keyboard navigation */
+[js-gantt-task-id]:focus-within {
+  background-color: rgba(0, 102, 204, 0.1);
+}
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Keyboard navigation indicators */
+.js-gantt-keyboard-mode [js-gantt-task-id]:focus {
+  box-shadow:
+    inset 0 0 0 3px #0066cc,
+    inset 0 0 0 5px #fff;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .js-gantt [js-gantt-taskbar-id],
+  .js-gantt [js-gantt-task-id] {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Improved contrast for text */
+.js-gantt [js-gantt-task-id] {
+  color: #333;
+}
+
+.js-gantt [js-gantt-taskbar-id] {
+  color: #000;
+}
+
+/* Ensure buttons are keyboard accessible */
+.js-gantt button,
+.js-gantt [role="button"] {
+  padding: 8px 12px;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.js-gantt button:focus,
+.js-gantt [role="button"]:focus {
+  outline: 3px solid #0066cc;
+  outline-offset: 2px;
+}
+
+/* Tooltip accessibility */
+.js-gantt [role="tooltip"] {
+  background-color: #000;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Dialog accessibility */
+.js-gantt [role="dialog"] {
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.js-gantt [role="dialog"]:focus {
+  outline: 3px solid #0066cc;
+  outline-offset: -3px;
+}
+
+/* Alert visibility */
+.js-gantt [role="alert"] {
+  padding: 12px;
+  margin-bottom: 12px;
+  border-left: 4px solid #d32f2f;
+  background-color: #ffebee;
+  color: #b71c1c;
+}
+
+/* Link visibility */
+.js-gantt a:focus {
+  outline: 3px solid #0066cc;
+  outline-offset: 2px;
+}
+
+/* Ensure form elements are accessible */
+.js-gantt input:focus,
+.js-gantt textarea:focus,
+.js-gantt select:focus {
+  outline: 3px solid #0066cc;
+  outline-offset: 2px;
+}
+
+/* Better color contrast for links */
+.js-gantt a {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+.js-gantt a:visited {
+  color: #7030a0;
+}
+
+.js-gantt a:hover {
+  color: #004a99;
+  text-decoration: underline;
+}
+
+.js-gantt a:active {
+  color: #002e66;
+}
+
+/* Checkbox and radio visibility */
+.js-gantt input[type="checkbox"],
+.js-gantt input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Label accessibility */
+.js-gantt label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+/* Field group accessibility */
+.js-gantt fieldset {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.js-gantt legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+/* Ensure sufficient spacing for touch targets */
+[js-gantt-task-id] {
+  min-height: 44px;
+}
+
+/* Skip link for keyboard navigation */
+.js-gantt-skip-link {
+  position: absolute;
+  left: -9999px;
+  z-index: 999;
+}
+
+.js-gantt-skip-link:focus {
+  left: 0;
+  top: 0;
+  background-color: #000;
+  color: #fff;
+  padding: 8px;
+  text-decoration: none;
+}
+
+/* Loading indicator accessibility */
+.js-gantt-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.js-gantt-loading::after {
+  content: "Loading...";
+  position: absolute;
+  left: -9999px;
+}
+
+/* Ensure form validation messages are visible */
+.js-gantt .error-message {
+  color: #d32f2f;
+  font-weight: 600;
+  margin-top: 4px;
+  display: block;
+}
+
+.js-gantt .success-message {
+  color: #388e3c;
+  font-weight: 600;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Ensure sufficient line height for readability */
+.js-gantt {
+  line-height: 1.5;
+}
+
+/* Better text size */
+.js-gantt {
+  font-size: 16px;
+}
+
+/* Ensure proper text spacing */
+.js-gantt {
+  letter-spacing: 0.02em;
+  word-spacing: 0.16em;
+}
