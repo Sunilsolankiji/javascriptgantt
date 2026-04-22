@@ -72,4 +72,21 @@ describe("attachEvent / dispatchEvent", () => {
     gantt.dispatchEvent("onBeforeTaskDrop", { task: { id: 1 } });
     expect(gantt.eventValue).toBe(true);
   });
+
+  it("is a no-op (no throw) after destroy()", () => {
+    const handler = vi.fn();
+    gantt.attachEvent("onTaskAdd", handler);
+    gantt.destroy();
+
+    // All three entry points must tolerate a post-destroy invocation —
+    // consumers may call them defensively during teardown.
+    expect(() => gantt.render()).not.toThrow();
+    expect(() => gantt.attachEvent("onTaskAdd", vi.fn())).not.toThrow();
+    expect(() =>
+      gantt.dispatchEvent("onTaskAdd", { task: { id: 9 } })
+    ).not.toThrow();
+
+    // Previously-attached handlers must NOT fire after destroy.
+    expect(handler).not.toHaveBeenCalled();
+  });
 });

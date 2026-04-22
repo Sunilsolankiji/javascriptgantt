@@ -143,6 +143,17 @@ class EventManager {
   }
 
   /**
+   * Get the number of listeners registered for an event.
+   * Used by regression tests (render-leak) to verify that re-renders do
+   * not accumulate handlers. Returns 0 for unknown events.
+   * @param {string} eventName - Event name
+   * @returns {number} Listener count
+   */
+  listenerCount(eventName) {
+    return this.listeners.get(eventName)?.length ?? 0;
+  }
+
+  /**
    * Create a debounced event handler
    * @param {Function} handler - Handler function
    * @param {number} delay - Debounce delay in ms

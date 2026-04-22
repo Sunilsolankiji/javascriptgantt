@@ -75,6 +75,17 @@ class javascriptgantt {
   // which leaked thousands of handlers after a few re-renders.
   #contentCells = [];
   #contentUpdatersBound = false;
+  // Registry of per-task-bar refresh closures (progress bar width, taskbar
+  // text, etc.). Populated during render; consumed by a SINGLE long-lived
+  // listener set wired once in #registerTaskBarUpdater. Previously every
+  // task bar called attachEvent("onAfterTaskUpdate", ...) inline, leaking
+  // ~4–6 handlers per task per render.
+  #taskBarUpdaters = [];
+  #taskBarUpdatersBound = false;
+  // Set to true by destroy(); render/attachEvent/dispatchEvent become no-ops
+  // after this flips so consumers calling methods on a torn-down instance
+  // don't blow up on null `this.options` / `this.element`.
+  #destroyed = false;
   #taskManager = null;
   #linkManager = null;
   #scaleManager = null;
@@ -386,6 +397,12 @@ class javascriptgantt {
    * @param {HTMLElement} element - gantt html element (optional).
    */
   render(ele = this.element) {
+    // No-op after destroy() — `this.options` / `this.element` are null and
+    // every downstream access would throw. Tests and consumers may call
+    // render() defensively during teardown, so silently bail out.
+    if (this.#destroyed || !this.options || !ele) {
+      return;
+    }
     if (
       this.options.weekStart > 6 ||
       typeof this.options.weekStart !== "number"
@@ -1197,6 +1214,35 @@ class javascriptgantt {
    */
   #resetContentCells() {
     this.#contentCells = [];
+    this.#taskBarUpdaters = [];
+  }
+
+  /**
+   * Register a task-bar refresh closure (progress width, taskbar text, etc.)
+   * to be invoked on onAfterTaskUpdate. Wires the underlying event listener
+   * exactly ONCE per instance; the registry is reset on every render so
+   * closures pointing at detached DOM are discarded.
+   *
+   * @param {() => void} updater - closure that re-applies task state to DOM
+   */
+  #registerTaskBarUpdater(updater) {
+    if (typeof updater !== "function") return;
+    this.#taskBarUpdaters.push(updater);
+
+    if (this.#taskBarUpdatersBound) return;
+    this.#taskBarUpdatersBound = true;
+
+    const refreshAll = () => {
+      for (const fn of this.#taskBarUpdaters) {
+        try {
+          fn();
+        } catch {
+          /* best-effort: stale closure referencing removed DOM */
+        }
+      }
+    };
+
+    this.attachEvent("onAfterTaskUpdate", refreshAll);
   }
 
   /**
@@ -1759,7 +1805,7 @@ class javascriptgantt {
           });
 
           // update the task progress onAfterTaskUpdate
-          this.attachEvent("onAfterTaskUpdate", () => {
+          this.#registerTaskBarUpdater(() => {
             const progress = task.progress || 0;
             taskProgress.style.width = `${progress}%`;
             taskProgressDrag.style.left = `${progress}%`;
@@ -1898,7 +1944,7 @@ class javascriptgantt {
         }
         jsGanttBarTask.append(jsGanttBarTaskContent);
 
-        this.attachEvent("onAfterTaskUpdate", () => {
+        this.#registerTaskBarUpdater(() => {
           const innerHTML = this.callTemplate(
             "taskbar_text",
             start_date.setHours(0),
@@ -4609,7 +4655,7 @@ class javascriptgantt {
           });
 
           // update the task progress onAfterTaskUpdate
-          this.attachEvent("onAfterTaskUpdate", () => {
+          this.#registerTaskBarUpdater(() => {
             const progress = progressPer > 100 ? 100 : task.progress || 0;
             setStyles(taskProgress, { width: `${progress}%` });
             setStyles(taskProgressDrag, { left: `${progress}%` });
@@ -4705,7 +4751,7 @@ class javascriptgantt {
           jsGanttBarTaskContent.innerHTML = innerHTML;
         }
 
-        this.attachEvent("onAfterTaskUpdate", () => {
+        this.#registerTaskBarUpdater(() => {
           const innerHTML = this.callTemplate(
             "taskbar_text",
             new Date(start_date),
@@ -5524,6 +5570,9 @@ class javascriptgantt {
    * @param {Function} callback - The callback function to execute when the event is triggered.
    */
   attachEvent(name, callback) {
+    if (this.#destroyed || !this.#eventManager) {
+      return;
+    }
     const eventNamesToCheck = [
       "onBeforeTaskDrag",
       "onBeforeTaskDrop",
@@ -5557,6 +5606,9 @@ class javascriptgantt {
    * @param {any} detail - Additional data to include with the event.
    */
   dispatchEvent(eventName, detail) {
+    if (this.#destroyed) {
+      return;
+    }
     // Emit via EventManager (may be null after destroy()).
     if (this.#eventManager) {
       this.#eventManager.emit(eventName, detail);
@@ -8111,7 +8163,7 @@ class javascriptgantt {
           }%`;
 
           // update the task progress onAfterTaskUpdate
-          this.attachEvent("onAfterTaskUpdate", () => {
+          this.#registerTaskBarUpdater(() => {
             const progress = progressPer > 100 ? 100 : task.progress || 0;
             taskProgress.style.width = `${progress}%`;
 
@@ -8242,7 +8294,7 @@ class javascriptgantt {
         }
         jsGanttBarTask.append(jsGanttBarTaskContent);
 
-        this.attachEvent("onAfterTaskUpdate", () => {
+        this.#registerTaskBarUpdater(() => {
           const innerHTML = this.callTemplate(
             "taskbar_text",
             task.start_date.setHours(0),
@@ -9014,6 +9066,12 @@ class javascriptgantt {
    */
   destroy() {
     try {
+      // Dispatch destroy event FIRST, while managers + element still exist
+      // so subscribers receive the notification.
+      if (typeof window !== "undefined") {
+        this.dispatchEvent("onDestroy", { timestamp: new Date() });
+      }
+
       // Clean up EventManager
       if (this.#eventManager) {
         this.#eventManager.removeAllListeners();
@@ -9039,6 +9097,9 @@ class javascriptgantt {
 
       // Clear search data
       this.#searchedData = undefined;
+
+      // Clear cached per-render content-cell registry so it can be GC'd
+      this.#contentCells = [];
 
       // Clear DOM content
       if (this.element) {
@@ -9069,12 +9130,11 @@ class javascriptgantt {
       this.originalData = null;
       this.templates = null;
 
-      // Dispatch destroy event
-      if (typeof window !== "undefined") {
-        this.dispatchEvent("onDestroy", { timestamp: new Date() });
-      }
+      this.#destroyed = true;
     } catch (error) {
       console.error("[javascriptgantt] Error during destruction:", error);
+      // Still mark destroyed so we don't loop on broken state
+      this.#destroyed = true;
     }
   }
 

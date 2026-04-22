@@ -111,6 +111,34 @@ describe("render-loop handler leak", () => {
     expect(afterTenMoreRenders).toBeLessThanOrEqual(afterFirstRender + 1);
   });
 
+  it("wires exactly one content-refresh listener per event (measurable)", () => {
+    // With the leak fix in place, the refresh events are bound a SMALL
+    // constant number of times during the first render (one per internal
+    // subsystem that needs to react) and never re-bound afterwards.
+    gantt.render();
+    const baseline = {};
+    for (const eventName of [
+      "onAfterTaskUpdate",
+      "onAfterProgressDrag",
+      "onTaskDrag",
+      "onAfterTaskDrag",
+    ]) {
+      const n = listenerCountFor(gantt, eventName);
+      // At most a handful — anything >5 means we're re-subscribing per task.
+      expect(n).toBeGreaterThan(0);
+      expect(n).toBeLessThanOrEqual(5);
+      baseline[eventName] = n;
+    }
+
+    // Re-render many times — counts must stay exactly the same.
+    for (let i = 0; i < 15; i++) {
+      gantt.render();
+    }
+    for (const eventName of Object.keys(baseline)) {
+      expect(listenerCountFor(gantt, eventName)).toBe(baseline[eventName]);
+    }
+  });
+
   it("renders idempotently without throwing on many re-renders", () => {
     for (let i = 0; i < 25; i++) {
       expect(() => gantt.render()).not.toThrow();
