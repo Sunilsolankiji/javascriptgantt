@@ -68,6 +68,13 @@ class javascriptgantt {
   #debounceTimers = new Map();
   #searchedData = undefined;
   #eventManager = null;
+  // Registry of content cells that need their innerHTML refreshed when the
+  // task model changes. Populated by each render; refreshed by a SINGLE
+  // set of long-lived event listeners wired up in #bindContentCellUpdates.
+  // Previously the code called attachEvent(...) 4× per cell per render,
+  // which leaked thousands of handlers after a few re-renders.
+  #contentCells = [];
+  #contentUpdatersBound = false;
   #taskManager = null;
   #linkManager = null;
   #scaleManager = null;
@@ -847,25 +854,9 @@ class javascriptgantt {
             return column.template(task) || task[column.name] || " ";
           };
 
-          // content of the column
-          content.innerHTML = getContentHTML();
-
-          this.attachEvent("onAfterTaskUpdate", () => {
-            content.innerHTML = getContentHTML();
-          });
-
-          // update content innerHTML on after progress drag
-          this.attachEvent("onAfterProgressDrag", () => {
-            content.innerHTML = getContentHTML();
-          });
-
-          this.attachEvent("onTaskDrag", () => {
-            content.innerHTML = getContentHTML();
-          });
-
-          this.attachEvent("onAfterTaskDrag", () => {
-            content.innerHTML = getContentHTML();
-          });
+          // Register the cell for automatic refresh on task events.
+          // One consolidated listener per instance — no per-cell leaks.
+          this.#registerContentCell(content, getContentHTML);
 
           if (column.tree) {
             addClass(cell, "js-gantt-d-flex");
@@ -881,53 +872,11 @@ class javascriptgantt {
               task?.children?.length &&
               !this.options.splitTask
             ) {
-              // tree icon - using imported createElement
-              const treeIcon = createElement("div", {
+              // tree icon (shared helper — handles the toggle logic too)
+              const treeIcon = this.#buildTreeIcon(task, jsGanttLayout, {
                 id: `toggle-tree-${j}`,
-                classes: [
-                  "js-gantt-tree-icon",
-                  !this.isTaskOpened(task.id)
-                    ? "js-gantt-tree-close"
-                    : "js-gantt-tree-open",
-                ],
               });
               cell.append(treeIcon);
-
-              // toggle children
-              this.addClickListener(treeIcon, () => {
-                const isTaskCollapse = !this.isTaskOpened(task.id);
-
-                if (isTaskCollapse) {
-                  this.addTaskToOpenedList(task.id);
-                } else {
-                  this.removeTaskFromOpenedList(task.id);
-                }
-
-                this.setCollapseAll(
-                  task.children,
-                  task.id,
-                  isTaskCollapse ? "open" : "collapse"
-                );
-
-                this.createTaskBars();
-
-                // Using imported class utilities
-                if (hasClass(treeIcon, "js-gantt-tree-close")) {
-                  removeClass(treeIcon, "js-gantt-tree-close");
-                  addClass(treeIcon, "js-gantt-tree-open");
-                } else {
-                  removeClass(treeIcon, "js-gantt-tree-open");
-                  addClass(treeIcon, "js-gantt-tree-close");
-                }
-
-                this.createScrollbar(jsGanttLayout);
-
-                // custom event of toggle tree
-                this.dispatchEvent("onTaskToggle", {
-                  task,
-                  isTaskOpened: isTaskCollapse,
-                });
-              });
             } else if (!this.options.splitTask) {
               cell.append(jsGanttBlank);
             }
@@ -1147,9 +1096,177 @@ class javascriptgantt {
     timeline.append(timelineScale);
   }
 
+  // ============================================================
+  // Shared row/cell builders (extracted to remove duplication
+  // between createTimelineBody / createTimelineChildBody and the
+  // sidebar pair)
+  // ============================================================
+
+  /**
+   * Build a single timeline row from the row template.
+   * Shared by createTimelineBody (top-level tasks) and
+   * createTimelineChildBody (nested children).
+   *
+   * @param {Object} task              - task data
+   * @param {string|number} idString   - value for `js-gantt-data-task-id`
+   * @param {HTMLElement} template     - pre-built row template to clone
+   * @param {string[]} [extraClasses]  - additional classes (e.g. child-row, hidden)
+   * @returns {HTMLElement|null} row element, or null if filtered out by search
+   */
+  #buildTimelineRow(task, idString, template, extraClasses = []) {
+    if (this.isTaskNotInSearchedData(task.id)) {
+      return null;
+    }
+
+    const row = template.cloneNode(true);
+
+    if (this.options.selectedRow === `${task.id}`) {
+      extraClasses.push("js-gantt-selected");
+    }
+    if (extraClasses.length) {
+      row.classList.add(...extraClasses);
+    }
+
+    row.setAttribute("js-gantt-data-task-id", idString);
+    row.setAttribute("js-gantt-task-id", task.id);
+
+    // user-supplied class hook
+    const { start_date, end_date } = this.getLargeAndSmallDate(task);
+    this.addClassesFromFunction(
+      this.templates.task_row_class,
+      row,
+      start_date,
+      end_date,
+      task
+    );
+
+    // cell-click event
+    this.addClickListener(row, (e) => {
+      if (hasClass(e.target, "js-gantt-task-cell")) {
+        this.dispatchEvent("onCellClick", {
+          task,
+          cellDate: e.target.getAttribute("js-gantt-cell-date"),
+        });
+      }
+    });
+
+    return row;
+  }
+
+  /**
+   * Register a sidebar content cell to be refreshed whenever task state
+   * changes. Replaces the previous pattern of calling attachEvent()
+   * 4 times per cell per render, which leaked handlers forever.
+   *
+   * Safe to call many times per render — the underlying event listeners
+   * are wired up exactly once per instance.
+   *
+   * @param {HTMLElement} element - cell content element to refresh
+   * @param {() => string} getHTML - function that returns the new innerHTML
+   */
+  #registerContentCell(element, getHTML) {
+    element.innerHTML = getHTML();
+    this.#contentCells.push({ element, getHTML });
+
+    if (this.#contentUpdatersBound) return;
+    this.#contentUpdatersBound = true;
+
+    const refreshAll = () => {
+      // Drop stale entries (row was removed from DOM) and refresh the rest.
+      this.#contentCells = this.#contentCells.filter(
+        ({ element: el }) => el && el.isConnected
+      );
+      for (const { element: el, getHTML: fn } of this.#contentCells) {
+        el.innerHTML = fn();
+      }
+    };
+
+    for (const ev of [
+      "onAfterTaskUpdate",
+      "onAfterProgressDrag",
+      "onTaskDrag",
+      "onAfterTaskDrag",
+    ]) {
+      this.attachEvent(ev, refreshAll);
+    }
+  }
+
+  /**
+   * Clear the per-render registry of content cells. Called at the start
+   * of each render so stale entries from the previous render are dropped.
+   */
+  #resetContentCells() {
+    this.#contentCells = [];
+  }
+
+  /**
+   * Build a tree-toggle icon with its click handler wired up.
+   * Shared by createSidebar and createSidebarChild.
+   *
+   * @param {Object} task
+   * @param {HTMLElement} jsGanttLayout - the layout element (for scrollbar refresh)
+   * @param {Object} [opts]
+   * @param {string} [opts.id] - optional DOM id for the icon
+   * @returns {HTMLElement}
+   */
+  #buildTreeIcon(task, jsGanttLayout, opts = {}) {
+    const treeIcon = createElement("div", {
+      ...(opts.id ? { id: opts.id } : {}),
+      classes: [
+        "js-gantt-tree-icon",
+        !this.isTaskOpened(task.id)
+          ? "js-gantt-tree-close"
+          : "js-gantt-tree-open",
+      ],
+    });
+
+    this.addClickListener(treeIcon, () => {
+      const isTaskCollapse = !this.isTaskOpened(task.id);
+
+      if (isTaskCollapse) {
+        this.addTaskToOpenedList(task.id);
+      } else {
+        this.removeTaskFromOpenedList(task.id);
+      }
+
+      this.setCollapseAll(
+        task.children,
+        task.id,
+        isTaskCollapse ? "open" : "collapse"
+      );
+
+      this.createTaskBars();
+
+      if (hasClass(treeIcon, "js-gantt-tree-close")) {
+        removeClass(treeIcon, "js-gantt-tree-close");
+        addClass(treeIcon, "js-gantt-tree-open");
+      } else {
+        removeClass(treeIcon, "js-gantt-tree-open");
+        addClass(treeIcon, "js-gantt-tree-close");
+      }
+
+      if (jsGanttLayout) {
+        this.createScrollbar(jsGanttLayout);
+      }
+
+      this.dispatchEvent("onTaskToggle", {
+        task,
+        isTaskOpened: isTaskCollapse,
+      });
+    });
+
+    return treeIcon;
+  }
+
   // create grid body
   createTimelineBody(timeline, jsGanttLayout, isFromRender = false) {
     const { options } = this;
+
+    // Fresh render — forget content cells from the previous render so
+    // they don't accumulate and leak memory.
+    if (isFromRender) {
+      this.#resetContentCells();
+    }
 
     // Using imported createElement utility
     const timelineDataContainer = createElement("div", {
@@ -1174,39 +1291,9 @@ class javascriptgantt {
     // grid data loop
     for (let j = 0; j < options.data.length; j++) {
       const task = this.options.data[j];
-      if (!this.isTaskNotInSearchedData(task.id)) {
-        const timelineRow = timelineRowTemplate.cloneNode(true);
-        const isSelected = options.selectedRow === `${task.id}`;
-
-        if (isSelected) {
-          addClass(timelineRow, "js-gantt-selected");
-        }
-
-        timelineRow.setAttribute("js-gantt-data-task-id", j);
-        timelineRow.setAttribute("js-gantt-task-id", task.id);
-
-        //add custom classes from user
-        const { start_date, end_date } = this.getLargeAndSmallDate(task);
-
-        this.addClassesFromFunction(
-          this.templates.task_row_class,
-          timelineRow,
-          start_date,
-          end_date,
-          task
-        );
-
-        // handle cell click event
-        this.addClickListener(timelineRow, (e) => {
-          if (hasClass(e.target, "js-gantt-task-cell")) {
-            this.dispatchEvent("onCellClick", {
-              task,
-              cellDate: e.target.getAttribute("js-gantt-cell-date"),
-            });
-          }
-        });
-
-        jsGanttTaskData.append(timelineRow);
+      const row = this.#buildTimelineRow(task, j, timelineRowTemplate);
+      if (row) {
+        jsGanttTaskData.append(row);
       }
 
       // if children exist
@@ -4153,29 +4240,12 @@ class javascriptgantt {
             html: column.template(task) || task[column.name] || " ",
           });
 
-          // update content innerHTML on after task update
-          this.attachEvent("onAfterTaskUpdate", () => {
-            content.innerHTML =
-              column.template(task) || task[column.name] || " ";
-          });
-
-          // update content innerHTML on after progress drag
-          this.attachEvent("onAfterProgressDrag", () => {
-            content.innerHTML =
-              column.template(task) || task[column.name] || " ";
-          });
-
-          // update content innerHTML on task drag
-          this.attachEvent("onTaskDrag", () => {
-            content.innerHTML =
-              column.template(task) || task[column.name] || " ";
-          });
-
-          // update content innerHTML on after task drag
-          this.attachEvent("onAfterTaskDrag", () => {
-            content.innerHTML =
-              column.template(task) || task[column.name] || " ";
-          });
+          // Register the cell for automatic refresh on task events.
+          // One consolidated listener per instance — no per-cell leaks.
+          this.#registerContentCell(
+            content,
+            () => column.template(task) || task[column.name] || " "
+          );
 
           if (column.tree) {
             // file icon - using imported createElement
@@ -4194,55 +4264,13 @@ class javascriptgantt {
             addClass(cell, "js-gantt-d-flex");
 
             if (task.children && task.children.length > 0) {
-              // tree icon - using imported createElement
-              const treeIcon = createElement("div", {
-                classes: [
-                  "js-gantt-tree-icon",
-                  !this.options.openedTasks.includes(task.id)
-                    ? "js-gantt-tree-close"
-                    : "js-gantt-tree-open",
-                ],
-              });
+              // tree icon (shared helper — handles the toggle logic too)
+              const jsGanttLayout = querySelector(
+                "#js-gantt-layout",
+                this.element
+              );
+              const treeIcon = this.#buildTreeIcon(task, jsGanttLayout);
               cell.append(treeIcon);
-
-              this.addClickListener(treeIcon, () => {
-                const isTaskCollapse = !this.isTaskOpened(task.id);
-
-                if (isTaskCollapse) {
-                  this.addTaskToOpenedList(task.id);
-                } else {
-                  this.removeTaskFromOpenedList(task.id);
-                }
-
-                this.setCollapseAll(
-                  task.children,
-                  task.id,
-                  isTaskCollapse ? "open" : "collapse"
-                );
-
-                this.createTaskBars();
-
-                // Using imported class utilities
-                if (hasClass(treeIcon, "js-gantt-tree-close")) {
-                  removeClass(treeIcon, "js-gantt-tree-close");
-                  addClass(treeIcon, "js-gantt-tree-open");
-                } else {
-                  removeClass(treeIcon, "js-gantt-tree-open");
-                  addClass(treeIcon, "js-gantt-tree-close");
-                }
-
-                const jsGanttLayout = querySelector(
-                  "#js-gantt-layout",
-                  this.element
-                );
-                this.createScrollbar(jsGanttLayout);
-
-                // custom event of toggle tree
-                this.dispatchEvent("onTaskToggle", {
-                  task,
-                  isTaskOpened: isTaskCollapse,
-                });
-              });
             } else {
               cell.append(jsGanttBlank);
             }
@@ -4287,57 +4315,28 @@ class javascriptgantt {
     isOpened,
     timelineRowTemplate
   ) {
-    const { options } = this;
-
     // loop through all the children
     for (let l = 0; l < taskData.length; l++) {
       const task = taskData[l];
       const taskParents = `${parentIdString}${l}`;
 
-      if (!this.isTaskNotInSearchedData(task.id)) {
-        const timelineRow = timelineRowTemplate.cloneNode(true);
-        const isRowSelected = options.selectedRow === `${task.id}`;
-        const isCollapsed = !this.isTaskOpened(task.parent);
+      const isCollapsed = !this.isTaskOpened(task.parent);
+      const extraClasses = [
+        "js-gantt-child-row",
+        `js-gantt-child-${task.parent}`,
+      ];
+      if (isCollapsed || !isOpened) {
+        extraClasses.push("js-gantt-d-none");
+      }
 
-        // Array to hold the classes
-        const classes = ["js-gantt-child-row", `js-gantt-child-${task.parent}`];
-
-        // Conditionally add classes based on `isCollapsed` and `isOpened`
-        if (isCollapsed || !isOpened) {
-          classes.push("js-gantt-d-none");
-        }
-
-        // Conditionally add the selected class
-        if (isRowSelected) {
-          classes.push("js-gantt-selected");
-        }
-
-        timelineRow.classList.add(...classes);
-
-        //add custom classes from user
-        const { start_date, end_date } = this.getLargeAndSmallDate(task);
-        this.addClassesFromFunction(
-          this.templates.task_row_class,
-          timelineRow,
-          start_date,
-          end_date,
-          task
-        );
-
-        timelineRow.setAttribute("js-gantt-data-task-id", taskParents);
-        timelineRow.setAttribute("js-gantt-task-id", task.id);
-
-        // handle cell click event
-        this.addClickListener(timelineRow, (e) => {
-          if (e.target.classList.contains("js-gantt-task-cell")) {
-            this.dispatchEvent("onCellClick", {
-              task,
-              cellDate: e.target.getAttribute("js-gantt-cell-date"),
-            });
-          }
-        });
-
-        jsGanttTaskData.append(timelineRow);
+      const row = this.#buildTimelineRow(
+        task,
+        taskParents,
+        timelineRowTemplate,
+        extraClasses
+      );
+      if (row) {
+        jsGanttTaskData.append(row);
       }
 
       // if children exist
@@ -5558,8 +5557,10 @@ class javascriptgantt {
    * @param {any} detail - Additional data to include with the event.
    */
   dispatchEvent(eventName, detail) {
-    // Emit via EventManager
-    this.#eventManager.emit(eventName, detail);
+    // Emit via EventManager (may be null after destroy()).
+    if (this.#eventManager) {
+      this.#eventManager.emit(eventName, detail);
+    }
 
     // Also dispatch DOM event for backward compatibility
     const event = new CustomEvent(eventName, { detail });
