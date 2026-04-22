@@ -4,6 +4,10 @@
  */
 
 import javascriptgantt from "../src/gantt.js";
+// The demo exercises every built-in locale, so pull in the full bundle.
+// Real apps should import only the locales they need, e.g.:
+//   import { fr, de } from "javascriptgantt/locales";
+import { allLocales } from "../src/locales/index.js";
 
 // jstour is loaded via global script tag in index.html
 const { jstour } = window;
@@ -59,6 +63,11 @@ function generateGanttData() {
 const data = generateGanttData();
 const element = document.getElementById("js-gantt");
 const ganttInstance = new javascriptgantt(element);
+
+// Register every built-in locale so the language dropdown can switch freely.
+// Only "en" is bundled with javascriptgantt by default — this is the
+// tree-shaking opt-in point.
+ganttInstance.registerLocales(allLocales);
 
 // ============= Helper Functions =============
 

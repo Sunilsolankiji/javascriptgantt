@@ -2,6 +2,7 @@
   "name": "javascriptgantt",
   "version": "1.3.0",
   "type": "module",
+  "sideEffects": false,
   "description": "A modern, feature-rich JavaScript Gantt chart library for project management. Build interactive, responsive Gantt charts with zero dependencies, featuring drag-and-drop functionality, task dependencies, auto-scheduling, and extensive customization options.",
   "main": "src/gantt.js",
   "module": "src/gantt.js",
@@ -17,6 +18,9 @@
     "./modules": {
       "import": "./src/modules/index.js"
     },
+    "./locales": {
+      "import": "./src/locales/index.js"
+    },
     "./gantt.css": "./src/gantt.css",
     "./accessibility.css": "./src/accessibility.css",
     "./theme/dark.css": "./src/theme/dark.css"
@@ -28,7 +32,8 @@
     "src/accessibility.css",
     "src/theme/",
     "src/utils/",
-    "src/modules/"
+    "src/modules/",
+    "src/locales/"
   ],
   "scripts": {
     "lint": "eslint .",

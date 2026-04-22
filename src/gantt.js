@@ -56,6 +56,12 @@ import { LinkManager } from "./modules/LinkManager.js";
 import { ScaleManager } from "./modules/ScaleManager.js";
 import { I18nManager } from "./modules/I18nManager.js";
 
+// Only the default "en" locale is bundled by default.
+// Additional locales are tree-shakable â€” import what you need:
+//   import { fr, de } from "javascriptgantt/locales";
+//   gantt.registerLocale("fr", fr);
+import { en as defaultLocale } from "./locales/index.js";
+
 class javascriptgantt {
   #arrangeData = true;
   #ganttHeight = 0;
@@ -235,1570 +241,18 @@ class javascriptgantt {
         opt.ctrlKeyRequiredForMouseScroll !== false,
       sort: opt.sort || false,
       dropArea: opt.dropArea !== false,
-      i18n: {
-        hi: {
-          month_full: [
-            "जनवरी",
-            "फ़रवरी",
-            "मार्च",
-            "अप्रैल",
-            "मई",
-            "जून",
-            "जुलाई",
-            "अगस्त",
-            "सितंबर",
-            "अक्टूबर",
-            "नवंबर",
-            "दिसंबर",
-          ],
-          month_short: [
-            "जनवरी",
-            "फ़रवरी",
-            "मार्च",
-            "अप्रैल",
-            "मई",
-            "जून",
-            "जुलाई",
-            "अगस्त",
-            "सितंबर",
-            "अक्टूबर",
-            "नवंबर",
-            "दिसंबर",
-          ],
-          day_full: [
-            "रविवार",
-            "सोमवार",
-            "मंगलवार",
-            "बुधवार",
-            "गुरुवार",
-            "शुक्रवार",
-            "शनिवार",
-          ],
-          day_short: ["रवि", "सोम", "मंगल", "बुध", "गुरु", "शुक्र", "शनि"],
-          label: {
-            description: "विवरण",
-          },
-          buttons: {
-            save: "जमा करे",
-            cancel: "रद्द करे",
-            delete: "मिटाये",
-          },
-        },
-        en: {
-          month_full: [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-          ],
-          month_short: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ],
-          day_full: [
-            "Sunday",
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-          ],
-          day_short: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-          label: {
-            description: "Description",
-          },
-          buttons: {
-            save: "Save",
-            cancel: "Cancel",
-            delete: "Delete",
-          },
-        },
-        fr: {
-          month_full: [
-            "Janvier",
-            "Février",
-            "Mars",
-            "Avril",
-            "Mai",
-            "Juin",
-            "Juillet",
-            "Août",
-            "Septembre",
-            "Octobre",
-            "Novembre",
-            "Décembre",
-          ],
-          month_short: [
-            "Jan",
-            "Fév",
-            "Mar",
-            "Avr",
-            "Mai",
-            "Juin",
-            "Juil",
-            "Aoû",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Déc",
-          ],
-          day_full: [
-            "Dimanche",
-            "Lundi",
-            "Mardi",
-            "Mercredi",
-            "Jeudi",
-            "Vendredi",
-            "Samedi",
-          ],
-          day_short: ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"],
-          label: {
-            description: "Description",
-          },
-          buttons: {
-            save: "Sauvegarder",
-            cancel: "Annuler",
-            delete: "Effacer",
-          },
-        },
-        de: {
-          month_full: [
-            "Januar",
-            "Februar",
-            "März ",
-            "April",
-            "Mai",
-            "Juni",
-            "Juli",
-            "August",
-            "September ",
-            "Oktober",
-            "November ",
-            "Dezember",
-          ],
-          month_short: [
-            "Jan",
-            "Feb",
-            "Mär",
-            "Apr",
-            "Mai",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Okt",
-            "Nov",
-            "Dez",
-          ],
-          day_full: [
-            "Sonntag",
-            "Montag",
-            "Dienstag",
-            "Mittwoch",
-            "Donnerstag",
-            "Freitag",
-            "Samstag",
-          ],
-          day_short: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
-          label: {
-            description: "Beschreibung",
-          },
-          buttons: {
-            save: "Speichern",
-            cancel: "Abbrechen",
-            delete: "Löschen",
-          },
-        },
-        ja: {
-          month_full: [
-            "1月",
-            "2月",
-            "3月",
-            "4月",
-            "5月",
-            "6月",
-            "7月",
-            "8月",
-            "9月",
-            "10月",
-            "11月",
-            "12月",
-          ],
-          month_short: [
-            "1月",
-            "2月",
-            "3月",
-            "4月",
-            "5月",
-            "6月",
-            "7月",
-            "8月",
-            "9月",
-            "10月",
-            "11月",
-            "12月",
-          ],
-          day_full: [
-            "日曜日",
-            "月曜日",
-            "火曜日",
-            "水曜日",
-            "木曜日",
-            "金曜日",
-            "土曜日",
-          ],
-          day_short: ["太陽", "月", "火", "結婚した", "木", "金", "土"],
-          label: {
-            description: "説明",
-          },
-          buttons: {
-            save: "保存する",
-            cancel: "キャンセル",
-            delete: "削除",
-          },
-        },
-        ar: {
-          month_full: [
-            "كانون الثاني",
-            "شباط",
-            "آذار",
-            "نيسان",
-            "أيار",
-            "حزيران",
-            "تموز",
-            "آب",
-            "أيلول",
-            "تشرين الأول",
-            "تشرين الثاني",
-            "كانون الأول",
-          ],
-          month_short: [
-            "يناير",
-            "فبراير",
-            "مارس",
-            "أبريل",
-            "مايو",
-            "يونيو",
-            "يوليو",
-            "أغسطس",
-            "سبتمبر",
-            "أكتوبر",
-            "نوفمبر",
-            "ديسمبر",
-          ],
-          day_full: [
-            "الأحد",
-            "الأثنين",
-            "ألثلاثاء",
-            "الأربعاء",
-            "ألحميس",
-            "ألجمعة",
-            "السبت",
-          ],
-          day_short: [
-            "احد",
-            "اثنين",
-            "ثلاثاء",
-            "اربعاء",
-            "خميس",
-            "جمعة",
-            "سبت",
-          ],
-          label: {
-            description: "وصف",
-          },
-          buttons: {
-            save: "يحفظ",
-            cancel: "يلغي",
-            delete: "يمسح",
-          },
-        },
-        be: {
-          month_full: [
-            "Студзень",
-            "Люты",
-            "Сакавік",
-            "Красавік",
-            "Maй",
-            "Чэрвень",
-            "Ліпень",
-            "Жнівень",
-            "Верасень",
-            "Кастрычнік",
-            "Лістапад",
-            "Снежань",
-          ],
-          month_short: [
-            "Студз",
-            "Лют",
-            "Сак",
-            "Крас",
-            "Maй",
-            "Чэр",
-            "Ліп",
-            "Жнів",
-            "Вер",
-            "Каст",
-            "Ліст",
-            "Снеж",
-          ],
-          day_full: [
-            "Нядзеля",
-            "Панядзелак",
-            "Аўторак",
-            "Серада",
-            "Чацвер",
-            "Пятніца",
-            "Субота",
-          ],
-          day_short: ["Нд", "Пн", "Аўт", "Ср", "Чцв", "Пт", "Сб"],
-          label: {
-            description: "Апісанне",
-          },
-          buttons: {
-            save: "Захаваць",
-            cancel: "Адмяніць",
-            delete: "Выдаліць",
-          },
-        },
-        ca: {
-          month_full: [
-            "Gener",
-            "Febrer",
-            "Març",
-            "Abril",
-            "Maig",
-            "Juny",
-            "Juliol",
-            "Agost",
-            "Setembre",
-            "Octubre",
-            "Novembre",
-            "Desembre",
-          ],
-          month_short: [
-            "Gen",
-            "Feb",
-            "Mar",
-            "Abr",
-            "Mai",
-            "Jun",
-            "Jul",
-            "Ago",
-            "Set",
-            "Oct",
-            "Nov",
-            "Des",
-          ],
-          day_full: [
-            "Diumenge",
-            "Dilluns",
-            "Dimarts",
-            "Dimecres",
-            "Dijous",
-            "Divendres",
-            "Dissabte",
-          ],
-          day_short: ["Dg", "Dl", "Dm", "Dc", "Dj", "Dv", "Ds"],
-          label: {
-            description: "Descripció",
-          },
-          buttons: {
-            save: "Desa",
-            cancel: "Cancel · lar",
-            delete: "Suprimeix",
-          },
-        },
-        cn: {
-          month_full: [
-            "一月",
-            "二月",
-            "三月",
-            "四月",
-            "五月",
-            "六月",
-            "七月",
-            "八月",
-            "九月",
-            "十月",
-            "十一月",
-            "十二月",
-          ],
-          month_short: [
-            "简",
-            "二月",
-            "三月",
-            "四月",
-            "可能",
-            "君",
-            "七月",
-            "八月",
-            "九月",
-            "十月",
-            "十一月",
-            "十二月",
-          ],
-          day_full: [
-            "星期日",
-            "星期一",
-            "星期二",
-            "星期三",
-            "星期四",
-            "星期五",
-            "星期六",
-          ],
-          day_short: [
-            "太阳",
-            "星期一",
-            "星期二",
-            "星期三",
-            "星期四",
-            "星期五",
-            "星期六",
-          ],
-          label: {
-            description: "描述",
-          },
-          buttons: {
-            save: "节省",
-            cancel: "取消",
-            delete: "删除",
-          },
-        },
-        hr: {
-          month_full: [
-            "Siječanj",
-            "Veljača",
-            "Ožujak",
-            "Travanj",
-            "Svibanj",
-            "Lipanj",
-            "Srpanj",
-            "Kolovoz",
-            "Rujan",
-            "Listopad",
-            "Studeni",
-            "Prosinac",
-          ],
-          month_short: [
-            "Sij",
-            "Velj",
-            "Ožu",
-            "Tra",
-            "Svi",
-            "Lip",
-            "Srp",
-            "Kol",
-            "Ruj",
-            "Lis",
-            "Stu",
-            "Pro",
-          ],
-          day_full: [
-            "Nedjelja",
-            "Ponedjeljak",
-            "Utorak",
-            "Srijeda",
-            "Četvrtak",
-            "Petak",
-            "Subota",
-          ],
-          day_short: ["Ned", "Pon", "Uto", "Sri", "Čet", "Pet", "Sub"],
-          label: {
-            description: "Opis",
-          },
-          buttons: {
-            save: "Uštedjeti",
-            cancel: "Otkazati",
-            delete: "Izbrisati",
-          },
-        },
-        cs: {
-          month_full: [
-            "Leden",
-            "Únor",
-            "Březen",
-            "Duben",
-            "Květen",
-            "Červen",
-            "Červenec",
-            "Srpen",
-            "Září",
-            "Říjen",
-            "Listopad",
-            "Prosinec",
-          ],
-          month_short: [
-            "Led",
-            "Ún",
-            "Bře",
-            "Dub",
-            "Kvě",
-            "Čer",
-            "Čec",
-            "Srp",
-            "Září",
-            "Říj",
-            "List",
-            "Pro",
-          ],
-          day_full: [
-            "Neděle",
-            "Pondělí",
-            "Úterý",
-            "Středa",
-            "Čtvrtek",
-            "Pátek",
-            "Sobota",
-          ],
-          day_short: ["Ne", "Po", "Út", "St", "Čt", "Pá", "So"],
-          label: {
-            description: "Popis",
-          },
-          buttons: {
-            save: "Uložit",
-            cancel: "zrušení",
-            delete: "Vymazat",
-          },
-        },
-        da: {
-          month_full: [
-            "Januar",
-            "Februar",
-            "Mars",
-            "April",
-            "Mai",
-            "Juni",
-            "Juli",
-            "August",
-            "September",
-            "Oktober",
-            "November",
-            "Desember",
-          ],
-          month_short: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "Mai",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Okt",
-            "Nov",
-            "Des",
-          ],
-          day_full: [
-            "Søndag",
-            "Mandag",
-            "Tirsdag",
-            "Onsdag",
-            "Torsdag",
-            "Fredag",
-            "Lørdag",
-          ],
-          day_short: ["Søn", "Man", "Tir", "Ons", "Tor", "Fre", "Lør"],
-          label: {
-            description: "Beskrivelse",
-          },
-          buttons: {
-            save: "Gemme",
-            cancel: "Afbestille",
-            delete: "Slet",
-          },
-        },
-        nl: {
-          month_full: [
-            "Januari",
-            "Februari",
-            "Maart",
-            "April",
-            "Mei",
-            "Juni",
-            "Juli",
-            "Augustus",
-            "September",
-            "Oktober",
-            "November",
-            "December",
-          ],
-          month_short: [
-            "Jan",
-            "Feb",
-            "mrt",
-            "Apr",
-            "Mei",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Okt",
-            "Nov",
-            "Dec",
-          ],
-          day_full: [
-            "Zondag",
-            "Maandag",
-            "Dinsdag",
-            "Woensdag",
-            "Donderdag",
-            "Vrijdag",
-            "Zaterdag",
-          ],
-          day_short: ["Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za"],
-          label: {
-            description: "Beschrijving",
-          },
-          buttons: {
-            save: "Redden",
-            cancel: "Annuleren",
-            delete: "Verwijderen",
-          },
-        },
-        fi: {
-          month_full: [
-            "Tammikuu",
-            "Helmikuu",
-            "Maaliskuu",
-            "Huhtikuu",
-            "Toukokuu",
-            "Kes&auml;kuu",
-            "Hein&auml;kuu",
-            "Elokuu",
-            "Syyskuu",
-            "Lokakuu",
-            "Marraskuu",
-            "Joulukuu",
-          ],
-          month_short: [
-            "Tam",
-            "Hel",
-            "Maa",
-            "Huh",
-            "Tou",
-            "Kes",
-            "Hei",
-            "Elo",
-            "Syy",
-            "Lok",
-            "Mar",
-            "Jou",
-          ],
-          day_full: [
-            "Sunnuntai",
-            "Maanantai",
-            "Tiistai",
-            "Keskiviikko",
-            "Torstai",
-            "Perjantai",
-            "Lauantai",
-          ],
-          day_short: ["Su", "Ma", "Ti", "Ke", "To", "Pe", "La"],
-          label: {
-            description: "Kuvaus",
-          },
-          buttons: {
-            save: "Tallentaa",
-            cancel: "Peruuttaa",
-            delete: "Poistaa",
-          },
-        },
-        el: {
-          month_full: [
-            "Ιανουάριος",
-            "Φεβρουάριος",
-            "Μάρτιος",
-            "Απρίλιος",
-            "Μάϊος",
-            "Ιούνιος",
-            "Ιούλιος",
-            "Αύγουστος",
-            "Σεπτέμβριος",
-            "Οκτώβριος",
-            "Νοέμβριος",
-            "Δεκέμβριος",
-          ],
-          month_short: [
-            "ΙΑΝ",
-            "ΦΕΒ",
-            "ΜΑΡ",
-            "ΑΠΡ",
-            "ΜΑΙ",
-            "ΙΟΥΝ",
-            "ΙΟΥΛ",
-            "ΑΥΓ",
-            "ΣΕΠ",
-            "ΟΚΤ",
-            "ΝΟΕ",
-            "ΔΕΚ",
-          ],
-          day_full: [
-            "Κυριακή",
-            "Δευτέρα",
-            "Τρίτη",
-            "Τετάρτη",
-            "Πέμπτη",
-            "Παρασκευή",
-            "Κυριακή",
-          ],
-          day_short: ["ΚΥ", "ΔΕ", "ΤΡ", "ΤΕ", "ΠΕ", "ΠΑ", "ΣΑ"],
-          label: {
-            description: "Περιγραφή",
-          },
-          buttons: {
-            save: "Αποθηκεύσετε",
-            cancel: "Ματαίωση",
-            delete: "Διαγράφω",
-          },
-        },
-        hu: {
-          month_full: [
-            "Január",
-            "Február",
-            "Március",
-            "Április",
-            "Május",
-            "Június",
-            "Július",
-            "Augusztus",
-            "Szeptember",
-            "Október",
-            "November",
-            "December",
-          ],
-          month_short: [
-            "Jan",
-            "Feb",
-            "Már",
-            "Ápr",
-            "Máj",
-            "Jún",
-            "Júl",
-            "Aug",
-            "Sep",
-            "Okt",
-            "Nov",
-            "Dec",
-          ],
-          day_full: [
-            "Vasárnap",
-            "Hétfõ",
-            "Kedd",
-            "Szerda",
-            "Csütörtök",
-            "Péntek",
-            "szombat",
-          ],
-          day_short: ["Va", "Hé", "Ke", "Sze", "Csü", "Pé", "Szo"],
-          label: {
-            description: "Leírás",
-          },
-          buttons: {
-            save: "Megment",
-            cancel: "Megszünteti",
-            delete: "Töröl",
-          },
-        },
-        id: {
-          month_full: [
-            "Januari",
-            "Februari",
-            "Maret",
-            "April",
-            "Mei",
-            "Juni",
-            "Juli",
-            "Agustus",
-            "September",
-            "Oktober",
-            "November",
-            "Desember",
-          ],
-          month_short: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "Mei",
-            "Jun",
-            "Jul",
-            "Ags",
-            "Sep",
-            "Okt",
-            "Nov",
-            "Des",
-          ],
-          day_full: [
-            "Minggu",
-            "Senin",
-            "Selasa",
-            "Rabu",
-            "Kamis",
-            "Jumat",
-            "Sabtu",
-          ],
-          day_short: ["Ming", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"],
-          label: {
-            description: "Keterangan",
-          },
-          buttons: {
-            save: "Menyimpan",
-            cancel: "Membatalkan",
-            delete: "Menghapus",
-          },
-        },
-        it: {
-          month_full: [
-            "Gennaio",
-            "Febbraio",
-            "Marzo",
-            "Aprile",
-            "Maggio",
-            "Giugno",
-            "Luglio",
-            "Agosto",
-            "Settembre",
-            "Ottobre",
-            "Novembre",
-            "Dicembre",
-          ],
-          month_short: [
-            "Gen",
-            "Feb",
-            "Mar",
-            "Apr",
-            "Mag",
-            "Giu",
-            "Lug",
-            "Ago",
-            "Set",
-            "Ott",
-            "Nov",
-            "Dic",
-          ],
-          day_full: [
-            "Domenica",
-            "Lunedì",
-            "Martedì",
-            "Mercoledì",
-            "Giovedì",
-            "Venerdì",
-            "Sabato",
-          ],
-          day_short: ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"],
-          label: {
-            description: "Descrizione",
-          },
-          buttons: {
-            save: "Salva",
-            cancel: "Annulla",
-            delete: "Eliminare",
-          },
-        },
-        kr: {
-          month_full: [
-            "1월",
-            "2월",
-            "3월",
-            "4월",
-            "5월",
-            "6월",
-            "7월",
-            "8월",
-            "9월",
-            "10월",
-            "11월",
-            "12월",
-          ],
-          month_short: [
-            "1월",
-            "2월",
-            "3월",
-            "4월",
-            "5월",
-            "6월",
-            "7월",
-            "8월",
-            "9월",
-            "10월",
-            "11월",
-            "12월",
-          ],
-          day_full: [
-            "일요일",
-            "월요일",
-            "화요일",
-            "수요일",
-            "목요일",
-            "금요일",
-            "토요일",
-          ],
-          day_short: ["일", "월", "화", "수", "목", "금", "토"],
-          label: {
-            description: "설명",
-          },
-          buttons: {
-            save: "구하다",
-            cancel: "취소",
-            delete: "삭제",
-          },
-        },
-        fa: {
-          month_full: [
-            "ژانویه",
-            "فوریه",
-            "مارس",
-            "آوریل",
-            "مه",
-            "ژوئن",
-            "ژوئیه",
-            "اوت",
-            "سپتامبر",
-            "اکتبر",
-            "نوامبر",
-            "دسامبر",
-          ],
-          month_short: [
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "10",
-            "11",
-            "12",
-          ],
-          day_full: [
-            "يکشنبه",
-            "دوشنبه",
-            "سه‌شنبه",
-            "چهارشنبه",
-            "پنجشنبه",
-            "جمعه",
-            "شنبه",
-          ],
-          day_short: ["ی", "د", "س", "چ", "پ", "ج", "ش"],
-          label: {
-            description: "شرح",
-          },
-          buttons: {
-            save: "صرفه جویی",
-            cancel: "لغو کنید",
-            delete: "حذف",
-          },
-        },
-        pl: {
-          month_full: [
-            "Styczeń",
-            "Luty",
-            "Marzec",
-            "Kwiecień",
-            "Maj",
-            "Czerwiec",
-            "Lipiec",
-            "Sierpień",
-            "Wrzesień",
-            "Październik",
-            "Listopad",
-            "Grudzień",
-          ],
-          month_short: [
-            "Sty",
-            "Lut",
-            "Mar",
-            "Kwi",
-            "Maj",
-            "Cze",
-            "Lip",
-            "Sie",
-            "Wrz",
-            "Paź",
-            "Lis",
-            "Gru",
-          ],
-          day_full: [
-            "Niedziela",
-            "Poniedziałek",
-            "Wtorek",
-            "Środa",
-            "Czwartek",
-            "Piątek",
-            "Sobota",
-          ],
-          day_short: ["Nie", "Pon", "Wto", "Śro", "Czw", "Pią", "Sob"],
-          label: {
-            description: "Opis",
-          },
-          buttons: {
-            save: "Ratować",
-            cancel: "Anulować",
-            delete: "Usuwać",
-          },
-        },
-        pt: {
-          month_full: [
-            "Janeiro",
-            "Fevereiro",
-            "Março",
-            "Abril",
-            "Maio",
-            "Junho",
-            "Julho",
-            "Agosto",
-            "Setembro",
-            "Outubro",
-            "Novembro",
-            "Dezembro",
-          ],
-          month_short: [
-            "Jan",
-            "Fev",
-            "Mar",
-            "Abr",
-            "Mai",
-            "Jun",
-            "Jul",
-            "Ago",
-            "Set",
-            "Out",
-            "Nov",
-            "Dez",
-          ],
-          day_full: [
-            "Domingo",
-            "Segunda",
-            "Terça",
-            "Quarta",
-            "Quinta",
-            "Sexta",
-            "Sábado",
-          ],
-          day_short: ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"],
-          label: {
-            description: "Descrição",
-          },
-          buttons: {
-            save: "Salvar",
-            cancel: "Cancelar",
-            delete: "Excluir",
-          },
-        },
-        ro: {
-          month_full: [
-            "Ianuarie",
-            "Februarie",
-            "Martie",
-            "Aprilie",
-            "Mai",
-            "Iunie",
-            "Iulie",
-            "August",
-            "Septembrie",
-            "Octombrie",
-            "November",
-            "December",
-          ],
-          month_short: [
-            "Ian",
-            "Feb",
-            "Mar",
-            "Apr",
-            "Mai",
-            "Iun",
-            "Iul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ],
-          day_full: [
-            "Duminica",
-            "Luni",
-            "Marti",
-            "Miercuri",
-            "Joi",
-            "Vineri",
-            "Sambata",
-          ],
-          day_short: ["Du", "Lu", "Ma", "Mi", "Jo", "Vi", "Sa"],
-          label: {
-            description: "Descriere",
-          },
-          buttons: {
-            save: "Salvați",
-            cancel: "Anulare",
-            delete: "Șterge",
-          },
-        },
-        ru: {
-          month_full: [
-            "Январь",
-            "Февраль",
-            "Март",
-            "Апрель",
-            "Maй",
-            "Июнь",
-            "Июль",
-            "Август",
-            "Сентябрь",
-            "Oктябрь",
-            "Ноябрь",
-            "Декабрь",
-          ],
-          month_short: [
-            "Янв",
-            "Фев",
-            "Maр",
-            "Aпр",
-            "Maй",
-            "Июн",
-            "Июл",
-            "Aвг",
-            "Сен",
-            "Окт",
-            "Ноя",
-            "Дек",
-          ],
-          day_full: [
-            "Воскресенье",
-            "Понедельник",
-            "Вторник",
-            "Среда",
-            "Четверг",
-            "Пятница",
-            "Суббота",
-          ],
-          day_short: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"],
-          label: {
-            description: "Описание",
-          },
-          buttons: {
-            save: "Сохранять",
-            cancel: "Отмена",
-            delete: "Удалить",
-          },
-        },
-        si: {
-          month_full: [
-            "Januar",
-            "Februar",
-            "Marec",
-            "April",
-            "Maj",
-            "Junij",
-            "Julij",
-            "Avgust",
-            "September",
-            "Oktober",
-            "November",
-            "December",
-          ],
-          month_short: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "Maj",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Okt",
-            "Nov",
-            "Dec",
-          ],
-          day_full: [
-            "Nedelja",
-            "Ponedeljek",
-            "Torek",
-            "Sreda",
-            "Četrtek",
-            "Petek",
-            "Sobota",
-          ],
-          day_short: ["Ned", "Pon", "Tor", "Sre", "Čet", "Pet", "Sob"],
-          label: {
-            description: "Opis",
-          },
-          buttons: {
-            save: "Shrani",
-            cancel: "Prekliči",
-            delete: "Izbriši",
-          },
-        },
-        es: {
-          month_full: [
-            "Enero",
-            "Febrero",
-            "Marzo",
-            "Abril",
-            "Mayo",
-            "Junio",
-            "Julio",
-            "Agosto",
-            "Septiembre",
-            "Octubre",
-            "Noviembre",
-            "Diciembre",
-          ],
-          month_short: [
-            "Ene",
-            "Feb",
-            "Mar",
-            "Abr",
-            "May",
-            "Jun",
-            "Jul",
-            "Ago",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dic",
-          ],
-          day_full: [
-            "Domingo",
-            "Lunes",
-            "Martes",
-            "Miércoles",
-            "Jueves",
-            "Viernes",
-            "Sábado",
-          ],
-          day_short: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"],
-          label: {
-            description: "Descripción",
-          },
-          buttons: {
-            save: "Ahorrar",
-            cancel: "Cancelar",
-            delete: "Borrar",
-          },
-        },
-        sv: {
-          month_full: [
-            "Januari",
-            "Februari",
-            "Mars",
-            "April",
-            "Maj",
-            "Juni",
-            "Juli",
-            "Augusti",
-            "September",
-            "Oktober",
-            "November",
-            "December",
-          ],
-          month_short: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "Maj",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Okt",
-            "Nov",
-            "Dec",
-          ],
-          day_full: [
-            "Söndag",
-            "Måndag",
-            "Tisdag",
-            "Onsdag",
-            "Torsdag",
-            "Fredag",
-            "Lördag",
-          ],
-          day_short: ["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"],
-          label: {
-            description: "Beskrivning",
-          },
-          buttons: {
-            save: "Spara",
-            cancel: "Annullera",
-            delete: "Radera",
-          },
-        },
-        tr: {
-          month_full: [
-            "Ocak",
-            "Şubat",
-            "Mart",
-            "Nisan",
-            "Mayıs",
-            "Haziran",
-            "Temmuz",
-            "Ağustos",
-            "Eylül",
-            "Ekim",
-            "Kasım",
-            "Aralık",
-          ],
-          month_short: [
-            "Oca",
-            "Şub",
-            "Mar",
-            "Nis",
-            "May",
-            "Haz",
-            "Tem",
-            "Ağu",
-            "Eyl",
-            "Eki",
-            "Kas",
-            "Ara",
-          ],
-          day_full: [
-            "Pazar",
-            "Pazartesi",
-            "Salı",
-            "Çarşamba",
-            "Perşembe",
-            "Cuma",
-            "Cumartesi",
-          ],
-          day_short: ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"],
-          label: {
-            description: "Tanım",
-          },
-          buttons: {
-            save: "Kaydetmek",
-            cancel: "İptal etmek",
-            delete: "Silmek",
-          },
-        },
-        ua: {
-          month_full: [
-            "Січень",
-            "Лютий",
-            "Березень",
-            "Квітень",
-            "Травень",
-            "Червень",
-            "Липень",
-            "Серпень",
-            "Вересень",
-            "Жовтень",
-            "Листопад",
-            "Грудень",
-          ],
-          month_short: [
-            "Січ",
-            "Лют",
-            "Бер",
-            "Кві",
-            "Тра",
-            "Чер",
-            "Лип",
-            "Сер",
-            "Вер",
-            "Жов",
-            "Лис",
-            "Гру",
-          ],
-          day_full: [
-            "Неділя",
-            "Понеділок",
-            "Вівторок",
-            "Середа",
-            "Четвер",
-            "П'ятниця",
-            "Субота",
-          ],
-          day_short: ["Нед", "Пон", "Вів", "Сер", "Чет", "Птн", "Суб"],
-          label: {
-            description: "опис",
-          },
-          buttons: {
-            save: "зберегти",
-            cancel: "Скасувати",
-            delete: "Видалити",
-          },
-        },
-        he: {
-          month_full: [
-            "ינואר",
-            "פברואר",
-            "מרץ",
-            "אפריל",
-            "מאי",
-            "יוני",
-            "יולי",
-            "אוגוסט",
-            "ספטמבר",
-            "אוקטובר",
-            "נובמבר",
-            "דצמבר",
-          ],
-          month_short: [
-            "ינואר",
-            "פברואר",
-            "מרץ",
-            "אפריל",
-            "מאי",
-            "יוני",
-            "יולי",
-            "אוגוסט",
-            "ספטמבר",
-            "אוקטובר",
-            "נובמבר",
-            "דצמבר",
-          ],
-          day_full: [
-            "יוֹם רִאשׁוֹן",
-            "יוֹם שֵׁנִי",
-            "יוֹם שְׁלִישִׁי",
-            "יום רביעי",
-            "יוֹם חֲמִישִׁי",
-            "יוֹם שִׁישִׁי",
-            "יום שבת",
-          ],
-          day_short: [
-            "שמש",
-            "יום שני",
-            "ג'",
-            "היינו עושים",
-            "יום ה'",
-            "שישי",
-            "ישב",
-          ],
-          label: {
-            description: "תיאור",
-          },
-          buttons: {
-            save: "להציל",
-            cancel: "לְבַטֵל",
-            delete: "לִמְחוֹק",
-          },
-        },
-        no: {
-          month_full: [
-            "januar",
-            "februar",
-            "mars",
-            "april",
-            "Kan",
-            "juni",
-            "juli",
-            "august",
-            "september",
-            "oktober",
-            "november",
-            "desember",
-          ],
-          month_short: [
-            "Jan",
-            "feb",
-            "Mar",
-            "apr",
-            "Kan",
-            "jun",
-            "jul",
-            "august",
-            "sep",
-            "okt",
-            "nov",
-            "des",
-          ],
-          day_full: [
-            "søndag",
-            "Monday",
-            "tirsdag",
-            "onsdag",
-            "Torsdag",
-            "fredag",
-            "lørdag",
-          ],
-          day_short: ["Søn", "man", "tirs", "ons", "tor", "fre", "Lør"],
-          label: {
-            description: "Beskrivelse",
-          },
-          buttons: {
-            save: "Lagre",
-            cancel: "Avbryt",
-            delete: "Slett",
-          },
-        },
-        sk: {
-          month_full: [
-            "Január",
-            "február",
-            "marec",
-            "apríl",
-            "máj",
-            "jún",
-            "júl",
-            "august",
-            "september",
-            "október",
-            "november",
-            "december",
-          ],
-          month_short: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "máj",
-            "Jun",
-            "júl",
-            "Aug",
-            "Sep",
-            "október",
-            "Nov",
-            "Dec",
-          ],
-          day_full: [
-            "Nedeľa",
-            "pondelok",
-            "utorok",
-            "streda",
-            "štvrtok",
-            "piatok",
-            "sobota",
-          ],
-          day_short: ["Ne", "Po", "Ut", "St", "Št", "Pia", "So"],
-          label: {
-            description: "Popis",
-          },
-          buttons: {
-            save: "Uložiť",
-            cancel: "Zrušiť",
-            delete: "Odstrániť",
-          },
-        },
-      },
+      // Locale registry.
+      // Only the default English locale is pre-loaded to keep the bundle
+      // small. Consumers can:
+      //   1. Pass additional locales inline via `opt.i18n` (backward compat), OR
+      //   2. Import tree-shakable locales:
+      //        import { fr } from "javascriptgantt/locales";
+      //        gantt.registerLocale("fr", fr);
+      i18n: { en: defaultLocale, ...(opt.i18n || {}) },
       localLang: opt.localLang || "en",
-      currentLanguage: {},
+      // Default currentLanguage so that early render calls never crash if
+      // init() hasn't resolved it yet.
+      currentLanguage: defaultLocale,
     };
   }
 
@@ -1860,7 +314,10 @@ class javascriptgantt {
   }
 
   init() {
-    this.options.currentLanguage = this.options.i18n[this.options.localLang];
+    this.options.currentLanguage =
+      this.options.i18n[this.options.localLang] ||
+      this.options.i18n.en ||
+      defaultLocale;
 
     /*for Safari below v16 */
     document.removeEventListener(
@@ -1952,7 +409,10 @@ class javascriptgantt {
 
     this.element = ele;
     const { options } = this;
-    this.options.currentLanguage = this.options.i18n[this.options.localLang];
+    this.options.currentLanguage =
+      this.options.i18n[this.options.localLang] ||
+      this.options.i18n.en ||
+      defaultLocale;
     this.zoomInit("initial");
 
     // create a copy of the data - using imported deepClone utility
@@ -2774,11 +1234,16 @@ class javascriptgantt {
       this.element
     );
 
-    if (isCalendarExist && isFromRender === false) {
+    if (isCalendarExist && isCalendarExist !== timeline && !isFromRender) {
+      // Swap in the freshly-built timeline (re-render path).
       isCalendarExist.replaceWith(timeline);
-    } else {
+    } else if (!isCalendarExist) {
+      // First render — attach to the layout.
       jsGanttLayout.append(timeline);
     }
+    // else: `timeline` is already the live DOM node (e.g. updateBody just
+    // cleared its contents). Nothing to re-attach; avoid self-`replaceWith`
+    // which can momentarily detach the node and break subsequent queries.
 
     this.createTaskBars(timelineDataContainer, isFromRender);
 
@@ -8729,15 +7194,29 @@ class javascriptgantt {
 
   /**
    * Updates the body of the Gantt chart.
+   *
+   * Safe to call before `render()` — it is a no-op if the gantt hasn't
+   * been rendered yet (e.g. when `setLocalLang` is invoked during init).
+   * The lookup is scoped to `this.element` so multiple gantt instances
+   * don't clash on the shared id `js-gantt-timeline-cell`.
    */
   updateBody() {
-    this.verScroll =
-      this.element.querySelector(".js-gantt-ver-scroll")?.scrollTop || 0;
-    this.horScroll =
-      this.element.querySelector(".js-gantt-hor-scroll")?.scrollLeft || 0;
+    if (!this.element) {
+      return;
+    }
 
-    const timeline = document.getElementById("js-gantt-timeline-cell");
+    const timeline = this.element.querySelector("#js-gantt-timeline-cell");
     const ganttLayout = this.element.querySelector(".js-gantt-layout");
+
+    if (!timeline || !ganttLayout) {
+      // Not rendered yet — nothing to update. Next render() call will
+      // pick up the new state.
+      return;
+    }
+
+    this.verScroll = querySelector(".js-gantt-ver-scroll", this.element)?.scrollTop || 0;
+    this.horScroll = querySelector(".js-gantt-hor-scroll", this.element)?.scrollLeft || 0;
+
     timeline.innerHTML = "";
     this.createTimelineScale(timeline);
     this.createTimelineBody(timeline, ganttLayout);
@@ -9185,12 +7664,114 @@ class javascriptgantt {
 
   /**
    * Method to set the local language to the gantt.
-   * @param { string } language - language code.
+   * If the requested language has not been registered (either inline via
+   * `opt.i18n` or via {@link registerLocale}), the call logs a warning and
+   * falls back to the previously active language â€” instead of crashing.
+   * @param { string } language - language code (e.g. "en", "fr").
+   * @returns { boolean } true when the language was applied, false on fallback.
    */
   setLocalLang(language) {
+    const translations = this.options.i18n?.[language];
+
+    if (!translations) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[javascriptgantt] Locale "${language}" is not registered. ` +
+        `Use registerLocale("${language}", translations) first, or import it ` +
+        `from "javascriptgantt/locales". Keeping current locale "${this.options.localLang}".`
+      );
+      return false;
+    }
+
     this.options.localLang = language;
-    this.options.currentLanguage = this.options.i18n[language];
+    this.options.currentLanguage = translations;
+
+    // Refresh the private #dateFormat cache so every code path that reads
+    // month/day names picks up the new locale. This is what makes the
+    // scale header actually re-label itself — ScaleManager.formatDate()
+    // and the `%D`/`%F`/`%M`/`%l` formatters all pull from here.
+    this.#dateFormat = {
+      ...this.#dateFormat,
+      month_full: translations.month_full || this.#dateFormat.month_full,
+      month_short: translations.month_short || this.#dateFormat.month_short,
+      day_full: translations.day_full || this.#dateFormat.day_full,
+      day_short: translations.day_short || this.#dateFormat.day_short,
+    };
+
+    // Keep the I18nManager in sync so consumers using i18nManager.t() also work.
+    if (this.#i18nManager) {
+      if (typeof this.#i18nManager.addLocale === "function") {
+        this.#i18nManager.addLocale(language, translations);
+      }
+      if (typeof this.#i18nManager.setLocale === "function") {
+        this.#i18nManager.setLocale(language);
+      }
+    }
+
     this.updateBody();
+    return true;
+  }
+
+  /**
+   * Register (or override) a locale at runtime.
+   *
+   * Enables tree-shakable locale loading: only the locales you import are
+   * bundled. The default "en" locale is always present.
+   *
+   * @example
+   *   import { fr, de } from "javascriptgantt/locales";
+   *   gantt.registerLocale("fr", fr);
+   *   gantt.registerLocale("de", de);
+   *   gantt.setLocalLang("fr");
+   *
+   * @param { string } code - Locale code (e.g. "fr").
+   * @param { object } translations - Locale object with the standard shape:
+   *   `{ month_full, month_short, day_full, day_short, label, buttons }`.
+   * @returns { boolean } true when registration succeeded.
+   */
+  registerLocale(code, translations) {
+    if (!code || typeof code !== "string") {
+      // eslint-disable-next-line no-console
+      console.warn("[javascriptgantt] registerLocale: code must be a string");
+      return false;
+    }
+    if (!translations || typeof translations !== "object") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[javascriptgantt] registerLocale: translations for "${code}" must be an object`
+      );
+      return false;
+    }
+
+    if (!this.options.i18n) {
+      this.options.i18n = {};
+    }
+    this.options.i18n[code] = translations;
+
+    if (
+      this.#i18nManager &&
+      typeof this.#i18nManager.addLocale === "function"
+    ) {
+      this.#i18nManager.addLocale(code, translations);
+    }
+
+    return true;
+  }
+
+  /**
+   * Register multiple locales in one call.
+   * @param { Record<string, object> } locales - Map of code â†’ translations.
+   * @example
+   *   import { fr, de, es } from "javascriptgantt/locales";
+   *   gantt.registerLocales({ fr, de, es });
+   */
+  registerLocales(locales = {}) {
+    if (!locales || typeof locales !== "object") {
+      return;
+    }
+    for (const [code, translations] of Object.entries(locales)) {
+      this.registerLocale(code, translations);
+    }
   }
 
   /**
