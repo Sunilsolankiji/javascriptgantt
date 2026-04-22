@@ -145,9 +145,8 @@ describe("setLocalLang + locale registry", () => {
     gantt.render();
 
     const headerTextOf = () =>
-      gantt.element
-        .querySelector(".js-gantt-scale-row")
-        ?.textContent?.trim() || "";
+      gantt.element.querySelector(".js-gantt-scale-row")?.textContent?.trim() ||
+      "";
 
     const englishHeader = headerTextOf();
     expect(englishHeader).toContain("Mon"); // Monday short in English
@@ -162,5 +161,40 @@ describe("setLocalLang + locale registry", () => {
     gantt.setLocalLang("de");
     const germanHeader = headerTextOf();
     expect(germanHeader).toContain("Mo"); // Montag short in German
+  });
+
+  it("calling render() a second time does not crash in createScrollbar", () => {
+    // Regression for: "gantt.js:5126 Uncaught TypeError: Cannot read
+    // properties of null (reading 'scrollHeight')" — triggered when a
+    // mouse-up after drag forced render() with an existing layout in the
+    // DOM. The fresh timeline node was not being mounted onto the fresh
+    // jsGanttLayout, so #js-gantt-timeline-data was missing and
+    // createScrollbar dereferenced null.
+    gantt.options.date_format = "%m-%d-%Y";
+    gantt.options.data = [
+      {
+        id: 1,
+        text: "P1",
+        parent: 0,
+        start_date: "05-05-2024",
+        end_date: "05-10-2024",
+        progress: 0,
+      },
+    ];
+    gantt.options.scales = [{ unit: "day", step: 1, format: "%d" }];
+    gantt.options.startDate = new Date(2024, 4, 1);
+    gantt.options.endDate = new Date(2024, 4, 31);
+
+    expect(() => gantt.render()).not.toThrow();
+    expect(() => gantt.render()).not.toThrow(); // ← the one that used to crash
+    expect(() => gantt.render()).not.toThrow();
+
+    // The timeline cell must live inside the current layout after every render.
+    const layout = gantt.element.querySelector("#js-gantt-layout");
+    const timeline = layout?.querySelector("#js-gantt-timeline-cell");
+    const timelineData = timeline?.querySelector("#js-gantt-timeline-data");
+    expect(layout).toBeTruthy();
+    expect(timeline).toBeTruthy();
+    expect(timelineData).toBeTruthy();
   });
 });

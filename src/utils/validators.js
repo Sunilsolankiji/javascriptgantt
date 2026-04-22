@@ -108,22 +108,10 @@ export function validateTask(task) {
     errors.push("Task must have an id property");
   }
 
-  if (!task.name || !isString(task.name)) {
-    errors.push("Task must have a name property (string)");
-  }
-
   if (!("start_date" in task)) {
     errors.push("Task must have a start_date property");
   } else if (!isString(task.start_date) && !isDate(task.start_date)) {
     errors.push("Task start_date must be a string or Date");
-  }
-
-  if (!("duration" in task) || !isNumber(task.duration)) {
-    errors.push("Task must have a duration property (number)");
-  }
-
-  if (task.duration < 0) {
-    errors.push("Task duration must be positive");
   }
 
   return {

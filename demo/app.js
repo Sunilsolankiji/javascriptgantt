@@ -539,8 +539,11 @@ function removeCol() {
 
 let idCount = 0;
 
-ganttInstance.attachEvent("onTaskDblClick", (_event) => {
-  // Event handler - task double clicked
+ganttInstance.attachEvent("onTaskDblClick", (event) => {
+  // Event handler - task double clicked. Logged once per double-click
+  // (was firing twice before the attachEvent dedup fix).
+  // eslint-disable-next-line no-console
+  console.log("onTaskDblClick", event);
 });
 
 ganttInstance.attachEvent("selectAreaOnDrag", (event) => {

@@ -1041,10 +1041,10 @@ class javascriptgantt {
           ? scale.format(new Date(date))
           : scaleManager
             ? scaleManager.formatDate(
-              new Date(date),
-              scale.format,
-              this.#dateFormat
-            )
+                new Date(date),
+                scale.format,
+                this.#dateFormat
+              )
             : this.formatDateToString(scale.format, date);
 
         let colDates;
@@ -1079,13 +1079,13 @@ class javascriptgantt {
           html: `<span class="date-scale">${dateFormat}</span>`,
           styles: isMultiUnitScale(scale)
             ? {
-              width: `${colDates.dateCount * this.calculateGridWidth(date)}px`,
-              left: `${rangeCount}px`,
-            }
+                width: `${colDates.dateCount * this.calculateGridWidth(date)}px`,
+                left: `${rangeCount}px`,
+              }
             : {
-              left: `${j * this.calculateGridWidth(date, "day")}px`,
-              width: `${this.calculateGridWidth(date, "day")}px`,
-            },
+                left: `${j * this.calculateGridWidth(date, "day")}px`,
+                width: `${this.calculateGridWidth(date, "day")}px`,
+              },
         });
 
         //add custom class from user
@@ -1119,10 +1119,10 @@ class javascriptgantt {
               ? scale.format(cellDate)
               : scaleManager
                 ? scaleManager.formatDate(
-                  cellDate,
-                  scale.format,
-                  this.#dateFormat
-                )
+                    cellDate,
+                    scale.format,
+                    this.#dateFormat
+                  )
                 : this.formatDateToString(scale.format, cellDate);
 
             hourCell.innerHTML = hourFormat;
@@ -1234,16 +1234,21 @@ class javascriptgantt {
       this.element
     );
 
-    if (isCalendarExist && isCalendarExist !== timeline && !isFromRender) {
-      // Swap in the freshly-built timeline (re-render path).
+    // Decide how to mount the timeline cell:
+    //   • re-render (isFromRender=false) with a brand-new timeline node
+    //     → swap the old one in place
+    //   • timeline already sits inside jsGanttLayout (e.g. updateBody
+    //     cleared its contents) → nothing to do
+    //   • otherwise → attach to the (new) layout
+    if (!isFromRender && isCalendarExist && isCalendarExist !== timeline) {
       isCalendarExist.replaceWith(timeline);
-    } else if (!isCalendarExist) {
-      // First render — attach to the layout.
+    } else if (timeline.parentElement !== jsGanttLayout) {
       jsGanttLayout.append(timeline);
     }
-    // else: `timeline` is already the live DOM node (e.g. updateBody just
-    // cleared its contents). Nothing to re-attach; avoid self-`replaceWith`
-    // which can momentarily detach the node and break subsequent queries.
+    // else: `timeline` is already the live DOM node inside jsGanttLayout.
+    // Avoid self-`replaceWith` which can momentarily detach the node and
+    // break subsequent queries (e.g. createScrollbar looking up
+    // #js-gantt-timeline-data).
 
     this.createTaskBars(timelineDataContainer, isFromRender);
 
@@ -1331,9 +1336,9 @@ class javascriptgantt {
         // Use ScaleManager for weekend detection if available
         const isWeekend = scaleManager
           ? scaleManager.isWeekend(
-            date,
-            options.weekends.map((w) => weekday.indexOf(w))
-          )
+              date,
+              options.weekends.map((w) => weekday.indexOf(w))
+            )
           : options.weekends.includes(weekday[date.getDay()]);
 
         cellClasses.push(
@@ -1354,16 +1359,16 @@ class javascriptgantt {
       const cellStyles =
         this.options.zoomLevel !== "day"
           ? {
-            left: `${rangeCount}px`,
-            width:
-              this.options.zoomLevel === "hour"
-                ? `${gridWidth}px`
-                : `${colDates.dateCount * gridWidth}px`,
-          }
+              left: `${rangeCount}px`,
+              width:
+                this.options.zoomLevel === "hour"
+                  ? `${gridWidth}px`
+                  : `${colDates.dateCount * gridWidth}px`,
+            }
           : {
-            left: `${gridWidth * k}px`,
-            width: `${gridWidth}px`,
-          };
+              left: `${gridWidth * k}px`,
+              width: `${gridWidth}px`,
+            };
 
       // Format date for cell attribute - use ScaleManager if available
       const cellDateAttr = scaleManager
@@ -2394,7 +2399,7 @@ class javascriptgantt {
         t.getFullYear() < n.getFullYear();
     return (
       i && r && a && t.setTime(t.getTime() + 36e5 * (24 - t.getHours())),
-        t
+      t
     );
   }
 
@@ -2411,12 +2416,12 @@ class javascriptgantt {
     );
 
     document.body.requestFullscreen?.() ||
-    // For Firefox
-    document.body.mozRequestFullScreen?.() ||
-    // For Chrome and Safari
-    document.body.webkitRequestFullscreen?.() ||
-    // For Internet Explorer
-    document.body.msRequestFullscreen?.();
+      // For Firefox
+      document.body.mozRequestFullScreen?.() ||
+      // For Chrome and Safari
+      document.body.webkitRequestFullscreen?.() ||
+      // For Internet Explorer
+      document.body.msRequestFullscreen?.();
     this.element.classList.add("js-gantt-fullScreen");
 
     this.fullScreen = true;
@@ -2455,12 +2460,12 @@ class javascriptgantt {
     this.element.classList.remove("js-gantt-fullScreen");
     if (listener !== true) {
       document.body.exitFullscreen?.() ||
-      // For Firefox
-      document.body.mozCancelFullScreen?.() ||
-      // For Chrome and Safari
-      document.body.webkitExitFullscreen?.() ||
-      // For Internet Explorer
-      document.body.msExitFullscreen?.();
+        // For Firefox
+        document.body.mozCancelFullScreen?.() ||
+        // For Chrome and Safari
+        document.body.webkitExitFullscreen?.() ||
+        // For Internet Explorer
+        document.body.msExitFullscreen?.();
     }
 
     this.fullScreen = false;
@@ -2715,7 +2720,7 @@ class javascriptgantt {
                 taskPosition !== currentTaskPosition) &&
               isTaskbarIndexInRange &&
               taskParentId !==
-              currentTaskParentId.slice(0, currentTaskParentId.length - 1) &&
+                currentTaskParentId.slice(0, currentTaskParentId.length - 1) &&
               !that.options.splitTask
             ) {
               updateData(taskParentId, task, taskPositionId);
@@ -2890,16 +2895,16 @@ class javascriptgantt {
 
         let taskStartDate =
           that.dates[
-          Math.round(taskbarOffsetLeft / timelineCellWidth) -
-          (task.type === "milestone" ? 1 : 0)
-            ];
+            Math.round(taskbarOffsetLeft / timelineCellWidth) -
+              (task.type === "milestone" ? 1 : 0)
+          ];
 
         let taskEndDate =
           that.dates[
-          Math.round(
-            (taskbarOffsetLeft + taskbarOffsetWith) / timelineCellWidth
-          ) - 1
-            ];
+            Math.round(
+              (taskbarOffsetLeft + taskbarOffsetWith) / timelineCellWidth
+            ) - 1
+          ];
 
         // if taskStartDate is less than the gantt range
         if (!taskStartDate) {
@@ -2912,7 +2917,7 @@ class javascriptgantt {
           const dateDiff =
             Math.round(
               (taskbarOffsetLeft + taskbarOffsetWith) /
-              that.calculateGridWidth(task.start_date)
+                that.calculateGridWidth(task.start_date)
             ) - that.dates.length;
 
           taskEndDate = that.add(
@@ -2982,10 +2987,10 @@ class javascriptgantt {
 
       let taskEndDate =
         that.dates[
-        Math.round(
-          (taskbarOffsetLeft + taskbarOffsetWith) / timelineCellWidth
-        ) - 1
-          ];
+          Math.round(
+            (taskbarOffsetLeft + taskbarOffsetWith) / timelineCellWidth
+          ) - 1
+        ];
 
       // emmit the dragTask event
       that.dispatchEvent("onTaskDrag", {
@@ -3055,7 +3060,7 @@ class javascriptgantt {
         Math.floor(
           (targetOffsetLeft + targetOffsetWidth - 1) / timelineCellWidth
         )
-        ]
+      ]
     );
 
     const startTimePixel = Math.round(targetOffsetLeft % timelineCellWidth);
@@ -3554,7 +3559,7 @@ class javascriptgantt {
     }
     const gridWidth = Math.max(
       elementWidth /
-      (level === "hour" && levelType !== "day" ? colCount * 24 : colCount),
+        (level === "hour" && levelType !== "day" ? colCount * 24 : colCount),
       minWidth
     );
     return gridWidth;
@@ -3727,7 +3732,7 @@ class javascriptgantt {
    * });
    */
   addTask(task) {
-    if (task.id == task.parent) {
+    if (task.id === task.parent) {
       this.toastr("Error", "task id and task parent can not be same", "error");
       return;
     }
@@ -5096,6 +5101,14 @@ class javascriptgantt {
     const layout = querySelector("#js-gantt-layout", this.element);
     const timeline = querySelector("#js-gantt-timeline-cell", this.element);
     const timelineData = querySelector("#js-gantt-timeline-data", this.element);
+
+    // Defensive: if the core DOM pieces aren't mounted yet, bail out rather
+    // than crashing on `null.scrollHeight`. This can happen when a render is
+    // triggered before the layout has been attached (e.g. during fast
+    // drag/drop or locale swaps).
+    if (!timeline || !timelineData || !layout) {
+      return;
+    }
     const headerHeight = this.calculateScaleHeight("scroll");
     const sidebar = this.element.querySelector("#js-gantt-grid-left-data");
     const rightSideBar = this.element.querySelector(
@@ -5520,21 +5533,22 @@ class javascriptgantt {
       "onBeforeTaskDblClick",
     ];
 
-    // Use EventManager for internal event tracking
-    this.#eventManager.on(name, callback);
-
-    this.element.addEventListener(name, handleEvent);
-
-    const that = this;
-
-    function handleEvent(e) {
+    // Route the listener through a wrapper so "before" events can set
+    // `this.eventValue` (used by the library to veto actions when the
+    // handler returns false). Register ONLY in EventManager — previously
+    // this method also added a raw DOM listener on `this.element`, which
+    // combined with `dispatchEvent`'s DOM CustomEvent caused every
+    // handler to fire twice.
+    const wrapped = (detail) => {
       if (eventNamesToCheck.includes(name)) {
-        that.eventValue = callback(e.detail);
-        that.eventValue = that.eventValue !== false;
+        this.eventValue = callback(detail);
+        this.eventValue = this.eventValue !== false;
       } else {
-        callback(e.detail);
+        callback(detail);
       }
-    }
+    };
+
+    this.#eventManager.on(name, wrapped);
   }
 
   /**
@@ -5736,7 +5750,7 @@ class javascriptgantt {
       extraHeight =
         (this.options.row_height -
           Math.floor((this.options.row_height * 80) / 100)) /
-        2 -
+          2 -
         1;
 
     // Using imported createElement utility
@@ -6056,7 +6070,7 @@ class javascriptgantt {
       extraHeight =
         (this.options.row_height -
           Math.floor((this.options.row_height * 80) / 100)) /
-        2 -
+          2 -
         1;
 
     const taskLink = document.createElement("div");
@@ -6656,15 +6670,15 @@ class javascriptgantt {
       linkDirection.style.top = `${source.offsetTop + source.offsetHeight / 2}px`;
       const base = Math.abs(
         e.clientX -
-        (startX -
-          (type === "left" && e.clientX - startX > 0
-            ? -20
-            : type === "left" && e.clientX - startX < 0
-              ? 0
-              : e.clientX - startX > 0
+          (startX -
+            (type === "left" && e.clientX - startX > 0
+              ? -20
+              : type === "left" && e.clientX - startX < 0
                 ? 0
-                : 20) -
-          rightPanelScroll.scrollLeft)
+                : e.clientX - startX > 0
+                  ? 0
+                  : 20) -
+            rightPanelScroll.scrollLeft)
       );
       const perp = Math.abs(e.clientY - (startY - rightPanelScroll.scrollTop));
       const hypo = Math.sqrt(base * base + perp * perp);
@@ -6940,7 +6954,7 @@ class javascriptgantt {
       const allTaskBars = taskBarArea.querySelectorAll(".js-gantt-bar-task");
       taskParent = allTaskBars[
         Math.floor(taskAreaRow.offsetTop / taskAreaRow.offsetHeight)
-        ].getAttribute("js-gantt-taskbar-id");
+      ].getAttribute("js-gantt-taskbar-id");
       const parentTask = that.getTask(taskParent);
       if (that.hasProperty(parentTask, "end_date")) {
         end_date = parentTask.start_date;
@@ -6965,9 +6979,9 @@ class javascriptgantt {
           that.dates[
             Math.floor(
               (taskArea.offsetLeft < 0 ? 0 : taskArea.offsetLeft) /
-              that.calculateGridWidth(end_date, "day")
+                that.calculateGridWidth(end_date, "day")
             )
-            ];
+          ];
 
         const isAtLastCol =
           that.calculateTimeLineWidth("current") <
@@ -6976,7 +6990,7 @@ class javascriptgantt {
         if (!isAtLastCol) {
           dateIndex = Math.floor(
             (taskArea.offsetLeft + taskArea.offsetWidth) /
-            that.calculateGridWidth(end_date, "day")
+              that.calculateGridWidth(end_date, "day")
           );
         } else {
           dateIndex = that.dates.length - 1;
@@ -7214,8 +7228,10 @@ class javascriptgantt {
       return;
     }
 
-    this.verScroll = querySelector(".js-gantt-ver-scroll", this.element)?.scrollTop || 0;
-    this.horScroll = querySelector(".js-gantt-hor-scroll", this.element)?.scrollLeft || 0;
+    this.verScroll =
+      querySelector(".js-gantt-ver-scroll", this.element)?.scrollTop || 0;
+    this.horScroll =
+      querySelector(".js-gantt-hor-scroll", this.element)?.scrollLeft || 0;
 
     timeline.innerHTML = "";
     this.createTimelineScale(timeline);
@@ -7308,18 +7324,18 @@ class javascriptgantt {
   calculateTaskEndDate(target, task) {
     let taskEndDate =
       this.dates[
-      Math.round(
-        (target.offsetLeft + target.offsetWidth) /
-        this.calculateGridWidth(task.start_date, "day")
-      ) - 1
-        ];
+        Math.round(
+          (target.offsetLeft + target.offsetWidth) /
+            this.calculateGridWidth(task.start_date, "day")
+        ) - 1
+      ];
 
     // if taskEndDate is greater than the gantt range
     if (!taskEndDate) {
       const dateDiff =
         Math.round(
           (target.offsetLeft + target.offsetWidth) /
-          this.calculateGridWidth(task.start_date, "day")
+            this.calculateGridWidth(task.start_date, "day")
         ) - this.dates.length;
       taskEndDate = this.add(
         new Date(this.dates[this.dates.length - 1]),
@@ -7556,7 +7572,7 @@ class javascriptgantt {
     const year =
       dateComponents.year.length === 2
         ? (parseInt(dateComponents.year, 10) < 50 ? "20" : "19") +
-        dateComponents.year
+          dateComponents.year
         : parseInt(dateComponents.year, 10);
     const hour = parseInt(dateComponents.hour, 10);
     const minute = parseInt(dateComponents.minute, 10);
@@ -7677,8 +7693,8 @@ class javascriptgantt {
       // eslint-disable-next-line no-console
       console.warn(
         `[javascriptgantt] Locale "${language}" is not registered. ` +
-        `Use registerLocale("${language}", translations) first, or import it ` +
-        `from "javascriptgantt/locales". Keeping current locale "${this.options.localLang}".`
+          `Use registerLocale("${language}", translations) first, or import it ` +
+          `from "javascriptgantt/locales". Keeping current locale "${this.options.localLang}".`
       );
       return false;
     }
@@ -7824,9 +7840,9 @@ class javascriptgantt {
           for (let j = 0; j < tasksArray.length; j++) {
             if (
               new Date(tasksArray[j].start_date).getTime() ===
-              new Date(task.start_date).getTime() &&
+                new Date(task.start_date).getTime() &&
               new Date(tasksArray[j].end_date).getTime() ===
-              new Date(task.end_date).getTime()
+                new Date(task.end_date).getTime()
             ) {
               flag = true;
               tasksArray[j] = task;

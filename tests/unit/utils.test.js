@@ -261,11 +261,14 @@ describe("Validators", () => {
       expect(result.errors.some((e) => e.includes("id"))).toBe(true);
     });
 
-    it("should reject task without name", () => {
-      const task = { id: 1, start_date: "2024-01-01", duration: 5 };
+    it("should reject task without start_date", () => {
+      // validateTask currently enforces `id` and `start_date`.
+      // The library uses `text` (not `name`) as the display label and
+      // it is intentionally optional — see AGENTS.md.
+      const task = { id: 1, duration: 5 };
       const result = validators.validateTask(task);
       expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.includes("name"))).toBe(true);
+      expect(result.errors.some((e) => e.includes("start_date"))).toBe(true);
     });
   });
 
