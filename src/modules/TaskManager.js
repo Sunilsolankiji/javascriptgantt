@@ -3,15 +3,9 @@
  * Handles task data operations (CRUD, filtering, sorting)
  */
 
-import {
-  deepClone,
-  findBy,
-  filterBy,
-  sortBy,
-  uniqueBy,
-} from "../utils/dataUtils.js";
+import { deepClone, findBy } from "../utils/dataUtils.js";
 import { validateTask, checkDuplicateIds } from "../utils/validators.js";
-import { parseDate, addDays, daysBetween } from "../utils/dateUtils.js";
+import { parseDate, addDays } from "../utils/dateUtils.js";
 
 class TaskManager {
   constructor(options = {}) {

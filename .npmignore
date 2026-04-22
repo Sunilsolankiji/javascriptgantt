@@ -7,6 +7,12 @@
 .vscode/
 .DS_Store
 Thumbs.db
+AGENTS.md
+CHANGELOG.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+SUPPORT.md
+SECURITY.md
 
 # Documentation
 docs/

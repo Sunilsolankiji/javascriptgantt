@@ -75,8 +75,8 @@ export function onMultiple(element, events) {
 export function querySelector(selector, root = document) {
   try {
     return root.querySelector(selector);
-  } catch (error) {
-    console.warn(`Query failed: ${selector}`, error);
+  } catch {
+    // Invalid selector - silently return null for graceful degradation
     return null;
   }
 }
@@ -90,8 +90,8 @@ export function querySelector(selector, root = document) {
 export function querySelectorAll(selector, root = document) {
   try {
     return root.querySelectorAll(selector);
-  } catch (error) {
-    console.warn(`Query failed: ${selector}`, error);
+  } catch {
+    // Invalid selector - return empty NodeList for graceful degradation
     return document.querySelectorAll(null);
   }
 }

@@ -213,7 +213,7 @@ class javascriptgantt {
       },
       scales: opt.scales || [{ unit: "day", step: 1, format: "%d" }],
       minColWidth: 80,
-      openedTasks: [],
+      openedTasks: opt.openedTasks || [],
       selectedRow: "",
       weekStart: opt.weekStart || 1,
       scale_height: opt.scale_height || 30,
@@ -1960,6 +1960,17 @@ class javascriptgantt {
       this.originalData = deepClone(this.options.data);
     }
 
+    // Handle initial collapse option BEFORE syncing with TaskManager.
+    // If collapse is false and the user did not provide openedTasks,
+    // populate openedTasks with all task IDs so all rows render expanded.
+    if (
+      !this.options.collapse &&
+      (!this.options.openedTasks || this.options.openedTasks.length === 0) &&
+      this.originalData?.length
+    ) {
+      this.options.openedTasks = this.originalData.map((task) => task?.id);
+    }
+
     // Initialize TaskManager with data
     if (this.#taskManager && this.originalData?.length) {
       this.#taskManager.init(this.originalData);
@@ -2041,11 +2052,6 @@ class javascriptgantt {
       this.dates = this.getDates(options.startDate, options.endDate);
     }
 
-    // set all task expanded initially if collapse is false
-    if (!options.collapse && !options?.openedTasks?.length) {
-      this.options.openedTasks = this.originalData.map((task) => task?.id);
-    }
-
     // Using imported addClass utility
     if (this.fullScreen === true) {
       addClass(this.element, "js-gantt-fullScreen");
@@ -2075,8 +2081,10 @@ class javascriptgantt {
     }
 
     // Using imported querySelector utility
-    const verScroll = querySelector(".js-gantt-ver-scroll", this.element)?.scrollTop || 0;
-    const horScroll = querySelector(".js-gantt-hor-scroll", this.element)?.scrollLeft || 0;
+    const verScroll =
+      querySelector(".js-gantt-ver-scroll", this.element)?.scrollTop || 0;
+    const horScroll =
+      querySelector(".js-gantt-hor-scroll", this.element)?.scrollLeft || 0;
 
     // append js-gantt-layout in element
     const layout = querySelector("#js-gantt-layout", this.element);
@@ -2206,7 +2214,10 @@ class javascriptgantt {
           const isAsc = !this.options?.sortOption?.isAsc;
           // Using imported createElement utility
           const sortIcon = createElement("div", {
-            classes: ["js-gantt-sort", isAsc ? "js-gantt-asc" : "js-gantt-desc"],
+            classes: [
+              "js-gantt-sort",
+              isAsc ? "js-gantt-asc" : "js-gantt-desc",
+            ],
           });
           headCell.appendChild(sortIcon);
         }
@@ -2288,7 +2299,6 @@ class javascriptgantt {
           task
         );
 
-
         const that = this;
 
         // handle double click event
@@ -2343,7 +2353,10 @@ class javascriptgantt {
             attributes: { "data-column-index": k },
             styles: {
               width: `${column.width || 80}px`,
-              ...(column.align && { textAlign: column.align, justifyContent: column.align }),
+              ...(column.align && {
+                textAlign: column.align,
+                justifyContent: column.align,
+              }),
             },
           });
 
@@ -2567,7 +2580,11 @@ class javascriptgantt {
         const dateFormat = isFunction(scale.format)
           ? scale.format(new Date(date))
           : scaleManager
-            ? scaleManager.formatDate(new Date(date), scale.format, this.#dateFormat)
+            ? scaleManager.formatDate(
+              new Date(date),
+              scale.format,
+              this.#dateFormat
+            )
             : this.formatDateToString(scale.format, date);
 
         let colDates;
@@ -2641,7 +2658,11 @@ class javascriptgantt {
             const hourFormat = isFunction(scale.format)
               ? scale.format(cellDate)
               : scaleManager
-                ? scaleManager.formatDate(cellDate, scale.format, this.#dateFormat)
+                ? scaleManager.formatDate(
+                  cellDate,
+                  scale.format,
+                  this.#dateFormat
+                )
                 : this.formatDateToString(scale.format, cellDate);
 
             hourCell.innerHTML = hourFormat;
@@ -2748,7 +2769,10 @@ class javascriptgantt {
     timeline.append(timelineDataContainer);
 
     // Using imported querySelector utility
-    const isCalendarExist = querySelector("#js-gantt-timeline-cell", this.element);
+    const isCalendarExist = querySelector(
+      "#js-gantt-timeline-cell",
+      this.element
+    );
 
     if (isCalendarExist && isFromRender === false) {
       isCalendarExist.replaceWith(timeline);
@@ -2841,7 +2865,10 @@ class javascriptgantt {
       } else {
         // Use ScaleManager for weekend detection if available
         const isWeekend = scaleManager
-          ? scaleManager.isWeekend(date, options.weekends.map(w => weekday.indexOf(w)))
+          ? scaleManager.isWeekend(
+            date,
+            options.weekends.map((w) => weekday.indexOf(w))
+          )
           : options.weekends.includes(weekday[date.getDay()]);
 
         cellClasses.push(
@@ -2988,7 +3015,9 @@ class javascriptgantt {
         taskLeft += hourLeft;
 
         const barTaskHeight = Math.floor((this.options.row_height * 80) / 100);
-        const taskTop = rowCount * this.options.row_height + Math.floor((this.options.row_height * 10) / 100);
+        const taskTop =
+          rowCount * this.options.row_height +
+          Math.floor((this.options.row_height * 10) / 100);
 
         // Build task bar styles
         const taskBarStyles = {
@@ -3362,7 +3391,10 @@ class javascriptgantt {
     }
     if (!isFromRender) {
       // create links if addLinks is true
-      const isLinksAreaExist = querySelector("#js-gantt-links-area", this.element);
+      const isLinksAreaExist = querySelector(
+        "#js-gantt-links-area",
+        this.element
+      );
 
       // if lines already exist remove all lines
       if (isLinksAreaExist) {
@@ -3510,9 +3542,15 @@ class javascriptgantt {
           resizerLeft += headerCell[j].offsetWidth;
           let resizerWrap;
           if (!isRight) {
-            resizerWrap = querySelector(`#js-gantt-col-resizer-wrap-${j}`, document);
+            resizerWrap = querySelector(
+              `#js-gantt-col-resizer-wrap-${j}`,
+              document
+            );
           } else {
-            resizerWrap = querySelector(`#js-gantt-col-resizer-wrap-r-${j}`, document);
+            resizerWrap = querySelector(
+              `#js-gantt-col-resizer-wrap-r-${j}`,
+              document
+            );
           }
           if (resizerWrap) {
             setStyles(resizerWrap, { left: `${resizerLeft}px` });
@@ -3525,18 +3563,29 @@ class javascriptgantt {
           const leftGrid = querySelector("#js-gantt-left-grid", document);
           setStyles(leftGrid, { width: `${resizerLeft}px` });
 
-          const leftResizer = querySelector("#js-gantt-left-layout-resizer-wrap", document);
-          const leftDataEl = querySelector("#js-gantt-grid-left-data", document);
+          const leftResizer = querySelector(
+            "#js-gantt-left-layout-resizer-wrap",
+            document
+          );
+          const leftDataEl = querySelector(
+            "#js-gantt-grid-left-data",
+            document
+          );
           setStyles(leftResizer, { left: `${leftDataEl.offsetWidth}px` });
         } else {
-          const rightResizer = querySelector("#js-gantt-timeline-resizer-wrap", that.element);
+          const rightResizer = querySelector(
+            "#js-gantt-timeline-resizer-wrap",
+            that.element
+          );
           setStyles(headCellContainer, { width: `${totalHeadWidth}px` });
           setStyles(sidebar, {
             width: `${totalHeadWidth}px`,
             minWidth: `${totalHeadWidth}px`,
           });
           const resizerLeft = sidebar.offsetLeft - rightResizer.offsetLeft;
-          setStyles(rightResizer, { left: `${rightResizer.offsetLeft + resizerLeft}px` });
+          setStyles(rightResizer, {
+            left: `${rightResizer.offsetLeft + resizerLeft}px`,
+          });
           that.options.rightGridWidth = sidebar.offsetWidth;
         }
         // rerender the calendar and scale
@@ -5603,7 +5652,10 @@ class javascriptgantt {
               : { "data-column-index": k },
             styles: {
               width: `${column.width || 80}px`,
-              ...(column.align && { textAlign: column.align, justifyContent: column.align }),
+              ...(column.align && {
+                textAlign: column.align,
+                justifyContent: column.align,
+              }),
             },
           });
 
@@ -5709,7 +5761,10 @@ class javascriptgantt {
                   addClass(treeIcon, "js-gantt-tree-close");
                 }
 
-                const jsGanttLayout = querySelector("#js-gantt-layout", this.element);
+                const jsGanttLayout = querySelector(
+                  "#js-gantt-layout",
+                  this.element
+                );
                 this.createScrollbar(jsGanttLayout);
 
                 // custom event of toggle tree
@@ -5873,7 +5928,9 @@ class javascriptgantt {
         const hourLeft = this.getPxByTime(start_date, "left");
         taskLeft += hourLeft;
 
-        const taskTop = rowCount * this.options.row_height + Math.floor((this.options.row_height * 10) / 100);
+        const taskTop =
+          rowCount * this.options.row_height +
+          Math.floor((this.options.row_height * 10) / 100);
 
         // Build task bar styles
         const taskBarStyles = {
@@ -6399,8 +6456,14 @@ class javascriptgantt {
             return;
           }
 
-          const selectedRows = querySelectorAll(".js-gantt-selected", this.element);
-          const selectedTaskBars = querySelectorAll(".js-gantt-selected-task-bar", this.element);
+          const selectedRows = querySelectorAll(
+            ".js-gantt-selected",
+            this.element
+          );
+          const selectedTaskBars = querySelectorAll(
+            ".js-gantt-selected-task-bar",
+            this.element
+          );
 
           for (const item of selectedRows) {
             removeClass(item, "js-gantt-selected");
@@ -6411,10 +6474,16 @@ class javascriptgantt {
           }
 
           // select the selected task taskBar
-          const currentTaskBar = querySelector(`[js-gantt-taskbar-id="${task.id}"]`, this.element);
+          const currentTaskBar = querySelector(
+            `[js-gantt-taskbar-id="${task.id}"]`,
+            this.element
+          );
           addClass(currentTaskBar, "js-gantt-selected-task-bar");
 
-          const taskRow = querySelectorAll(`[js-gantt-data-task-id="${j}"]`, this.element);
+          const taskRow = querySelectorAll(
+            `[js-gantt-data-task-id="${j}"]`,
+            this.element
+          );
           for (const item of taskRow) {
             addClass(item, "js-gantt-selected");
           }
@@ -6432,7 +6501,10 @@ class javascriptgantt {
             attributes: { "data-column-index": `r-${k}` },
             styles: {
               width: `${column.width || 80}px`,
-              ...(column.align && { textAlign: column.align, justifyContent: column.align }),
+              ...(column.align && {
+                textAlign: column.align,
+                justifyContent: column.align,
+              }),
             },
           });
 
@@ -6445,7 +6517,10 @@ class javascriptgantt {
           );
 
           const content = createElement("div", {
-            classes: ["js-gantt-cell-data", k == 0 ? "js-gantt-d-block" : "js-gantt-data"],
+            classes: [
+              "js-gantt-cell-data",
+              k == 0 ? "js-gantt-d-block" : "js-gantt-data",
+            ],
             html: column.template(task) || task[column.name] || " ",
           });
 
@@ -6676,9 +6751,14 @@ class javascriptgantt {
       }
     });
 
-    const timelineResizer = querySelector("#js-gantt-timeline-resizer-wrap", this.element);
+    const timelineResizer = querySelector(
+      "#js-gantt-timeline-resizer-wrap",
+      this.element
+    );
     if (timelineResizer) {
-      setStyles(timelineResizer, { left: `${timeline.offsetLeft + timeline.offsetWidth}px` });
+      setStyles(timelineResizer, {
+        left: `${timeline.offsetLeft + timeline.offsetWidth}px`,
+      });
     }
 
     // Helper function using imported createElement
@@ -6941,7 +7021,10 @@ class javascriptgantt {
     const colWidth = this.calculateGridWidth(data.start_date, "day");
 
     // Using imported createElement utility
-    const cssClasses = ["js-gantt-marker", ...data.css.trim().replace(/\s+/g, " ").split(" ")];
+    const cssClasses = [
+      "js-gantt-marker",
+      ...data.css.trim().replace(/\s+/g, " ").split(" "),
+    ];
     const flag = createElement("div", {
       classes: cssClasses,
       attributes: { title: data.title },
@@ -7846,7 +7929,8 @@ class javascriptgantt {
 
       // Also update options.links for backward compatibility
       const linkIndex = this.options.links.findIndex((obj) => obj.id == id);
-      const linkobj = removedLink || this.options.links.find((obj) => obj.id === id) || null;
+      const linkobj =
+        removedLink || this.options.links.find((obj) => obj.id === id) || null;
       if (linkIndex !== -1) {
         this.options.links.splice(linkIndex, 1);
       }
@@ -7880,7 +7964,9 @@ class javascriptgantt {
     if (this.#linkManager) {
       return this.#linkManager.getPredecessors(taskId);
     }
-    return this.options.links.filter((l) => l.target === taskId).map((l) => l.source);
+    return this.options.links
+      .filter((l) => l.target === taskId)
+      .map((l) => l.source);
   }
 
   /**
@@ -7892,7 +7978,9 @@ class javascriptgantt {
     if (this.#linkManager) {
       return this.#linkManager.getSuccessors(taskId);
     }
-    return this.options.links.filter((l) => l.source === taskId).map((l) => l.target);
+    return this.options.links
+      .filter((l) => l.source === taskId)
+      .map((l) => l.target);
   }
 
   /**
@@ -8782,7 +8870,10 @@ class javascriptgantt {
     }
 
     // Use LinkManager's wouldCreateCycle for basic check
-    if (this.#linkManager && this.#linkManager.wouldCreateCycle(currentSource, currentTarget)) {
+    if (
+      this.#linkManager &&
+      this.#linkManager.wouldCreateCycle(currentSource, currentTarget)
+    ) {
       return true;
     }
 
@@ -10316,7 +10407,6 @@ class javascriptgantt {
     return compatibility;
   }
 
-
   /**
    * Destroys the Gantt instance and cleans up all resources
    * Call this when removing the Gantt chart from the DOM
@@ -10769,7 +10859,6 @@ class javascriptgantt {
   }
 
   // ============= Legacy Utility Methods =============
-
 
   /**
    * Clone data deeply using imported deepClone utility

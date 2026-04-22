@@ -397,6 +397,7 @@ class I18nManager {
    */
   setLocale(locale) {
     if (!this.translations.has(locale)) {
+      // eslint-disable-next-line no-console
       console.warn(
         `Locale "${locale}" not found, using fallback "${this.fallbackLocale}"`
       );
@@ -442,6 +443,7 @@ class I18nManager {
 
     // Return key if translation not found
     if (!translation) {
+      // eslint-disable-next-line no-console
       console.warn(`Translation not found: ${key}`);
       return key;
     }

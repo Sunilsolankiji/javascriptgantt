@@ -1,9 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   sampleTasks,
   sampleOptions,
   invalidTasks,
-  invalidOptions,
 } from "../fixtures/sample-data.js";
 
 /**

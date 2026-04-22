@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 // Test dateUtils
 import * as dateUtils from "../../src/utils/dateUtils.js";

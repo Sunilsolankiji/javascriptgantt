@@ -28,16 +28,17 @@ class ExportManager {
 
   /**
    * Export to PDF
-   * @param {string} filename - Output filename
+   * @param {string} _filename - Output filename
    * @param {Object} options - PDF options
    * @returns {Promise<Blob>} PDF blob
    */
-  async toPDF(filename = "gantt-chart", options = {}) {
+  async toPDF(_filename = "gantt-chart", options = {}) {
     const canvas = await this.toCanvas(options.styleSheet);
-    const imgData = canvas.toDataURL("image/png");
+    canvas.toDataURL("image/png");
 
     // PDF generation requires external library
     // This is a placeholder that would use jsPDF or similar
+    // eslint-disable-next-line no-console
     console.warn(
       "PDF export requires jsPDF library. Use toPNG for image export."
     );
@@ -238,6 +239,7 @@ class ExportManager {
         }
       } catch (e) {
         // Cross-origin stylesheets may throw
+        // eslint-disable-next-line no-console
         console.warn("Could not access stylesheet:", e);
       }
     }

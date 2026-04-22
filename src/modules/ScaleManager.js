@@ -3,18 +3,7 @@
  * Handles timeline scale calculations and rendering
  */
 
-import {
-  parseDate,
-  formatDate,
-  addDays,
-  daysBetween,
-  getStartOfMonth,
-  getEndOfMonth,
-  getDaysInMonth,
-  getQuarter,
-  getStartOfQuarter,
-  getStartOfWeek,
-} from "../utils/dateUtils.js";
+import { daysBetween } from "../utils/dateUtils.js";
 
 class ScaleManager {
   constructor(options = {}) {

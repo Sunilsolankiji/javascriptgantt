@@ -15,7 +15,7 @@
  * ========================================================= */
 
 (function (global) {
-  class ztTour {
+  class jstour {
     constructor(options, templates) {
       this.initializeOptions(options);
       this.initializeTemplate(templates);
@@ -126,13 +126,13 @@
 
       const hintEle = document.createElement("div");
       const hintBackdrop = document.createElement("div");
-      hintBackdrop.classList.add(`zt-tour-${popupType}-backdrop`);
+      hintBackdrop.classList.add(`jstour-${popupType}-backdrop`);
       hintBackdrop.addEventListener("click", () => {
         hintEle.remove();
         hintBackdrop.remove();
       });
       hintEle.innerHTML = hint.innerHTML;
-      hintEle.classList.add(`zt-tour-${popupType}`);
+      hintEle.classList.add(`jstour-${popupType}`);
 
       let dimentions;
       if (!isAnnouncement) {
@@ -146,8 +146,8 @@
 
       hintEle.style.top = isAnnouncement
         ? "50%"
-        : `${dimentions.top + dimentions.height + 10}px`;
-      hintEle.style.left = isAnnouncement ? "50%" : `${dimentions.left + 10}px`;
+        : dimentions.top + dimentions.height + 10 + "px";
+      hintEle.style.left = isAnnouncement ? "50%" : dimentions.left + 10 + "px";
       hintEle.style.transform = isAnnouncement ? "translate(-50%, -50%)" : "";
     }
 
@@ -158,9 +158,9 @@
 
     removeHint(isAnnouncement = false) {
       const popupType = isAnnouncement ? "announcement" : "hint";
-      const oldHint = document.querySelectorAll(`.zt-tour-${popupType}`);
+      const oldHint = document.querySelectorAll(`.jstour-${popupType}`);
       const oldHintBackdrop = document.querySelectorAll(
-        `.zt-tour-${popupType}-backdrop`
+        `.jstour-${popupType}-backdrop`
       );
 
       Array.from(oldHint).forEach((hint) => hint.remove());
@@ -170,7 +170,7 @@
     }
 
     removeAnnouncement() {
-      this.removeHint(true);
+      removeHint(true);
     }
 
     highlightStep(currentStep) {
@@ -191,50 +191,50 @@
 
     createPopup() {
       const wrapper = document.createElement("div");
-      wrapper.classList.add("zt-tour-popup");
+      wrapper.classList.add("jstour-popup");
       if (this.getOption("popupClass")) {
         wrapper.classList.add(this.getOption("popupClass").trim());
       }
 
       const arrow = document.createElement("div");
-      arrow.classList.add("zt-tour-popup-arrow");
+      arrow.classList.add("jstour-popup-arrow");
 
       const title = document.createElement("header");
-      title.id = "zt-tour-popup-title";
-      title.classList.add("zt-tour-popup-title");
+      title.id = "jstour-popup-title";
+      title.classList.add("jstour-popup-title");
       title.style.display = "none";
       title.innerText = "Popup Title";
 
       const description = document.createElement("div");
-      description.id = "zt-tour-popup-description";
-      description.classList.add("zt-tour-popup-description");
+      description.id = "jstour-popup-description";
+      description.classList.add("jstour-popup-description");
       description.style.display = "none";
       description.innerText = "Popup description is here";
 
       const closeButton = document.createElement("button");
       closeButton.type = "button";
-      closeButton.classList.add("zt-tour-popup-close-btn");
+      closeButton.classList.add("jstour-popup-close-btn");
       closeButton.setAttribute("aria-label", "Close");
       closeButton.innerHTML = "&times;";
 
       const footer = document.createElement("footer");
-      footer.classList.add("zt-tour-popup-footer");
+      footer.classList.add("jstour-popup-footer");
 
       const progress = document.createElement("span");
-      progress.classList.add("zt-tour-popup-progress-text");
+      progress.classList.add("jstour-popup-progress-text");
       progress.innerText = "";
 
       const footerButtons = document.createElement("span");
-      footerButtons.classList.add("zt-tour-popup-navigation-btns");
+      footerButtons.classList.add("jstour-popup-navigation-btns");
 
       const previousButton = document.createElement("button");
       previousButton.type = "button";
-      previousButton.classList.add("zt-tour-popup-prev-btn");
+      previousButton.classList.add("jstour-popup-prev-btn");
       previousButton.innerHTML = "&larr; Previous";
 
       const nextButton = document.createElement("button");
       nextButton.type = "button";
-      nextButton.classList.add("zt-tour-popup-next-btn");
+      nextButton.classList.add("jstour-popup-next-btn");
       nextButton.innerHTML = "Next &rarr;";
 
       footerButtons.appendChild(previousButton);
@@ -266,7 +266,7 @@
       const popup = this.createPopup();
       this.options.popup = popup;
 
-      const oldPopups = document.querySelectorAll(".zt-tour-popup");
+      const oldPopups = document.querySelectorAll(".jstour-popup");
 
       // remove all old popups
       Array.from(oldPopups).forEach((ele) => {
@@ -410,7 +410,7 @@
       const elementHeight = elementDimensions.height;
 
       // Remove all arrow classes
-      popupArrow.className = "zt-tour-popup-arrow";
+      popupArrow.className = "jstour-popup-arrow";
 
       let arrowSide = side;
       let arrowAlignment = alignment;
@@ -477,13 +477,14 @@
           arrowSide = "right";
           arrowAlignment = "end";
         }
+      } else {
       }
 
       if (!arrowSide) {
-        popupArrow.classList.add("zt-tour-d-none");
+        popupArrow.classList.add("jstour-d-none");
       } else {
-        popupArrow.classList.add(`zt-tour-popup-arrow-side-${arrowSide}`);
-        popupArrow.classList.add(`zt-tour-popup-arrow-align-${arrowAlignment}`);
+        popupArrow.classList.add(`jstour-popup-arrow-side-${arrowSide}`);
+        popupArrow.classList.add(`jstour-popup-arrow-align-${arrowAlignment}`);
       }
     }
 
@@ -509,7 +510,7 @@
       const windowY = window.innerHeight;
 
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.classList.add("zt-tour-overlay", "zt-tour-overlay-animated");
+      svg.classList.add("jstour-overlay", "jstour-overlay-animated");
 
       svg.setAttribute("viewBox", `0 0 ${windowX} ${windowY}`);
       svg.setAttribute("xmlSpace", "preserve");
@@ -585,7 +586,7 @@
     }
 
     repositionPopup(element, step) {
-      const { popup } = this.options;
+      const popup = this.options.popup;
       let { align = "start", side = "left" } = step?.popup || {};
 
       align = step.element ? align : "over";
@@ -635,18 +636,18 @@
           window.innerHeight / 2 - popupDimensions.realHeight / 2;
 
         popup.wrapper.style.left = `${leftToSet}px`;
-        popup.wrapper.style.right = `auto`;
+        popup.wrapper.style.right = "auto";
         popup.wrapper.style.top = `${topToSet}px`;
-        popup.wrapper.style.bottom = `auto`;
+        popup.wrapper.style.bottom = "auto";
       } else if (noneOptimal) {
         const leftValue =
           window.innerWidth / 2 - popupDimensions?.realWidth / 2;
         const bottomValue = 10;
 
         popup.wrapper.style.left = `${leftValue}px`;
-        popup.wrapper.style.right = `auto`;
+        popup.wrapper.style.right = "auto";
         popup.wrapper.style.bottom = `${bottomValue}px`;
-        popup.wrapper.style.top = `auto`;
+        popup.wrapper.style.top = "auto";
       } else if (isLeftOptimal) {
         const leftToSet = Math.min(
           leftValue,
@@ -664,7 +665,7 @@
 
         popup.wrapper.style.left = `${leftToSet}px`;
         popup.wrapper.style.top = `${topToSet}px`;
-        popup.wrapper.style.bottom = `auto`;
+        popup.wrapper.style.bottom = "auto";
         popup.wrapper.style.right = "auto";
 
         popupRenderedSide = "left";
@@ -684,7 +685,7 @@
 
         popup.wrapper.style.right = `${rightToSet}px`;
         popup.wrapper.style.top = `${topToSet}px`;
-        popup.wrapper.style.bottom = `auto`;
+        popup.wrapper.style.bottom = "auto";
         popup.wrapper.style.left = "auto";
 
         popupRenderedSide = "right";
@@ -704,7 +705,7 @@
 
         popup.wrapper.style.top = `${topToSet}px`;
         popup.wrapper.style.left = `${leftToSet}px`;
-        popup.wrapper.style.bottom = `auto`;
+        popup.wrapper.style.bottom = "auto";
         popup.wrapper.style.right = "auto";
 
         popupRenderedSide = "top";
@@ -725,7 +726,7 @@
 
         popup.wrapper.style.left = `${leftToSet}px`;
         popup.wrapper.style.bottom = `${bottomToSet}px`;
-        popup.wrapper.style.top = `auto`;
+        popup.wrapper.style.top = "auto";
         popup.wrapper.style.right = "auto";
 
         popupRenderedSide = "bottom";
@@ -734,7 +735,7 @@
       if (!noneOptimal) {
         this.renderPopupArrow(requiredAlignment, popupRenderedSide, element);
       } else {
-        popup.arrow.classList.add("zt-tour-d-none");
+        popup.arrow.classList.add("jstour-d-none");
       }
     }
 
@@ -843,8 +844,8 @@
     }
 
     destroyTour() {
-      const { popup } = this.options;
-      const overlaySvg = document.querySelector(".zt-tour-overlay");
+      const popup = this.options.popup;
+      const overlaySvg = document.querySelector(".jstour-overlay");
 
       if (popup.wrapper) {
         popup.wrapper.remove();
@@ -1068,9 +1069,6 @@
 
     refreshStep() {
       const currentStep = this.getOption("currentStep");
-      if (!currentStep) {
-        return;
-      }
       const step = this.getOption("steps")[currentStep];
       const element = document.querySelector(step.element);
       this.trackActiveElement(element);
@@ -1079,14 +1077,16 @@
     }
 
     addDummyElement() {
-      const isDummyElement = document.getElementById("zt-popup-dummy-element");
+      const isDummyElement = document.getElementById(
+        "jstour-popup-dummy-element"
+      );
       if (isDummyElement) {
         return isDummyElement;
       }
 
       const element = document.createElement("div");
 
-      element.id = "zt-popup-dummy-element";
+      element.id = "jstour-popup-dummy-element";
       element.style.width = "0";
       element.style.height = "0";
       element.style.pointerEvents = "none";
@@ -1099,8 +1099,9 @@
 
       return element;
     }
+
     //
   }
 
-  global.ztTour = ztTour;
+  global.jstour = jstour;
 })(this);

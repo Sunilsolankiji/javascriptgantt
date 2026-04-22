@@ -36,22 +36,22 @@ class AccessibilityManager {
 
     // Task rows
     const taskRows = element.querySelectorAll("[js-gantt-task-id]");
-    taskRows.forEach((row, index) => {
-      const taskId = row.getAttribute("js-gantt-task-id");
+    taskRows.forEach((_row, _index) => {
+      const taskId = _row.getAttribute("js-gantt-task-id");
       const task = this.gantt.getTask(taskId);
 
       if (task) {
-        row.setAttribute("role", "presentation");
-        row.setAttribute("tabindex", "0");
-        row.setAttribute("aria-label", this.getTaskAriaLabel(task));
-        row.setAttribute("aria-describedby", `task-desc-${taskId}`);
+        _row.setAttribute("role", "presentation");
+        _row.setAttribute("tabindex", "0");
+        _row.setAttribute("aria-label", this.getTaskAriaLabel(task));
+        _row.setAttribute("aria-describedby", `task-desc-${taskId}`);
 
         // Create description element
         const descEl = document.createElement("div");
         descEl.id = `task-desc-${taskId}`;
         descEl.style.display = "none";
         descEl.textContent = this.getTaskDescription(task);
-        row.appendChild(descEl);
+        _row.appendChild(descEl);
       }
     });
 
@@ -293,7 +293,8 @@ class AccessibilityManager {
     const task = this.gantt.getTask(taskId);
     if (task) {
       window.clipboardData = { task, action: "copy" };
-      console.log(`Copied task: ${task.name}`);
+      // Emit event for clipboard action (useful for testing/logging)
+      this.gantt.dispatchEvent("clipboard:copy", { task });
     }
   }
 
@@ -304,7 +305,8 @@ class AccessibilityManager {
     const task = this.gantt.getTask(taskId);
     if (task) {
       window.clipboardData = { task, action: "cut" };
-      console.log(`Cut task: ${task.name}`);
+      // Emit event for clipboard action (useful for testing/logging)
+      this.gantt.dispatchEvent("clipboard:cut", { task });
     }
   }
 
@@ -320,7 +322,8 @@ class AccessibilityManager {
         this.gantt.deleteTask(task.id);
         window.clipboardData = null;
       }
-      console.log(`Pasted task: ${newTask.name}`);
+      // Emit event for clipboard action (useful for testing/logging)
+      this.gantt.dispatchEvent("clipboard:paste", { task: newTask });
     }
   }
 

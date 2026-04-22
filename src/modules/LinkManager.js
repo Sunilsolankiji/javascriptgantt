@@ -213,7 +213,6 @@ class LinkManager {
     }
 
     // Create curved path
-    const midX = (startX + endX) / 2;
     const offsetX = Math.abs(endX - startX) * 0.5;
 
     // Determine path direction
