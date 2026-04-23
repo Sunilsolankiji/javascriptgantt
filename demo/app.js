@@ -30,7 +30,7 @@ function generateGanttData() {
   const data = [];
   let idCounter = 1;
 
-  for (let project = 1; project <= 5; project++) {
+  for (let project = 1; project <= 500; project++) {
     const projectId = idCounter++;
     data.push({
       id: projectId,
@@ -288,7 +288,7 @@ ganttInstance.options.taskProgress = true;
 
 const currentDate = new Date();
 ganttInstance.options.startDate = new Date(currentDate.setDate(1));
-ganttInstance.options.endDate = new Date(currentDate.setDate(31));
+ganttInstance.options.endDate = new Date(currentDate.setDate(331));
 
 // ============= Templates =============
 

@@ -232,13 +232,22 @@
   border-bottom: 1px solid var(--primary-border);
 }
 
+/* Virtualized cells mode: rows have no child `.js-gantt-task-cell` DOM.
+ * Gridlines + weekend striping are painted on the parent
+ * `.js-gantt-task-data` via a CSS background gradient
+ * (see #installGridBackground in gantt.js). Row must span full width so
+ * `offsetX` in the onCellClick handler maps to the right date column. */
+.js-gantt-task-row.js-gantt-virtcells {
+  width: 100%;
+  background-color: transparent;
+}
+
 .js-gantt-task-cell {
   width: 80px;
   height: 100%;
   position: absolute;
   background-color: var(--timeline-cell-background);
   border-right: 1px solid var(--primary-border);
-  /* border-left: 1px solid #ebebeb; */
 }
 
 .js-gantt-weekday-cell {

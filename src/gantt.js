@@ -87,6 +87,35 @@ class javascriptgantt {
   // loops over options.data made render O(n²). Cleared at render start and
   // whenever task data is mutated (addTask / deleteTask / updateTaskDate).
   #taskBoundsCache = new Map();
+  // Cell virtualization — horizontal windowing for `.js-gantt-task-cell`
+  // and `.js-gantt-scale-cell`. Only dates whose pixel range intersects
+  // [scrollLeft - buffer, scrollLeft + viewportWidth + buffer] become
+  // DOM cells. Rebuilt on horizontal scroll; coalesced via rAF.
+  // A value of `null` for viewportWidth means "unknown" (e.g. detached
+  // render, or happy-dom) and we render the full range to stay safe.
+  #cellViewport = { scrollLeft: 0, width: null, bufferPx: 400 };
+  #cellRaf = 0;
+  #cellScrollHandler = null;
+  // Vertical row virtualization — sibling to the horizontal cell system
+  // above. `#visibleRowIndices` maps task.id → its global row index
+  // among currently-visible (non-collapsed, non-filtered) tasks, so the
+  // three lanes (sidebar, timeline body, bars) can independently look up
+  // a task's top-y without re-walking the tree. `#totalVisibleRows`
+  // drives container heights so scrollbars reflect the full extent even
+  // when off-screen rows are absent from the DOM.
+  #visibleRowIndices = new Map();
+  #totalVisibleRows = 0;
+  #rowViewport = { scrollTop: 0, height: null, bufferPx: 400 };
+  // Lazy-lookup scroll-sync handler installed by #rebuildVisibleRows.
+  // Unlike the closures inside createScrollbar, this one resolves the
+  // current sidebar via querySelector on every event, so it keeps
+  // working after the sidebar element has been replaced.
+  #liveScrollSyncHandler = null;
+  // Reverse-direction sync (sidebar → timeline). The sidebar element
+  // itself is replaced on each rebuild, so we track both the handler
+  // AND the element it was attached to so we can detach cleanly.
+  #liveSidebarScrollHandler = null;
+  #liveSidebarScrollEl = null;
   // Set to true by destroy(); render/attachEvent/dispatchEvent become no-ops
   // after this flips so consumers calling methods on a torn-down instance
   // don't blow up on null `this.options` / `this.element`.
@@ -233,6 +262,15 @@ class javascriptgantt {
       collapse: opt.collapse !== false,
       fullWeek: opt.fullWeek !== false,
       todayMarker: opt.todayMarker !== false,
+      // When true (default), the timeline body uses a CSS background
+      // gradient for vertical gridlines + weekend striping instead of
+      // rendering one `.js-gantt-task-cell` DOM node per (task × date).
+      // For a 500-task, 3-year chart that drops DOM cell count from
+      // ~500k to 0 and removes the primary cause of browser freeze at
+      // large scale. Set to `false` to restore the legacy per-cell DOM
+      // if your app uses the `timeline_cell_class` template for custom
+      // per-cell classes (currently only honored in legacy mode).
+      virtualCells: opt.virtualCells !== false,
       weekends: opt.weekends || [],
       startDate: opt.startDate,
       endDate: opt.endDate,
@@ -408,6 +446,44 @@ class javascriptgantt {
     if (this.#destroyed || !this.options || !ele) {
       return;
     }
+    // Seed the horizontal cell viewport from the host element's width
+    // BEFORE any cell-building loop runs. This lets the very first render
+    // skip DOM creation for off-screen cells instead of building the full
+    // date range and trimming afterward. clientWidth is 0 in happy-dom
+    // and detached renders — those paths fall back to "render all".
+    {
+      const prior = this.element?.querySelector("#js-gantt-timeline-cell");
+      if (prior && prior.clientWidth > 0) {
+        this.#cellViewport.scrollLeft = prior.scrollLeft || 0;
+        this.#cellViewport.width = prior.clientWidth;
+        this.#rowViewport.scrollTop = prior.scrollTop || 0;
+        this.#rowViewport.height =
+          prior.clientHeight > 0 ? prior.clientHeight : null;
+      } else {
+        // First render: approximate from host width minus the sidebar.
+        const hostW = ele.clientWidth;
+        if (hostW > 0) {
+          const sidebarW =
+            typeof this.options.sidebarWidth === "number"
+              ? this.options.sidebarWidth
+              : 300;
+          this.#cellViewport.scrollLeft = 0;
+          this.#cellViewport.width = Math.max(0, hostW - sidebarW);
+        } else {
+          // Unknown viewport — render every cell so nothing goes missing.
+          this.#cellViewport.scrollLeft = 0;
+          this.#cellViewport.width = null;
+        }
+        const hostH = ele.clientHeight;
+        if (hostH > 0) {
+          this.#rowViewport.scrollTop = 0;
+          this.#rowViewport.height = hostH;
+        } else {
+          this.#rowViewport.scrollTop = 0;
+          this.#rowViewport.height = null;
+        }
+      }
+    }
     // Drop stale per-task memoized subtree bounds from any prior
     // render or mutation — fresh data may have different children.
     this.#invalidateTaskBoundsCache();
@@ -544,6 +620,13 @@ class javascriptgantt {
       this.dates = this.getDates(options.startDate, options.endDate);
     }
 
+    // Compute the flat ordered list of VISIBLE (non-collapsed, non-
+    // filtered) rows before the lanes start building. Each lane looks
+    // up `task.id → globalIndex` via #getRowIndex to decide where to
+    // position a row and whether to skip building it entirely when it's
+    // outside the vertical viewport.
+    this.#buildVisibleRowIndex();
+
     // Using imported addClass utility
     if (this.fullScreen === true) {
       addClass(this.element, "js-gantt-fullScreen");
@@ -629,6 +712,13 @@ class javascriptgantt {
         this.options.links[i]
       );
     }
+
+    // Install the horizontal-scroll reconcile handler so that cells
+    // off-screen stay out of the DOM and newly-visible dates get built
+    // as the user scrolls. Safe to call on every render — the helper
+    // removes any prior listener before re-attaching. See
+    // #rebuildVisibleCells for the reconcile body.
+    this.#installCellScrollHandler();
   }
 
   // create left sidebar
@@ -925,7 +1015,14 @@ class javascriptgantt {
           }
         }
 
-        leftDataContainer.append(dataItem);
+        // Row virtualization: skip appending when the row is outside the
+        // vertical viewport + buffer. #positionRowForViewport also sets
+        // absolute top/height on the element so kept rows render at the
+        // correct y regardless of which siblings were skipped.
+        const positioned = this.#positionRowForViewport(dataItem, task.id);
+        if (positioned) {
+          leftDataContainer.append(dataItem);
+        }
       }
 
       if (!this.options.splitTask && task?.children?.length) {
@@ -943,6 +1040,11 @@ class javascriptgantt {
 
     sidebar.append(leftDataContainer);
     jsGanttLayout.append(sidebar);
+
+    // Row virtualization: size the sidebar lane's row container to the
+    // full visible-row extent so the scrollbar tracks rows that aren't
+    // currently in the DOM.
+    this.#setLaneScrollHeight(leftDataContainer);
 
     // Using imported createElement utility
     const sidebarResizerWrap = createElement("div", {
@@ -1076,8 +1178,13 @@ class javascriptgantt {
           isMultiUnitScale(scale) &&
           new Date(endDate).getTime() < currentDate
         ) {
-          timelineScaleRow.append(dateCell);
-          rangeCount += colDates.dateCount * this.calculateGridWidth(date);
+          const spanWidth = colDates.dateCount * this.calculateGridWidth(date);
+          // Cell virtualization: skip off-screen scale cells. rangeCount
+          // still advances so downstream cells stay positioned correctly.
+          if (this.#isCellInViewport(rangeCount, spanWidth)) {
+            timelineScaleRow.append(dateCell);
+          }
+          rangeCount += spanWidth;
           endDate = new Date(colDates.endDate);
         } else if (scale.unit == "hour") {
           const dateStartHour = new Date(date).getHours();
@@ -1086,31 +1193,39 @@ class javascriptgantt {
 
           const fragment = document.createDocumentFragment();
           for (let k = dateStartHour; k < 24; k++) {
-            const hourCell = dateCell.cloneNode(true);
+            // Skip off-screen hour cells entirely (no clone, no format
+            // computation) — rangeCount still advances.
+            if (this.#isCellInViewport(rangeCount, cellWidth)) {
+              const hourCell = dateCell.cloneNode(true);
 
-            // Use ScaleManager for hour formatting
-            const hourFormat = isFunction(scale.format)
-              ? scale.format(cellDate)
-              : scaleManager
-                ? scaleManager.formatDate(
-                    cellDate,
-                    scale.format,
-                    this.#dateFormat
-                  )
-                : this.formatDateToString(scale.format, cellDate);
+              // Use ScaleManager for hour formatting
+              const hourFormat = isFunction(scale.format)
+                ? scale.format(cellDate)
+                : scaleManager
+                  ? scaleManager.formatDate(
+                      cellDate,
+                      scale.format,
+                      this.#dateFormat
+                    )
+                  : this.formatDateToString(scale.format, cellDate);
 
-            hourCell.innerHTML = hourFormat;
+              hourCell.innerHTML = hourFormat;
+              setStyles(hourCell, {
+                width: `${cellWidth}px`,
+                left: `${rangeCount}px`,
+              });
+              fragment.appendChild(hourCell);
+            }
             cellDate.setHours(k + 1);
-            setStyles(hourCell, {
-              width: `${cellWidth}px`,
-              left: `${rangeCount}px`,
-            });
-            fragment.appendChild(hourCell);
             rangeCount += cellWidth;
           }
           timelineScaleRow.append(fragment);
         } else if (scale.unit == "day" && scale.step == 1) {
-          timelineScaleRow.append(dateCell);
+          // Day scale cells carry their left via `left: j * gridWidth`.
+          const dayGrid = this.calculateGridWidth(date, "day");
+          if (this.#isCellInViewport(j * dayGrid, dayGrid)) {
+            timelineScaleRow.append(dateCell);
+          }
         }
       }
       timelineScale.append(timelineScaleRow);
@@ -1175,6 +1290,13 @@ class javascriptgantt {
       }
     });
 
+    // Row virtualization: absolutely position by the task's precomputed
+    // global row index so off-screen rows can be skipped without breaking
+    // the visual stacking order. Returns null (→ caller won't append) when
+    // this task's row is outside the vertical viewport + buffer.
+    const positioned = this.#positionRowForViewport(row, task.id);
+    if (!positioned) return null;
+
     return row;
   }
 
@@ -1228,6 +1350,424 @@ class javascriptgantt {
   #resetContentCells() {
     this.#contentCells = [];
     this.#taskBarUpdaters = [];
+  }
+
+  /**
+   * Return the current horizontal viewport in pixels.
+   * When width is unknown (e.g. during the first render before the
+   * timeline container is in the DOM, or in happy-dom where clientWidth
+   * is 0), return `null` — callers should render the full date range.
+   * @returns {{ left: number, right: number } | null}
+   */
+  #getCellViewportPx() {
+    const width = this.#cellViewport.width;
+    if (width == null || width <= 0 || !Number.isFinite(width)) {
+      return null;
+    }
+    const scrollLeft = Math.max(0, this.#cellViewport.scrollLeft || 0);
+    const buffer = this.#cellViewport.bufferPx || 0;
+    return {
+      left: scrollLeft - buffer,
+      right: scrollLeft + width + buffer,
+    };
+  }
+
+  /**
+   * Test whether a cell spanning `[left, left+width]` intersects the
+   * current viewport window. Always returns true when the viewport is
+   * unknown — the render loop falls back to "build everything".
+   * @param {number} left
+   * @param {number} width
+   * @returns {boolean}
+   */
+  #isCellInViewport(left, width) {
+    const vp = this.#getCellViewportPx();
+    if (!vp) return true;
+    return left + width >= vp.left && left <= vp.right;
+  }
+
+  /**
+   * Build `#visibleRowIndices` — a Map from task.id to its global row
+   * index among currently-VISIBLE tasks (honors search-filter + collapse
+   * guards). Called once at the top of render() and whenever the visible
+   * shape of the tree changes (expand/collapse).
+   *
+   * Runs in a single O(n) depth-first pass. The row ordering matches the
+   * append order of the existing row-building loops, so the three lanes
+   * (sidebar / timeline / bars) see the same `top` for any given task.
+   */
+  #buildVisibleRowIndex() {
+    this.#visibleRowIndices.clear();
+    let idx = 0;
+    const walk = (tasks, isAncestorOpened) => {
+      if (!Array.isArray(tasks)) return;
+      for (const task of tasks) {
+        if (!task || this.isTaskNotInSearchedData(task.id)) continue;
+        this.#visibleRowIndices.set(task.id, idx++);
+        // Recurse into children only when:
+        //   - search is active (full tree is on-screen behind d-none), or
+        //   - every ancestor is opened AND this task is opened.
+        // Mirrors the guards in createSidebarChild + createTimelineChildBody.
+        const recurse = this.#searchedData
+          ? true
+          : isAncestorOpened && this.isTaskOpened(task.id);
+        if (task?.children?.length && recurse) {
+          walk(task.children, true);
+        }
+      }
+    };
+    walk(this.options.data, true);
+    this.#totalVisibleRows = idx;
+  }
+
+  /**
+   * Current vertical viewport window in pixels, or null if unknown
+   * (render-all fallback — safe default for happy-dom + detached).
+   * @returns {{ top: number, bottom: number } | null}
+   */
+  #getRowViewportPx() {
+    const h = this.#rowViewport.height;
+    if (h == null || h <= 0 || !Number.isFinite(h)) return null;
+    const scrollTop = Math.max(0, this.#rowViewport.scrollTop || 0);
+    const buffer = this.#rowViewport.bufferPx || 0;
+    return { top: scrollTop - buffer, bottom: scrollTop + h + buffer };
+  }
+
+  /**
+   * Test whether a row spanning `[top, top+height]` intersects the
+   * current vertical viewport window. Always returns true when the
+   * viewport height is unknown — the render loop falls back to
+   * "build every row".
+   * @param {number} top
+   * @param {number} height
+   * @returns {boolean}
+   */
+  #isRowInViewport(top, height) {
+    const vp = this.#getRowViewportPx();
+    if (!vp) return true;
+    return top + height >= vp.top && top <= vp.bottom;
+  }
+
+  /**
+   * Get the precomputed row index for a task. Returns null if the task
+   * is filtered out / collapsed away from the visible tree.
+   * @param {string|number} taskId
+   * @returns {number | null}
+   */
+  #getRowIndex(taskId) {
+    const idx = this.#visibleRowIndices.get(taskId);
+    return typeof idx === "number" ? idx : null;
+  }
+
+  /**
+   * Apply absolute positioning + viewport-skip semantics to a freshly-
+   * built row element. Returns `null` if the row should NOT be appended
+   * (off-screen); otherwise returns the mutated element ready to append.
+   *
+   * Consolidates the "position row at top = idx * row_height, skip if
+   * off-screen" logic shared by sidebar + timeline-body lanes so both
+   * see identical geometry.
+   *
+   * @param {HTMLElement} row - row element already built by caller
+   * @param {string|number} taskId - task.id (for index lookup)
+   * @returns {HTMLElement | null}
+   */
+  #positionRowForViewport(row, taskId) {
+    if (!row) return null;
+    const idx = this.#getRowIndex(taskId);
+    if (idx == null) return null;
+    const h = this.options.row_height;
+    const top = idx * h;
+    if (!this.#isRowInViewport(top, h)) return null;
+    row.style.position = "absolute";
+    row.style.top = `${top}px`;
+    row.style.left = "0";
+    row.style.right = "0";
+    row.style.height = `${h}px`;
+    return row;
+  }
+
+  /**
+   * Set a lane container's intrinsic height to match the total visible
+   * row count so the scrollbar reflects off-screen rows. Called on the
+   * sidebar, timeline-body, and bars containers after their row-building
+   * loops complete.
+   * @param {HTMLElement} container
+   */
+  #setLaneScrollHeight(container) {
+    if (!container) return;
+    const h = this.#totalVisibleRows * this.options.row_height;
+    
+    if (h > 0) {
+      container.style.position = "relative";
+      container.style.height = `${h}px`;
+      container.style.minHeight = `${h}px`;
+    }
+  }
+
+  /**
+   * Read current scroll position + container width from the live timeline
+   * container and cache them on `#cellViewport`. Must be called before
+   * any row/scale build loop that wants windowing.
+   */
+  #snapshotCellViewport() {
+    if (!this.element) return;
+    const container = this.element.querySelector("#js-gantt-timeline-cell");
+    if (!container) return;
+    this.#cellViewport.scrollLeft = container.scrollLeft || 0;
+    // clientWidth is 0 in happy-dom and in some detached-render paths —
+    // leave width null so the viewport check degrades to "render all".
+    const cw = container.clientWidth;
+    this.#cellViewport.width = cw > 0 ? cw : null;
+    // Vertical companion — used by row virtualization.
+    this.#rowViewport.scrollTop = container.scrollTop || 0;
+    const ch = container.clientHeight;
+    this.#rowViewport.height = ch > 0 ? ch : null;
+  }
+
+  /**
+   * Rebuild visible timeline cells for all task rows + scale rows.
+   * Triggered on horizontal scroll when the window has shifted enough
+   * to expose un-rendered area. Rebuilds are O(visibleRows × windowCells)
+   * not O(totalRows × totalDates), so remain cheap even for year-long
+   * daily-zoom charts.
+   */
+  #rebuildVisibleCells() {
+    if (!this.element) return;
+    this.#snapshotCellViewport();
+
+    // Task rows share a single template — rebuild it once and clone the
+    // new cells into every existing row.
+    const taskRows = this.element.querySelectorAll(".js-gantt-task-row");
+    if (taskRows.length) {
+      const newTemplate = this.createRowTemplate();
+      taskRows.forEach((row) => {
+        // Remove existing cells only — leave any non-cell decorations
+        // (e.g. selection overlays that future code might add) alone.
+        const oldCells = row.querySelectorAll(":scope > .js-gantt-task-cell");
+        oldCells.forEach((c) => c.remove());
+        for (const cell of newTemplate.children) {
+          row.appendChild(cell.cloneNode(true));
+        }
+      });
+    }
+
+    // Scale header: re-run createTimelineScale into the existing layout
+    // spot. Too costly to do on every scroll tick without throttling —
+    // the scroll handler coalesces via rAF.
+    const scaleRoot = this.element.querySelector(".js-gantt-scale");
+    if (scaleRoot) {
+      const timeline = scaleRoot.parentElement;
+      const jsGanttLayout = this.element.querySelector("#js-gantt-layout");
+      // Remember where the old scale sat so we can insert the new one in
+      // the same position. createTimelineScale unconditionally appends
+      // the new scale to the end of `timeline`, which pushes it BELOW
+      // `.js-gantt-timeline-data` on every scroll reconcile — the user
+      // saw the scale header jump to the bottom on horizontal scroll.
+      const nextSibling = scaleRoot.nextSibling;
+      if (timeline && jsGanttLayout) {
+        scaleRoot.remove();
+        this.createTimelineScale(timeline, jsGanttLayout);
+        const newScale = timeline.querySelector(".js-gantt-scale");
+        if (newScale && nextSibling && newScale !== nextSibling) {
+          timeline.insertBefore(newScale, nextSibling);
+        }
+      }
+    }
+  }
+
+  /**
+   * Attach a horizontal-scroll reconcile handler to the timeline scroll
+   * container. Safe to call more than once per instance — the handler is
+   * tracked via #cellScrollHandler and replaced.
+   */
+  #installCellScrollHandler() {
+    if (!this.element) return;
+    const container = this.element.querySelector("#js-gantt-timeline-cell");
+    if (!container) return;
+
+    // Remove prior handler if this is a re-render.
+    if (this.#cellScrollHandler) {
+      container.removeEventListener("scroll", this.#cellScrollHandler);
+      this.#cellScrollHandler = null;
+    }
+
+    let lastRenderedScroll = container.scrollLeft || 0;
+    let lastRenderedScrollTop = container.scrollTop || 0;
+
+    const handler = () => {
+      const nowX = container.scrollLeft || 0;
+      const nowY = container.scrollTop || 0;
+      const bufferX = this.#cellViewport.bufferPx || 0;
+      const bufferY = this.#rowViewport.bufferPx || 0;
+      // Coalesce: only reconcile when the user has scrolled past half the
+      // buffer on either axis since the last rebuild. Avoids rebuilding
+      // on every pixel of a slow scroll.
+      const crossedX = Math.abs(nowX - lastRenderedScroll) >= bufferX / 2;
+      const crossedY = Math.abs(nowY - lastRenderedScrollTop) >= bufferY / 2;
+      if (!crossedX && !crossedY) return;
+
+      if (this.#cellRaf) return;
+      this.#cellRaf = requestAnimationFrame(() => {
+        this.#cellRaf = 0;
+        lastRenderedScroll = container.scrollLeft || 0;
+        lastRenderedScrollTop = container.scrollTop || 0;
+        // Horizontal crossed → rebuild cells in the visible window.
+        // Vertical crossed → rebuild the rows lane (sidebar + timeline +
+        // bars) with the new top-range. Often both are needed at once
+        // (e.g. diagonal-ish scroll).
+        if (crossedX) {
+          this.#rebuildVisibleCells();
+        }
+        if (crossedY) {
+          this.#rebuildVisibleRows();
+        }
+      });
+    };
+
+    container.addEventListener("scroll", handler, { passive: true });
+    this.#cellScrollHandler = handler;
+  }
+
+  /**
+   * Rebuild the row-bearing lanes (sidebar, timeline body, bars) using
+   * the current vertical viewport. Triggered on vertical scroll when the
+   * user crosses the buffer threshold. Re-runs the existing lane-build
+   * functions in-place so all per-row listeners (drag, dblclick, etc.)
+   * are reattached on newly-visible rows.
+   */
+  #rebuildVisibleRows() {
+    if (!this.element) return;
+    this.#snapshotCellViewport();
+
+    const jsGanttLayout = this.element.querySelector("#js-gantt-layout");
+    if (!jsGanttLayout) return;
+
+    // Rebuild the visible-row index in case collapse state changed since
+    // the last render (e.g. an openTask fired between scroll ticks).
+    this.#buildVisibleRowIndex();
+
+    // Stable anchor: `#js-gantt-timeline-cell` is never removed during
+    // a row rebuild. Everything that sits BEFORE the timeline in the
+    // layout (sidebar + resizer wrap) must be re-inserted before it.
+    const timelineCell = this.element.querySelector("#js-gantt-timeline-cell");
+    const savedScrollTop = timelineCell?.scrollTop || 0;
+    const savedScrollLeft = timelineCell?.scrollLeft || 0;
+
+    // Sidebar lane — remove + rebuild + relocate.
+    const oldLeft = this.element.querySelector("#js-gantt-grid-left-data");
+    const oldLeftResizer = this.element.querySelector(
+      "#js-gantt-left-layout-resizer-wrap"
+    );
+    if (oldLeft) oldLeft.remove();
+    if (oldLeftResizer) oldLeftResizer.remove();
+    this.createSidebar(jsGanttLayout);
+    const newLeft = this.element.querySelector("#js-gantt-grid-left-data");
+    const newLeftResizer = this.element.querySelector(
+      "#js-gantt-left-layout-resizer-wrap"
+    );
+    if (newLeft && timelineCell && newLeft.parentElement === jsGanttLayout) {
+      jsGanttLayout.insertBefore(newLeft, timelineCell);
+    }
+    if (
+      newLeftResizer &&
+      timelineCell &&
+      newLeftResizer.parentElement === jsGanttLayout
+    ) {
+      jsGanttLayout.insertBefore(newLeftResizer, timelineCell);
+    }
+
+    // Timeline body lane — drop + rebuild + keep below the scale.
+    const oldBody = this.element.querySelector("#js-gantt-timeline-data");
+    if (oldBody) {
+      const timeline = oldBody.parentElement;
+      const bodyAnchor = oldBody.nextSibling;
+      oldBody.remove();
+      if (timeline) {
+        this.createTimelineBody(timeline, jsGanttLayout, true);
+        const newBody = timeline.querySelector("#js-gantt-timeline-data");
+        if (newBody && bodyAnchor && newBody !== bodyAnchor) {
+          timeline.insertBefore(newBody, bodyAnchor);
+        }
+      }
+    }
+
+    // Rewire scroll-sync listener WITHOUT tearing down the custom
+    // scrollbar DOM. The original handler installed by createScrollbar
+    // closes over the (now-detached) old sidebar — we can't mutate its
+    // closure, but we can add a second listener that resolves the LIVE
+    // sidebar via querySelector every time the timeline scrolls. The
+    // old listener becomes a no-op (writes to a detached element).
+    //
+    // Critically, we do NOT re-run createScrollbar: that would destroy
+    // and re-create the custom `.js-gantt-ver-scroll` element. When the
+    // user is actively dragging that scrollbar, replacing it mid-drag
+    // aborts the browser's pointer-capture and the scroll glitches.
+    this.#installLiveScrollSync(timelineCell, savedScrollTop, savedScrollLeft);
+  }
+
+  /**
+   * Attach a lazy-lookup scroll-sync handler on the timeline container.
+   * Unlike the closures in createScrollbar, this queries the current
+   * sidebar + custom scrollbar via `this.element.querySelector` on every
+   * scroll event, so it survives any number of sidebar-element swaps
+   * done by #rebuildVisibleRows without needing to re-run createScrollbar
+   * (which would destroy the active custom scrollbar mid-drag).
+   * @param {HTMLElement} timelineCell
+   * @param {number} restoreTop
+   * @param {number} restoreLeft
+   */
+  #installLiveScrollSync(timelineCell, restoreTop = 0, restoreLeft = 0) {
+    if (!timelineCell) return;
+    if (this.#liveScrollSyncHandler) {
+      timelineCell.removeEventListener("scroll", this.#liveScrollSyncHandler);
+      this.#liveScrollSyncHandler = null;
+    }
+    const host = this.element;
+    const handler = () => {
+      const sb = host?.querySelector("#js-gantt-grid-left-data");
+      if (sb && sb.scrollTop !== timelineCell.scrollTop) {
+        sb.scrollTop = timelineCell.scrollTop;
+      }
+      const rsb = host?.querySelector("#js-gantt-grid-right-data");
+      if (rsb && rsb.scrollTop !== timelineCell.scrollTop) {
+        rsb.scrollTop = timelineCell.scrollTop;
+      }
+    };
+    timelineCell.addEventListener("scroll", handler, { passive: true });
+    this.#liveScrollSyncHandler = handler;
+
+    // Attach the reverse direction (sidebar → timeline) to the CURRENT
+    // sidebar element. The original listener from createScrollbar was
+    // bound to the previous sidebar, which we just replaced — that
+    // listener is now orphaned on a detached node. We need a fresh one
+    // per rebuild because the sidebar itself changes; remove any prior
+    // attachment via the same `#liveSidebarScrollHandler` marker.
+    const sb = host?.querySelector("#js-gantt-grid-left-data");
+    if (this.#liveSidebarScrollHandler && this.#liveSidebarScrollEl) {
+      this.#liveSidebarScrollEl.removeEventListener(
+        "scroll",
+        this.#liveSidebarScrollHandler
+      );
+      this.#liveSidebarScrollHandler = null;
+      this.#liveSidebarScrollEl = null;
+    }
+    if (sb) {
+      const sidebarHandler = () => {
+        if (timelineCell.scrollTop !== sb.scrollTop) {
+          timelineCell.scrollTop = sb.scrollTop;
+        }
+      };
+      sb.addEventListener("scroll", sidebarHandler, { passive: true });
+      this.#liveSidebarScrollHandler = sidebarHandler;
+      this.#liveSidebarScrollEl = sb;
+    }
+
+    // Push the restored scroll position NOW so the freshly-built rows
+    // align visually before the user moves the scrollbar again.
+    timelineCell.scrollTop = restoreTop;
+    timelineCell.scrollLeft = restoreLeft;
+    if (sb) sb.scrollTop = restoreTop;
   }
 
   /**
@@ -1286,6 +1826,20 @@ class javascriptgantt {
         this.addTaskToOpenedList(task.id);
       } else {
         this.removeTaskFromOpenedList(task.id);
+      }
+
+      // In search mode the full tree is in the DOM with `.js-gantt-d-none`
+      // applied to collapsed branches — the legacy class-toggle path works
+      // there. In normal mode, collapsed branches are NOT in the DOM, so
+      // expanding/collapsing must trigger a full re-render to build/drop
+      // the rows. See createSidebarChild / createTimelineChildBody.
+      if (!this.#searchedData) {
+        this.render();
+        this.dispatchEvent("onTaskToggle", {
+          task,
+          isTaskOpened: isTaskCollapse,
+        });
+        return;
       }
 
       this.setCollapseAll(
@@ -1370,6 +1924,12 @@ class javascriptgantt {
     setStyles(timelineDataContainer, {
       width: `${this.calculateTimeLineWidth("updated", "day")}px`,
     });
+
+    // Row virtualization: rows are absolutely positioned inside
+    // jsGanttTaskData, so the container needs an explicit height for the
+    // scrollbar to reflect all (visible) rows — including those NOT in
+    // the DOM because they're outside the viewport.
+    this.#setLaneScrollHeight(jsGanttTaskData);
 
     timelineDataContainer.append(jsGanttTaskData);
     timeline.append(timelineDataContainer);
@@ -1541,24 +2101,38 @@ class javascriptgantt {
         const cellWidth = gridWidth;
         const fragment = document.createDocumentFragment();
         for (let i = 0; i < 24; i++) {
-          const hourCell = timelineCell.cloneNode(true);
-          setStyles(hourCell, {
-            left: `${rangeCount}px`,
-            width: `${cellWidth}px`,
-          });
+          // Cell virtualization: only create the hour cell when its pixel
+          // range intersects the horizontal viewport + buffer. Off-screen
+          // hours get their position accounted for (rangeCount advances)
+          // but contribute nothing to the DOM.
+          if (this.#isCellInViewport(rangeCount, cellWidth)) {
+            const hourCell = timelineCell.cloneNode(true);
+            setStyles(hourCell, {
+              left: `${rangeCount}px`,
+              width: `${cellWidth}px`,
+            });
+            fragment.appendChild(hourCell);
+          }
           rangeCount += cellWidth;
-          fragment.appendChild(hourCell);
         }
         timelineRow.append(fragment);
       } else if (
         this.options.zoomLevel !== "day" &&
         new Date(cellEndDate).getTime() < currentDate
       ) {
-        rangeCount += colDates.dateCount * gridWidth;
+        const spanWidth = colDates.dateCount * gridWidth;
+        // Append only when any part of the multi-unit cell is on-screen.
+        if (this.#isCellInViewport(rangeCount, spanWidth)) {
+          timelineRow.append(timelineCell);
+        }
+        rangeCount += spanWidth;
         cellEndDate = new Date(colDates.endDate);
-        timelineRow.append(timelineCell);
       } else if (this.options.zoomLevel === "day") {
-        timelineRow.append(timelineCell);
+        // Day-zoom path: cell positions are deterministic (k * gridWidth)
+        // — skip creating DOM for out-of-viewport cells.
+        if (this.#isCellInViewport(gridWidth * k, gridWidth)) {
+          timelineRow.append(timelineCell);
+        }
       }
     }
 
@@ -1972,7 +2546,16 @@ class javascriptgantt {
           }
         });
 
-        jsGanttBarsArea.append(jsGanttBarTask);
+        // Row virtualization (bars lane, top level): only attach the
+        // taskbar to the DOM when its row is on-screen. Build cost is
+        // still paid for off-screen bars (sunk into this block above),
+        // but DOM size — which dominates layout/paint — drops to
+        // O(visible rows). rowCount still advances so subsequent bars
+        // position at the right `top`.
+        const _barTop = rowCount * this.options.row_height;
+        if (this.#isRowInViewport(_barTop, this.options.row_height)) {
+          jsGanttBarsArea.append(jsGanttBarTask);
+        }
 
         rowCount += 1;
       }
@@ -1994,7 +2577,6 @@ class javascriptgantt {
 
     // Using querySelector for DOM lookups
     const barsArea = querySelector("#js-gantt-bars-area", document);
-
     if (barContainer === null) {
       barContainer = querySelector("#js-gantt-timeline-data", document);
     }
@@ -2005,6 +2587,10 @@ class javascriptgantt {
     } else {
       barContainer.append(jsGanttBarsArea);
     }
+
+    // Row virtualization (bars lane): size the bars area to the full
+    // visible-row extent so scrollbars still reflect off-screen rows.
+    this.#setLaneScrollHeight(jsGanttBarsArea);
     if (!isFromRender) {
       // create links if addLinks is true
       const isLinksAreaExist = querySelector(
@@ -2649,6 +3235,21 @@ class javascriptgantt {
    * Method to expand all rows of gantt
    */
   expandAll() {
+    this.options.openedTasks = this.originalData.map((task) => task?.id);
+    this.options.collapse = false;
+    // Sync TaskManager so isTaskOpened() reflects the new state; otherwise
+    // the recursion guards in createSidebarChild / createTimelineChildBody
+    // see stale per-task state from before this call.
+    if (this.#taskManager) {
+      this.#taskManager.expandAll();
+    }
+
+    // Normal mode: no d-none rows exist in the DOM — rebuild instead.
+    if (!this.#searchedData) {
+      this.render();
+      return;
+    }
+
     const childRows = this.element.querySelectorAll(".js-gantt-child-row");
     const toggleIcons = this.element.querySelectorAll(".js-gantt-tree-close");
 
@@ -2664,22 +3265,34 @@ class javascriptgantt {
       }
     }
 
-    this.options.openedTasks = this.originalData.map((task) => task?.id);
     this.createTaskBars();
     const jsGanttLayout = this.element.querySelector("#js-gantt-layout");
     this.createScrollbar(jsGanttLayout);
-    this.options.collapse = false;
   }
 
   /**
    * Method to collapse all rows of gantt
    */
   collapseAll() {
-    const childRows = this.element.querySelectorAll(".js-gantt-child-row");
-    const toggleIcons = this.element.querySelectorAll(".js-gantt-tree-icon");
-
     // Make the opened task array empty
     this.options.openedTasks.length = 0;
+    // Sync TaskManager — without this, isTaskOpened() still returns true
+    // for previously-expanded tasks (TaskManager owns its own openedTasks
+    // array) and the recursion guards in createSidebarChild /
+    // createTimelineChildBody would still build child rows.
+    if (this.#taskManager) {
+      this.#taskManager.collapseAll();
+    }
+
+    // Normal mode: no collapsed children exist in the DOM anyway — just
+    // rebuild with an empty openedTasks to render only top-level rows.
+    if (!this.#searchedData) {
+      this.render();
+      return;
+    }
+
+    const childRows = this.element.querySelectorAll(".js-gantt-child-row");
+    const toggleIcons = this.element.querySelectorAll(".js-gantt-tree-icon");
 
     // Change all the toggle icons to close
     for (const icon of toggleIcons) {
@@ -3740,11 +4353,20 @@ class javascriptgantt {
       }
     } else {
       const timeLineRow = this.element.querySelector(".js-gantt-task-row");
-      const timeLineCell = timeLineRow.querySelectorAll(".js-gantt-task-cell");
-      totalWidth = Array.from(timeLineCell).reduce(
-        (totalWidth, cell) => totalWidth + cell.offsetWidth,
-        0
-      );
+      const timeLineCell = timeLineRow?.querySelectorAll(".js-gantt-task-cell");
+      // When cells are windowed (virtualCells), querying live DOM returns
+      // only the visible slice. Fall back to the analytical width in that
+      // case so totals reflect the full timeline, not just the viewport.
+      if (timeLineCell && timeLineCell.length >= (this.dates?.length || 0)) {
+        totalWidth = Array.from(timeLineCell).reduce(
+          (total, cell) => total + cell.offsetWidth,
+          0
+        );
+      } else {
+        totalWidth =
+          this.calculateGridWidth(new Date(0), "day") *
+          (this.dates?.length || 0);
+      }
     }
     return totalWidth;
   }
@@ -4178,6 +4800,16 @@ class javascriptgantt {
     isRight,
     isOpened
   ) {
+    // Virtualization: if the parent subtree is collapsed and we are not
+    // in search mode, skip building these DOM nodes entirely. Previously
+    // all descendants were rendered with `.js-gantt-d-none` applied — for
+    // a 2500-task chart that meant 2500 rows in the DOM regardless of
+    // collapse state. Now DOM cost is proportional to VISIBLE rows.
+    // Search mode (`#searchedData` set) still renders everything so that
+    // matches inside collapsed branches stay reachable via class toggle.
+    if (!isOpened && !this.#searchedData) {
+      return;
+    }
     // loop through all the children
     for (let l = 0; l < taskData.length; l++) {
       const task = taskData[l];
@@ -4354,7 +4986,12 @@ class javascriptgantt {
           }
         }
 
-        leftDataContainer.append(dataItem);
+        // Row virtualization (child branch): same skip-and-position logic
+        // as the top-level sidebar loop — see createSidebar.
+        const positioned = this.#positionRowForViewport(dataItem, task.id);
+        if (positioned) {
+          leftDataContainer.append(dataItem);
+        }
       }
 
       this.createSidebarChild(
@@ -4376,6 +5013,14 @@ class javascriptgantt {
     isOpened,
     timelineRowTemplate
   ) {
+    // Virtualization: skip building DOM rows for collapsed subtrees when
+    // not searching. Matches the behavior of createChildTaskBars which
+    // already guards on `isTaskOpened`. See createSidebarChild for the
+    // full rationale — this is the second half of the row-lane pair and
+    // must skip in lockstep or the lanes' row counts would diverge.
+    if (!isOpened && !this.#searchedData) {
+      return;
+    }
     // loop through all the children
     for (let l = 0; l < taskData.length; l++) {
       const task = taskData[l];
@@ -4782,7 +5427,13 @@ class javascriptgantt {
 
         jsGanttBarTask.append(jsGanttBarTaskContent);
 
-        jsGanttBarsArea.append(jsGanttBarTask);
+        // Row virtualization (bars lane, child branch) — see the top-
+        // level createTaskBars comment for rationale. Skip attaching
+        // off-screen taskbars; rowCount still advances.
+        const _barTop = rowCount * this.options.row_height;
+        if (this.#isRowInViewport(_barTop, this.options.row_height)) {
+          jsGanttBarsArea.append(jsGanttBarTask);
+        }
 
         rowCount += 1;
       }
@@ -5117,7 +5768,11 @@ class javascriptgantt {
           dataItem.append(cell);
         }
 
-        leftDataContainer.append(dataItem);
+        // Row virtualization (right-sidebar branch): see createSidebar.
+        const positioned = this.#positionRowForViewport(dataItem, task.id);
+        if (positioned) {
+          leftDataContainer.append(dataItem);
+        }
       }
 
       this.createSidebarChild(
@@ -5131,6 +5786,10 @@ class javascriptgantt {
       );
     }
     sidebar.append(leftDataContainer);
+
+    // Row virtualization: size the right-sidebar lane for the full
+    // visible-row extent (matches createSidebar's behavior).
+    this.#setLaneScrollHeight(leftDataContainer);
 
     // Using imported createElement utility
     const timelineResizerWrap = createElement("div", {
@@ -5241,7 +5900,14 @@ class javascriptgantt {
     function handleCalendarScroll(e) {
       sidebar.scrollTop = timeline.scrollTop;
       horScroll.scrollLeft = timeline.scrollLeft;
-      verticalScroll.scrollTop = timeline.scrollTop;
+      // Proportional mapping for the custom vertical scrollbar
+      const tlMax = timeline.scrollHeight - timeline.clientHeight;
+      const vsMax = verticalScroll.scrollHeight - verticalScroll.clientHeight;
+      if (tlMax > 0 && vsMax > 0) {
+        verticalScroll.scrollTop = Math.round(
+          (timeline.scrollTop / tlMax) * vsMax
+        );
+      }
       if (rightSideBar) {
         rightSideBar.scrollTop = timeline.scrollTop;
       }
@@ -5254,7 +5920,13 @@ class javascriptgantt {
 
     function handleSidebarScroll() {
       timeline.scrollTop = sidebar.scrollTop;
-      verticalScroll.scrollTop = sidebar.scrollTop;
+      const sbMax = sidebar.scrollHeight - sidebar.clientHeight;
+      const vsMax = verticalScroll.scrollHeight - verticalScroll.clientHeight;
+      if (sbMax > 0 && vsMax > 0) {
+        verticalScroll.scrollTop = Math.round(
+          (sidebar.scrollTop / sbMax) * vsMax
+        );
+      }
       if (rightSideBar) {
         rightSideBar.scrollTop = sidebar.scrollTop;
       }
@@ -5275,17 +5947,29 @@ class javascriptgantt {
 
       function handleRightSidebarScroll() {
         timeline.scrollTop = rightSideBar.scrollTop;
-        verticalScroll.scrollTop = rightSideBar.scrollTop;
+        const rMax = rightSideBar.scrollHeight - rightSideBar.clientHeight;
+        const vsMax = verticalScroll.scrollHeight - verticalScroll.clientHeight;
+        if (rMax > 0 && vsMax > 0) {
+          verticalScroll.scrollTop = Math.round(
+            (rightSideBar.scrollTop / rMax) * vsMax
+          );
+        }
         sidebar.scrollTop = rightSideBar.scrollTop;
       }
     }
 
-    // for vertical custom scroller
+    // for vertical custom scroller – use proportional mapping because the
+    // custom scrollbar's scroll range can differ from the timeline's range.
     verticalScroll.addEventListener("scroll", () => {
-      timeline.scrollTop = verticalScroll.scrollTop;
-      sidebar.scrollTop = verticalScroll.scrollTop;
+      const vsMax = verticalScroll.scrollHeight - verticalScroll.clientHeight;
+      const tlMax = timeline.scrollHeight - timeline.clientHeight;
+      if (vsMax <= 0 || tlMax <= 0) return;
+      const ratio = verticalScroll.scrollTop / vsMax;
+      const targetTop = Math.round(ratio * tlMax);
+      timeline.scrollTop = targetTop;
+      sidebar.scrollTop = targetTop;
       if (rightSideBar) {
-        rightSideBar.scrollTop = verticalScroll.scrollTop;
+        rightSideBar.scrollTop = targetTop;
       }
     });
 
@@ -5702,20 +6386,29 @@ class javascriptgantt {
       return;
     }
 
-    const sidebar = this.element.querySelector("#js-gantt-left-grid");
-    const taskRow = sidebar.querySelector(`[js-gantt-task-id="${id}"]`);
-    const children = this.element.querySelectorAll(`.js-gantt-child-${id}`);
-    const jsGanttLayout = this.element.querySelector("#js-gantt-layout");
-    const toggleTreeIcon = taskRow.querySelector(".js-gantt-tree-icon");
-
     const task = this.getTask(id);
-    if (task.parent !== 0) {
+    if (task && task.parent !== 0) {
       this.openTask(task.parent);
     }
 
     if (!this.isTaskOpened(id)) {
       this.addTaskToOpenedList(id);
     }
+
+    // Normal mode: collapsed children aren't in the DOM, so class-toggling
+    // is a no-op — rebuild via render(). Search mode still uses the
+    // legacy class-toggle path below because all rows are in the DOM.
+    if (!this.#searchedData) {
+      this.render();
+      return;
+    }
+
+    const sidebar = this.element.querySelector("#js-gantt-left-grid");
+    const taskRow = sidebar?.querySelector(`[js-gantt-task-id="${id}"]`);
+    const children = this.element.querySelectorAll(`.js-gantt-child-${id}`);
+    const jsGanttLayout = this.element.querySelector("#js-gantt-layout");
+    const toggleTreeIcon = taskRow?.querySelector(".js-gantt-tree-icon");
+
     this.createTaskBars();
 
     children.forEach((child) => {
@@ -9141,6 +9834,38 @@ class javascriptgantt {
 
       // Clear cached per-render content-cell registry so it can be GC'd
       this.#contentCells = [];
+
+      // Cancel any pending cell-reconcile rAF and drop the scroll handler.
+      if (this.#cellRaf) {
+        cancelAnimationFrame(this.#cellRaf);
+        this.#cellRaf = 0;
+      }
+      if (this.#cellScrollHandler && this.element) {
+        const container = this.element.querySelector("#js-gantt-timeline-cell");
+        if (container) {
+          container.removeEventListener("scroll", this.#cellScrollHandler);
+        }
+      }
+      this.#cellScrollHandler = null;
+
+      // Detach the live-scroll-sync handler installed by #rebuildVisibleRows
+      // so we don't leave a listener firing on a container whose closure
+      // can no longer access `this.element`.
+      if (this.#liveScrollSyncHandler && this.element) {
+        const container = this.element.querySelector("#js-gantt-timeline-cell");
+        if (container) {
+          container.removeEventListener("scroll", this.#liveScrollSyncHandler);
+        }
+      }
+      this.#liveScrollSyncHandler = null;
+      if (this.#liveSidebarScrollHandler && this.#liveSidebarScrollEl) {
+        this.#liveSidebarScrollEl.removeEventListener(
+          "scroll",
+          this.#liveSidebarScrollHandler
+        );
+      }
+      this.#liveSidebarScrollHandler = null;
+      this.#liveSidebarScrollEl = null;
 
       // Clear DOM content
       if (this.element) {
