@@ -82,6 +82,11 @@ class javascriptgantt {
   // ~4–6 handlers per task per render.
   #taskBarUpdaters = [];
   #taskBarUpdatersBound = false;
+  // Per-render cache for getLargeAndSmallDate(task) — computing a task's
+  // subtree min/max dates recurses the whole subtree, so calling it inside
+  // loops over options.data made render O(n²). Cleared at render start and
+  // whenever task data is mutated (addTask / deleteTask / updateTaskDate).
+  #taskBoundsCache = new Map();
   // Set to true by destroy(); render/attachEvent/dispatchEvent become no-ops
   // after this flips so consumers calling methods on a torn-down instance
   // don't blow up on null `this.options` / `this.element`.
@@ -403,6 +408,9 @@ class javascriptgantt {
     if (this.#destroyed || !this.options || !ele) {
       return;
     }
+    // Drop stale per-task memoized subtree bounds from any prior
+    // render or mutation — fresh data may have different children.
+    this.#invalidateTaskBoundsCache();
     if (
       this.options.weekStart > 6 ||
       typeof this.options.weekStart !== "number"
@@ -1201,7 +1209,12 @@ class javascriptgantt {
     for (const ev of [
       "onAfterTaskUpdate",
       "onAfterProgressDrag",
-      "onTaskDrag",
+      // NOTE: `onTaskDrag` was removed from this list — it fires on every
+      // mousemove during drag, and refreshAll rewrites innerHTML on every
+      // registered cell (tasks × columns). With 2500 tasks × 2 cols at
+      // 60 fps that's 300k innerHTML writes/sec → total UI freeze. The
+      // dragged task's row is updated directly by #updateTask; the rest
+      // only need to reconcile on drop (onAfterTaskDrag / onAfterTaskUpdate).
       "onAfterTaskDrag",
     ]) {
       this.attachEvent(ev, refreshAll);
@@ -3476,6 +3489,8 @@ class javascriptgantt {
         item.end_date = end;
       }
     });
+    // Dates changed — bounds cache for this task and its ancestors is stale.
+    this.#invalidateTaskBoundsCache();
   }
 
   /**
@@ -5674,6 +5689,7 @@ class javascriptgantt {
    * Updates the duration of each task in the data
    */
   updateTaskDuration() {
+    this.#invalidateTaskBoundsCache();
     this.eachTask((task) => {
       const { start_date, end_date } = this.getLargeAndSmallDate(task);
       task.duration = this.getDates(start_date, end_date, false)?.length || 0;
@@ -8361,6 +8377,15 @@ class javascriptgantt {
    * @returns {Object} {start_date, end_date} - An object containing the earliest start date and the latest end date.
    */
   getLargeAndSmallDate(taskData) {
+    // Fast path: per-render memoization. Without this, calling
+    // getLargeAndSmallDate inside an O(n) loop over options.data while
+    // the function itself recurses the whole subtree makes render O(n²).
+    // Cache key is the task's id; cache is invalidated in #invalidateTaskBoundsCache.
+    const cacheKey = taskData && taskData.id;
+    if (cacheKey != null && this.#taskBoundsCache.has(cacheKey)) {
+      return this.#taskBoundsCache.get(cacheKey);
+    }
+
     const { children = [], start_date = null, end_date = null } = taskData;
 
     let startDate, endDate;
@@ -8385,7 +8410,23 @@ class javascriptgantt {
     const minDate = new Date(Math.min(...sanitizedDates));
     const maxDate = new Date(Math.max(...sanitizedDates));
 
-    return { start_date: minDate, end_date: maxDate };
+    const result = { start_date: minDate, end_date: maxDate };
+    if (cacheKey != null) {
+      this.#taskBoundsCache.set(cacheKey, result);
+    }
+    return result;
+  }
+
+  /**
+   * Invalidate the per-render task-bounds cache. Called at the start of
+   * each render and whenever task dates / children / parents are mutated.
+   * Over-invalidation is always safe; under-invalidation can show stale
+   * parent spans after edits.
+   */
+  #invalidateTaskBoundsCache() {
+    if (this.#taskBoundsCache.size) {
+      this.#taskBoundsCache.clear();
+    }
   }
 
   /**

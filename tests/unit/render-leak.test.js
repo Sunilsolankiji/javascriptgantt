@@ -120,7 +120,10 @@ describe("render-loop handler leak", () => {
     for (const eventName of [
       "onAfterTaskUpdate",
       "onAfterProgressDrag",
-      "onTaskDrag",
+      // NOTE: `onTaskDrag` is intentionally NOT in this list — subscribing
+      // refreshAll to it fired the whole content-cell refresh on every
+      // mousemove during drag (tasks × cols innerHTML writes per frame,
+      // total UI freeze at scale). The dragged row is updated directly.
       "onAfterTaskDrag",
     ]) {
       const n = listenerCountFor(gantt, eventName);
@@ -130,6 +133,10 @@ describe("render-loop handler leak", () => {
       baseline[eventName] = n;
     }
 
+    // onTaskDrag must stay at 0 — regression guard against accidentally
+    // re-adding the per-frame refreshAll subscription.
+    expect(listenerCountFor(gantt, "onTaskDrag")).toBe(0);
+
     // Re-render many times — counts must stay exactly the same.
     for (let i = 0; i < 15; i++) {
       gantt.render();
@@ -137,6 +144,7 @@ describe("render-loop handler leak", () => {
     for (const eventName of Object.keys(baseline)) {
       expect(listenerCountFor(gantt, eventName)).toBe(baseline[eventName]);
     }
+    expect(listenerCountFor(gantt, "onTaskDrag")).toBe(0);
   });
 
   it("renders idempotently without throwing on many re-renders", () => {
